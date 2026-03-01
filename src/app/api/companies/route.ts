@@ -23,7 +23,7 @@ export async function GET() {
   }
 
   if (!companies || companies.length === 0) {
-    const empty = Object.fromEntries(STATUSES.map((s) => [s, []])) as KanbanBoard;
+    const empty = Object.fromEntries(STATUSES.map((s) => [s, []])) as unknown as KanbanBoard;
     return NextResponse.json(empty);
   }
 
@@ -60,7 +60,7 @@ export async function GET() {
   }));
 
   // Group by status into kanban columns
-  const board = Object.fromEntries(STATUSES.map((s) => [s, []])) as KanbanBoard;
+  const board = Object.fromEntries(STATUSES.map((s) => [s, []])) as unknown as KanbanBoard;
   for (const company of enriched) {
     board[company.status].push(company);
   }
