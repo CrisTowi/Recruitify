@@ -1,0 +1,90 @@
+/* ── Board ── */
+.board {
+  display: flex;
+  gap: 16px;
+  padding: 24px;
+  overflow-x: auto;
+  align-items: flex-start;
+  min-height: calc(100dvh - 56px); /* subtract header height */
+}
+
+/* ── Column ── */
+.column {
+  flex: 0 0 var(--kanban-column-width);
+  background-color: var(--color-surface-alt);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100dvh - 104px);
+}
+
+.columnHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.columnDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.columnDot[data-status="wishlist"]    { background-color: var(--color-status-wishlist); }
+.columnDot[data-status="applied"]     { background-color: var(--color-status-applied); }
+.columnDot[data-status="interviewing"]{ background-color: var(--color-status-interviewing); }
+.columnDot[data-status="offer"]       { background-color: var(--color-status-offer); }
+.columnDot[data-status="rejected"]    { background-color: var(--color-status-rejected); }
+.columnDot[data-status="ghosted"]     { background-color: var(--color-status-ghosted); }
+
+.columnTitle {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  flex: 1;
+}
+
+.columnCount {
+  font-size: 0.75rem;
+  font-weight: 700;
+  background-color: var(--color-border);
+  color: var(--color-text-secondary);
+  padding: 1px 7px;
+  border-radius: 100px;
+}
+
+/* ── Cards list ── */
+.cardList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* ── States ── */
+.empty {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  text-align: center;
+  padding: 16px 0;
+}
+
+.loading,
+.error {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-size: 0.9375rem;
+}
+
+.error {
+  color: var(--color-status-rejected);
+}

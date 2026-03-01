@@ -1,0 +1,109 @@
+.card {
+  background-color: var(--color-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  padding: 12px;
+  cursor: pointer;
+  transition: box-shadow 150ms ease, transform 150ms ease;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-1px);
+}
+
+/* ── Header ── */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.logoFallback {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-brand);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Status badge ── */
+.statusBadge {
+  display: inline-block;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 6px;
+  border-radius: 100px;
+  width: fit-content;
+}
+
+.statusBadge[data-status="wishlist"]    { background: color-mix(in srgb, var(--color-status-wishlist)    15%, transparent); color: var(--color-status-wishlist); }
+.statusBadge[data-status="applied"]     { background: color-mix(in srgb, var(--color-status-applied)     15%, transparent); color: var(--color-status-applied); }
+.statusBadge[data-status="interviewing"]{ background: color-mix(in srgb, var(--color-status-interviewing)15%, transparent); color: var(--color-status-interviewing); }
+.statusBadge[data-status="offer"]       { background: color-mix(in srgb, var(--color-status-offer)       15%, transparent); color: var(--color-status-offer); }
+.statusBadge[data-status="rejected"]    { background: color-mix(in srgb, var(--color-status-rejected)    15%, transparent); color: var(--color-status-rejected); }
+.statusBadge[data-status="ghosted"]     { background: color-mix(in srgb, var(--color-status-ghosted)     15%, transparent); color: var(--color-status-ghosted); }
+
+/* ── Next step footer ── */
+.nextStep {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-border);
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.nextStepLabel {
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.nextStepName {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nextStepDate {
+  font-weight: 600;
+  color: var(--color-brand);
+  flex-shrink: 0;
+}
