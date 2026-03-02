@@ -67,3 +67,21 @@ export async function GET() {
 
   return NextResponse.json(board);
 }
+
+export async function POST(request: Request) {
+  const body = await request.json();
+  const { name, logo_url, status } = body;
+
+  if (!name?.trim()) {
+    return NextResponse.json({ error: 'name is required' }, { status: 400 });
+  }
+
+  const { data, error } = await supabase
+    .from('companies')
+    .insert({ name: name.trim(), logo_url: logo_url || null, status: status ?? 'Wishlist' })
+    .select()
+    .single();
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json(data, { status: 201 });
+}

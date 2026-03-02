@@ -1,0 +1,8 @@
+.wrapper {
+  touch-action: none;
+}
+
+.dragging {
+  opacity: 0.35;
+  cursor: grabbing;
+}

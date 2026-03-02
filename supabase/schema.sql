@@ -78,3 +78,55 @@ create policy "service role full access – roadmap"
 
 create policy "service role full access – offers"
   on offers for all using (true);
+
+-- ────────────────────────────────────────────────────────────
+-- ENUM: timeline event type
+-- ────────────────────────────────────────────────────────────
+create type timeline_event_type as enum (
+  'note',
+  'contact',
+  'appointment',
+  'process_status'
+);
+
+-- ────────────────────────────────────────────────────────────
+-- ENUM: process status value
+-- ────────────────────────────────────────────────────────────
+create type process_status_value as enum (
+  'Waiting for update',
+  'Invited to next step',
+  'Idle',
+  'Offer pending',
+  'Negotiating',
+  'Background check',
+  'References requested'
+);
+
+-- ────────────────────────────────────────────────────────────
+-- TABLE: timeline_events
+-- ────────────────────────────────────────────────────────────
+create table if not exists timeline_events (
+  id             uuid                 primary key default gen_random_uuid(),
+  company_id     uuid                 not null references companies (id) on delete cascade,
+  event_type     timeline_event_type  not null,
+  created_at     timestamptz          not null default now(),
+  -- note + shared notes field
+  title          text,
+  body           text,
+  -- contact
+  contact_name   text,
+  contact_role   text,
+  contact_email  text,
+  -- appointment
+  scheduled_at   timestamptz,
+  -- process_status
+  process_status process_status_value
+);
+
+create index idx_timeline_company_id
+  on timeline_events (company_id, created_at desc);
+
+alter table timeline_events enable row level security;
+
+create policy "service role full access – timeline_events"
+  on timeline_events for all using (true);

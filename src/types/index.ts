@@ -44,3 +44,63 @@ export interface CompanyWithNextStep extends Company {
 
 /** Kanban columns keyed by status */
 export type KanbanBoard = Record<ApplicationStatus, CompanyWithNextStep[]>;
+
+// ─── Drag-and-Drop Data Types ─────────────────────────────────────────────────
+
+export interface DraggableCardData {
+  type: 'card';
+  company: CompanyWithNextStep;
+}
+
+export interface DroppableColumnData {
+  type: 'column';
+  status: ApplicationStatus;
+}
+
+// ─── Timeline Types ───────────────────────────────────────────────────────────
+
+export type TimelineEventType = 'note' | 'contact' | 'appointment' | 'process_status';
+
+export type ProcessStatusValue =
+  | 'Waiting for update'
+  | 'Invited to next step'
+  | 'Idle'
+  | 'Offer pending'
+  | 'Negotiating'
+  | 'Background check'
+  | 'References requested';
+
+export const PROCESS_STATUS_VALUES: ProcessStatusValue[] = [
+  'Waiting for update',
+  'Invited to next step',
+  'Idle',
+  'Offer pending',
+  'Negotiating',
+  'Background check',
+  'References requested',
+];
+
+export interface TimelineEvent {
+  id: string;
+  company_id: string;
+  event_type: TimelineEventType;
+  created_at: string;
+  title: string | null;
+  body: string | null;
+  contact_name: string | null;
+  contact_role: string | null;
+  contact_email: string | null;
+  scheduled_at: string | null;
+  process_status: ProcessStatusValue | null;
+}
+
+export interface CreateTimelineEventPayload {
+  event_type: TimelineEventType;
+  title?: string;
+  body?: string;
+  contact_name?: string;
+  contact_role?: string;
+  contact_email?: string;
+  scheduled_at?: string;
+  process_status?: ProcessStatusValue;
+}

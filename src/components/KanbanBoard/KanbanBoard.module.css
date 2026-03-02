@@ -1,3 +1,26 @@
+/* ── Toolbar ── */
+.toolbar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px 24px 0;
+}
+
+.addButton {
+  background-color: var(--color-brand);
+  color: #fff;
+  border: none;
+  padding: 8px 18px;
+  border-radius: var(--radius-md);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.addButton:hover {
+  background-color: var(--color-brand-hover);
+}
+
 /* ── Board ── */
 .board {
   display: flex;
@@ -87,4 +110,12 @@
 
 .error {
   color: var(--color-status-rejected);
+}
+
+/* ── Drag-and-drop ── */
+.cardListOver {
+  background-color: color-mix(in srgb, var(--color-brand) 8%, transparent);
+  border-radius: var(--radius-md);
+  outline: 2px dashed var(--color-brand);
+  outline-offset: -2px;
 }

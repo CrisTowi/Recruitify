@@ -13,7 +13,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>
+      <body suppressHydrationWarning>
         <header className="site-header">
           <span className="site-logo">Recruitify</span>
         </header>
