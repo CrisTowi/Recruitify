@@ -79,10 +79,22 @@ export default function KanbanBoard() {
       };
     });
 
-    patchStatus(cardId, newStatus).catch(() => {
-      setBoard(snapshot);
-      setError('Failed to move card. Please try again.');
-    });
+    patchStatus(cardId, newStatus)
+      .then(() => {
+        fetch(`/api/companies/${cardId}/timeline`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            event_type: 'status_change',
+            title: oldStatus,
+            body: newStatus,
+          }),
+        }).catch(() => { /* fire-and-forget */ });
+      })
+      .catch(() => {
+        setBoard(snapshot);
+        setError('Failed to move card. Please try again.');
+      });
   }, [board]);
 
   const handleCardClick = useCallback((company: CompanyWithNextStep) => {

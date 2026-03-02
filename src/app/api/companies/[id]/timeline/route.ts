@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 import type { CreateTimelineEventPayload, TimelineEventType } from '@/types';
 import { PROCESS_STATUS_VALUES } from '@/types';
 
-const VALID_EVENT_TYPES: TimelineEventType[] = ['note', 'contact', 'appointment', 'process_status'];
+const VALID_EVENT_TYPES: TimelineEventType[] = ['note', 'contact', 'appointment', 'process_status', 'status_change'];
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -54,6 +54,9 @@ export async function POST(request: Request, { params }: Ctx) {
     if (body.body?.trim()) row.body = body.body.trim();
   } else if (event_type === 'process_status') {
     row.process_status = body.process_status;
+  } else if (event_type === 'status_change') {
+    if (body.title) row.title = body.title;
+    if (body.body) row.body = body.body;
   }
 
   const { data, error } = await supabase

@@ -394,6 +394,7 @@
 .timelineIcon[data-type="contact"]        { background-color: var(--color-status-applied); }
 .timelineIcon[data-type="appointment"]    { background-color: var(--color-status-interviewing); }
 .timelineIcon[data-type="process_status"] { background-color: var(--color-status-offer); }
+.timelineIcon[data-type="status_change"]  { background-color: var(--color-status-ghosted); }
 
 /* ── Content bubble ── */
 .timelineContent {
@@ -421,10 +422,34 @@
   color: var(--color-text-secondary);
 }
 
+.itemHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 .eventDate {
   font-size: 0.75rem;
   color: var(--color-text-muted);
   flex-shrink: 0;
+}
+
+.editButton {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: color 0.12s, border-color 0.12s;
+}
+
+.editButton:hover {
+  color: var(--color-brand);
+  border-color: var(--color-brand);
 }
 
 /* ── Item body ── */
@@ -480,6 +505,68 @@
   background: color-mix(in srgb, var(--color-status-offer) 12%, transparent);
   padding: 3px 10px;
   border-radius: 100px;
+}
+
+/* ── Status change item ── */
+.statusChangeText {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.statusChangeFrom {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.statusChangeArrow {
+  color: var(--color-text-muted);
+  font-weight: 400;
+}
+
+.statusChangeTo {
+  font-weight: 600;
+  color: var(--color-brand);
+}
+
+/* ── Edit form ── */
+.editForm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.editFormActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.cancelButton {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 6px 14px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background-color 0.12s, color 0.12s;
+}
+
+.cancelButton:hover:not(:disabled) {
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+}
+
+.cancelButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* ── Responsive ── */

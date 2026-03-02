@@ -59,7 +59,7 @@ export interface DroppableColumnData {
 
 // ─── Timeline Types ───────────────────────────────────────────────────────────
 
-export type TimelineEventType = 'note' | 'contact' | 'appointment' | 'process_status';
+export type TimelineEventType = 'note' | 'contact' | 'appointment' | 'process_status' | 'status_change';
 
 export type ProcessStatusValue =
   | 'Waiting for update'

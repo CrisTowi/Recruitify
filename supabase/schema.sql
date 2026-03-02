@@ -86,8 +86,11 @@ create type timeline_event_type as enum (
   'note',
   'contact',
   'appointment',
-  'process_status'
+  'process_status',
+  'status_change'
 );
+-- If upgrading an existing DB, run:
+-- ALTER TYPE timeline_event_type ADD VALUE 'status_change';
 
 -- ────────────────────────────────────────────────────────────
 -- ENUM: process status value
