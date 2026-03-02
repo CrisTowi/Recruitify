@@ -1,0 +1,4 @@
+-- Pending migrations for Recruitify
+-- Run these in the Supabase SQL editor or via the Supabase CLI.
+-- This file is cleared once migrations are confirmed applied.
+-- Claude will keep this file updated when new schema changes are introduced.
