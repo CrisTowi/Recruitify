@@ -7,8 +7,9 @@ import type {
   TimelineEventType,
   ProcessStatusValue,
   CreateTimelineEventPayload,
+  InterestLevel,
 } from '@/types';
-import { PROCESS_STATUS_VALUES } from '@/types';
+import { PROCESS_STATUS_VALUES, INTEREST_LEVELS } from '@/types';
 import styles from './CompanyDetailModal.module.css';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -531,15 +532,18 @@ interface Props {
   company: CompanyWithNextStep;
   onClose: () => void;
   onDeleted: (id: string) => void;
+  onUpdated: (updated: CompanyWithNextStep) => void;
 }
 
-export default function CompanyDetailModal({ company, onClose, onDeleted }: Props) {
+export default function CompanyDetailModal({ company, onClose, onDeleted, onUpdated }: Props) {
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [interestLevel, setInterestLevel] = useState<InterestLevel | null>(company.interest_level);
+  const [savingInterest, setSavingInterest] = useState(false);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -562,6 +566,25 @@ export default function CompanyDetailModal({ company, onClose, onDeleted }: Prop
       .then((data) => { setEvents(data); setLoading(false); })
       .catch((err: Error) => { setFetchError(err.message); setLoading(false); });
   }, [company.id]);
+
+  const handleInterestChange = useCallback(async (value: InterestLevel | null) => {
+    const prev = interestLevel;
+    setInterestLevel(value);
+    setSavingInterest(true);
+    try {
+      const res = await fetch(`/api/companies/${company.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ interest_level: value }),
+      });
+      if (!res.ok) throw new Error();
+      onUpdated({ ...company, interest_level: value });
+    } catch {
+      setInterestLevel(prev);
+    } finally {
+      setSavingInterest(false);
+    }
+  }, [company, interestLevel, onUpdated]);
 
   const handleCreated = useCallback((newEvent: TimelineEvent) => {
     setEvents((prev) => [newEvent, ...prev]);
@@ -631,6 +654,25 @@ export default function CompanyDetailModal({ company, onClose, onDeleted }: Prop
             >
               ✕
             </button>
+          </div>
+        </div>
+
+        {/* Interest level selector */}
+        <div className={styles.interestBar}>
+          <span className={styles.interestLabel}>Interest</span>
+          <div className={styles.interestOptions}>
+            {INTEREST_LEVELS.map(({ value, emoji }) => (
+              <button
+                key={value}
+                className={`${styles.interestOption} ${interestLevel === value ? styles.interestOptionActive : ''}`}
+                onClick={() => handleInterestChange(interestLevel === value ? null : value)}
+                disabled={savingInterest}
+                title={value}
+              >
+                <span className={styles.interestEmoji}>{emoji}</span>
+                <span className={styles.interestOptionLabel}>{value}</span>
+              </button>
+            ))}
           </div>
         </div>
 

@@ -19,15 +19,29 @@ create type application_status as enum (
 );
 
 -- ────────────────────────────────────────────────────────────
+-- ENUM: interest level
+-- ────────────────────────────────────────────────────────────
+create type interest_level as enum (
+  'Excited',
+  'Interested',
+  'Meh',
+  'Not interested'
+);
+
+-- ────────────────────────────────────────────────────────────
 -- TABLE: companies
 -- ────────────────────────────────────────────────────────────
 create table if not exists companies (
-  id          uuid primary key default gen_random_uuid(),
-  name        text             not null,
-  logo_url    text,
-  status      application_status not null default 'Wishlist',
-  created_at  timestamptz      not null default now()
+  id             uuid               primary key default gen_random_uuid(),
+  name           text               not null,
+  logo_url       text,
+  status         application_status not null default 'Wishlist',
+  interest_level interest_level,
+  created_at     timestamptz        not null default now()
 );
+-- If upgrading an existing DB, run:
+-- CREATE TYPE interest_level AS ENUM ('Excited','Interested','Meh','Not interested');
+-- ALTER TABLE companies ADD COLUMN interest_level interest_level;
 
 create index idx_companies_status on companies (status);
 

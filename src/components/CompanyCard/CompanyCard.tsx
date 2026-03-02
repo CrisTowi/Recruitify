@@ -1,4 +1,4 @@
-import type { CompanyWithNextStep, ApplicationStatus } from '@/types';
+import type { CompanyWithNextStep, ApplicationStatus, InterestLevel } from '@/types';
 import styles from './CompanyCard.module.css';
 
 interface Props {
@@ -14,8 +14,15 @@ const STATUS_LABELS: Record<ApplicationStatus, string> = {
   Ghosted:     'Ghosted',
 };
 
+const INTEREST_EMOJI: Record<InterestLevel, string> = {
+  'Excited':       '🔥',
+  'Interested':    '⭐',
+  'Meh':           '😐',
+  'Not interested':'👎',
+};
+
 export default function CompanyCard({ company }: Props) {
-  const { name, logo_url, status, next_step } = company;
+  const { name, logo_url, status, next_step, interest_level } = company;
 
   return (
     <article className={styles.card}>
@@ -37,6 +44,11 @@ export default function CompanyCard({ company }: Props) {
             {STATUS_LABELS[status]}
           </span>
         </div>
+        {interest_level && (
+          <span className={styles.interestBadge} title={interest_level}>
+            {INTEREST_EMOJI[interest_level]}
+          </span>
+        )}
       </div>
 
       {next_step && (

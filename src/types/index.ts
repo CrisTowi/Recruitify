@@ -8,11 +8,21 @@ export type ApplicationStatus =
   | 'Rejected'
   | 'Ghosted';
 
+export type InterestLevel = 'Excited' | 'Interested' | 'Meh' | 'Not interested';
+
+export const INTEREST_LEVELS: { value: InterestLevel; emoji: string }[] = [
+  { value: 'Excited',      emoji: '🔥' },
+  { value: 'Interested',   emoji: '⭐' },
+  { value: 'Meh',          emoji: '😐' },
+  { value: 'Not interested', emoji: '👎' },
+];
+
 export interface Company {
   id: string;
   name: string;
   logo_url: string | null;
   status: ApplicationStatus;
+  interest_level: InterestLevel | null;
   created_at: string;
 }
 

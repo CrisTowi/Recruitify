@@ -140,6 +140,16 @@ export default function KanbanBoard() {
               return { ...prev, [status]: prev[status].filter((c) => c.id !== id) };
             });
           }}
+          onUpdated={(updated) => {
+            setSelectedCompany(updated);
+            setBoard((prev) => {
+              if (!prev) return prev;
+              return {
+                ...prev,
+                [updated.status]: prev[updated.status].map((c) => c.id === updated.id ? updated : c),
+              };
+            });
+          }}
         />
       )}
     </DndContext>
