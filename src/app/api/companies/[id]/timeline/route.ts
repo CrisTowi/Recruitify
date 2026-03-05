@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { getDb } from '@/lib/db';
+import { DuplicateCalendarEventError } from '@/lib/db/types';
 import type { CreateTimelineEventPayload, TimelineEventType } from '@/types';
 import { PROCESS_STATUS_VALUES } from '@/types';
 
@@ -7,22 +8,22 @@ const VALID_EVENT_TYPES: TimelineEventType[] = ['note', 'contact', 'appointment'
 
 type Ctx = { params: Promise<{ id: string }> };
 
-export async function GET(_req: Request, { params }: Ctx) {
+export async function GET(req: Request, { params }: Ctx) {
   const { id } = await params;
 
-  const { data, error } = await supabase
-    .from('timeline_events')
-    .select('*')
-    .eq('company_id', id)
-    .order('created_at', { ascending: false });
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data ?? []);
+  try {
+    const db = await getDb(req);
+    const events = await db.getTimeline(id);
+    return NextResponse.json(events);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Internal server error';
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }
 
 export async function POST(request: Request, { params }: Ctx) {
   const { id } = await params;
-  const body = await request.json() as CreateTimelineEventPayload;
+  const body = await request.json() as CreateTimelineEventPayload & { calendar_event_id?: string };
   const { event_type } = body;
 
   if (!event_type || !VALID_EVENT_TYPES.includes(event_type)) {
@@ -38,33 +39,38 @@ export async function POST(request: Request, { params }: Ctx) {
     return NextResponse.json({ error: 'Invalid process_status' }, { status: 400 });
   }
 
-  const row: Record<string, unknown> = { company_id: id, event_type };
+  const payload: CreateTimelineEventPayload & { calendar_event_id?: string } = { event_type };
+
+  if (body.calendar_event_id) payload.calendar_event_id = body.calendar_event_id;
 
   if (event_type === 'note') {
-    if (body.title?.trim()) row.title = body.title.trim();
-    if (body.body?.trim()) row.body = body.body.trim();
+    if (body.title?.trim()) payload.title = body.title.trim();
+    if (body.body?.trim()) payload.body = body.body.trim();
   } else if (event_type === 'contact') {
-    row.contact_name = body.contact_name!.trim();
-    if (body.contact_role?.trim()) row.contact_role = body.contact_role.trim();
-    if (body.contact_email?.trim()) row.contact_email = body.contact_email.trim();
-    if (body.body?.trim()) row.body = body.body.trim();
+    payload.contact_name = body.contact_name!.trim();
+    if (body.contact_role?.trim()) payload.contact_role = body.contact_role.trim();
+    if (body.contact_email?.trim()) payload.contact_email = body.contact_email.trim();
+    if (body.body?.trim()) payload.body = body.body.trim();
   } else if (event_type === 'appointment') {
-    if (body.title?.trim()) row.title = body.title.trim();
-    if (body.scheduled_at) row.scheduled_at = body.scheduled_at;
-    if (body.body?.trim()) row.body = body.body.trim();
+    if (body.title?.trim()) payload.title = body.title.trim();
+    if (body.scheduled_at) payload.scheduled_at = body.scheduled_at;
+    if (body.body?.trim()) payload.body = body.body.trim();
   } else if (event_type === 'process_status') {
-    row.process_status = body.process_status;
+    payload.process_status = body.process_status;
   } else if (event_type === 'status_change') {
-    if (body.title) row.title = body.title;
-    if (body.body) row.body = body.body;
+    if (body.title) payload.title = body.title;
+    if (body.body) payload.body = body.body;
   }
 
-  const { data, error } = await supabase
-    .from('timeline_events')
-    .insert(row)
-    .select()
-    .single();
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data, { status: 201 });
+  try {
+    const db = await getDb(request);
+    const event = await db.createTimelineEvent(id, payload);
+    return NextResponse.json(event, { status: 201 });
+  } catch (err: unknown) {
+    if (err instanceof DuplicateCalendarEventError) {
+      return NextResponse.json({ error: err.message }, { status: 409 });
+    }
+    const message = err instanceof Error ? err.message : 'Internal server error';
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }

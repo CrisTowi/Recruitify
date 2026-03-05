@@ -114,3 +114,12 @@ export interface CreateTimelineEventPayload {
   scheduled_at?: string;
   process_status?: ProcessStatusValue;
 }
+
+// ─── Calendar Types ───────────────────────────────────────────────────────────
+
+export interface CalendarMatch {
+  calendar_event_id: string;
+  title: string;
+  scheduled_at: string | null;
+  description: string | null;
+}

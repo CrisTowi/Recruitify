@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { getDb } from '@/lib/db';
 import type { ApplicationStatus, InterestLevel } from '@/types';
 
 const VALID_STATUSES: ApplicationStatus[] = [
@@ -17,7 +17,7 @@ export async function PATCH(
   const { id } = await params;
   const body = await request.json() as { status?: ApplicationStatus; interest_level?: InterestLevel | null };
 
-  const update: Record<string, unknown> = {};
+  const update: { status?: ApplicationStatus; interest_level?: InterestLevel | null } = {};
 
   if ('status' in body) {
     if (!body.status || !VALID_STATUSES.includes(body.status)) {
@@ -37,30 +37,31 @@ export async function PATCH(
     return NextResponse.json({ error: 'No fields to update' }, { status: 400 });
   }
 
-  const { data, error } = await supabase
-    .from('companies')
-    .update(update)
-    .eq('id', id)
-    .select()
-    .single();
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  if (!data) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-
-  return NextResponse.json(data);
+  try {
+    const db = await getDb(request);
+    const company = await db.updateCompany(id, update);
+    return NextResponse.json(company);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Internal server error';
+    if (message === 'Not found') {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
 
-  const { error } = await supabase
-    .from('companies')
-    .delete()
-    .eq('id', id);
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return new Response(null, { status: 204 });
+  try {
+    const db = await getDb(request);
+    await db.deleteCompany(id);
+    return new Response(null, { status: 204 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Internal server error';
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }
