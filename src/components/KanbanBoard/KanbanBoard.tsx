@@ -10,6 +10,7 @@ import DroppableColumn from './DroppableColumn';
 import CompanyCard from '@/components/CompanyCard/CompanyCard';
 import AddCompanyModal from '@/components/AddCompanyModal/AddCompanyModal';
 import CompanyDetailModal from '@/components/CompanyDetailModal/CompanyDetailModal';
+import OfferModal from '@/components/OfferModal/OfferModal';
 import type { ApplicationStatus, CompanyWithNextStep, KanbanBoard as KanbanBoardType } from '@/types';
 import styles from './KanbanBoard.module.css';
 
@@ -40,6 +41,7 @@ export default function KanbanBoard() {
   const [showModal, setShowModal] = useState(false);
   const [activeCard, setActiveCard] = useState<CompanyWithNextStep | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<CompanyWithNextStep | null>(null);
+  const [offerModalCompany, setOfferModalCompany] = useState<CompanyWithNextStep | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -90,6 +92,11 @@ export default function KanbanBoard() {
             body: newStatus,
           }),
         }).catch(() => { /* fire-and-forget */ });
+
+        // Show offer modal when moving to Offer column
+        if (newStatus === 'Offer') {
+          setOfferModalCompany({ ...data.company, status: 'Offer' });
+        }
       })
       .catch(() => {
         setBoard(snapshot);
@@ -150,6 +157,13 @@ export default function KanbanBoard() {
               };
             });
           }}
+        />
+      )}
+      {offerModalCompany && (
+        <OfferModal
+          company={offerModalCompany}
+          onSaved={() => setOfferModalCompany(null)}
+          onSkip={() => setOfferModalCompany(null)}
         />
       )}
     </DndContext>

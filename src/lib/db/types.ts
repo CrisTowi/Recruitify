@@ -6,6 +6,7 @@ import type {
   InterviewStage,
   TimelineEvent,
   CreateTimelineEventPayload,
+  CompanyOffer,
 } from '@/types';
 
 export interface GoogleTokens {
@@ -53,6 +54,10 @@ export interface DbAdapter {
     eventId: string,
     data: Record<string, unknown>,
   ): Promise<TimelineEvent>;
+
+  // ── Offers ────────────────────────────────────────────────────────────────
+  getOffer(companyId: string): Promise<CompanyOffer | null>;
+  upsertOffer(companyId: string, data: Partial<Omit<CompanyOffer, 'id' | 'company_id' | 'created_at' | 'updated_at'>>): Promise<CompanyOffer>;
 
   // ── Google Calendar tokens ────────────────────────────────────────────────
   getGoogleTokens(): Promise<GoogleTokens | null>;

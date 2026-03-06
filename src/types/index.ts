@@ -37,14 +37,28 @@ export interface InterviewStage {
   notes: string | null;
 }
 
-export interface Offer {
+export type RemotePolicy = 'Remote' | 'Hybrid' | 'On-site';
+export type HealthTier = 'None' | 'Basic' | 'Premium';
+export const REMOTE_POLICIES: RemotePolicy[] = ['Remote', 'Hybrid', 'On-site'];
+export const HEALTH_TIERS: HealthTier[] = ['None', 'Basic', 'Premium'];
+
+export interface CompanyOffer {
   id: string;
   company_id: string;
-  base_salary: number;
-  sign_on_bonus: number | null;
+  base_salary: number | null;
+  currency: string;
+  signing_bonus: number | null;
   equity_value: number | null;
+  equity_vesting: string | null;
+  bonus_pct: number | null;
+  pto_days: number | null;
+  remote_policy: RemotePolicy | null;
+  health_tier: HealthTier | null;
+  retirement_match_pct: number | null;
+  other_benefits: string | null;
   notes: string | null;
   created_at: string;
+  updated_at: string;
 }
 
 // ─── API Response Types ───────────────────────────────────────────────────────

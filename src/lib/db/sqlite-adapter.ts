@@ -10,6 +10,9 @@ import type {
   TimelineEventType,
   ProcessStatusValue,
   CreateTimelineEventPayload,
+  CompanyOffer,
+  RemotePolicy,
+  HealthTier,
 } from '@/types';
 import type { DbAdapter, GoogleTokens } from './types';
 import { DuplicateCalendarEventError } from './types';
@@ -77,6 +80,25 @@ function initSchema(db: Database.Database): void {
       ON timeline_events(company_id, calendar_event_id)
       WHERE calendar_event_id IS NOT NULL;
 
+    CREATE TABLE IF NOT EXISTS company_offers (
+      id TEXT PRIMARY KEY,
+      company_id TEXT NOT NULL REFERENCES companies(id) ON DELETE CASCADE UNIQUE,
+      base_salary INTEGER,
+      currency TEXT NOT NULL DEFAULT 'USD',
+      signing_bonus INTEGER,
+      equity_value INTEGER,
+      equity_vesting TEXT,
+      bonus_pct REAL,
+      pto_days INTEGER,
+      remote_policy TEXT,
+      health_tier TEXT,
+      retirement_match_pct REAL,
+      other_benefits TEXT,
+      notes TEXT,
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+      updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+    );
+
     CREATE TABLE IF NOT EXISTS google_tokens (
       id INTEGER PRIMARY KEY DEFAULT 1,
       access_token TEXT NOT NULL,
@@ -128,6 +150,25 @@ interface TimelineEventRow {
   calendar_event_id: string | null;
 }
 
+interface OfferRow {
+  id: string;
+  company_id: string;
+  base_salary: number | null;
+  currency: string;
+  signing_bonus: number | null;
+  equity_value: number | null;
+  equity_vesting: string | null;
+  bonus_pct: number | null;
+  pto_days: number | null;
+  remote_policy: string | null;
+  health_tier: string | null;
+  retirement_match_pct: number | null;
+  other_benefits: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 interface GoogleTokensRow {
   id: number;
   access_token: string;
@@ -136,6 +177,27 @@ interface GoogleTokensRow {
 }
 
 // ── Row-to-domain mappers ─────────────────────────────────────────────────────
+
+function mapOffer(row: OfferRow): CompanyOffer {
+  return {
+    id: row.id,
+    company_id: row.company_id,
+    base_salary: row.base_salary,
+    currency: row.currency,
+    signing_bonus: row.signing_bonus,
+    equity_value: row.equity_value,
+    equity_vesting: row.equity_vesting,
+    bonus_pct: row.bonus_pct,
+    pto_days: row.pto_days,
+    remote_policy: row.remote_policy as RemotePolicy | null,
+    health_tier: row.health_tier as HealthTier | null,
+    retirement_match_pct: row.retirement_match_pct,
+    other_benefits: row.other_benefits,
+    notes: row.notes,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
+}
 
 function mapCompany(row: CompanyRow): Company {
   return {
@@ -451,6 +513,67 @@ export class SqliteAdapter implements DbAdapter {
       .get(eventId, companyId)!;
 
     return Promise.resolve(mapTimelineEvent(row));
+  }
+
+  // ── Offers ───────────────────────────────────────────────────────────────────
+
+  getOffer(companyId: string): Promise<CompanyOffer | null> {
+    const db = getDb();
+    const row = db
+      .prepare<[string], OfferRow>('SELECT * FROM company_offers WHERE company_id = ?')
+      .get(companyId);
+    return Promise.resolve(row ? mapOffer(row) : null);
+  }
+
+  upsertOffer(
+    companyId: string,
+    data: Partial<Omit<CompanyOffer, 'id' | 'company_id' | 'created_at' | 'updated_at'>>,
+  ): Promise<CompanyOffer> {
+    const db = getDb();
+
+    const existing = db
+      .prepare<[string], OfferRow>('SELECT * FROM company_offers WHERE company_id = ?')
+      .get(companyId);
+
+    if (existing) {
+      const fields = Object.keys(data) as (keyof typeof data)[];
+      if (fields.length > 0) {
+        const setClauses = fields.map((f) => `${f} = ?`);
+        setClauses.push('updated_at = ?');
+        const values = [...fields.map((f) => data[f] ?? null), new Date().toISOString(), existing.id, companyId];
+        db.prepare(
+          `UPDATE company_offers SET ${setClauses.join(', ')} WHERE id = ? AND company_id = ?`,
+        ).run(...values);
+      }
+    } else {
+      const id = crypto.randomUUID();
+      db.prepare(
+        `INSERT INTO company_offers (
+          id, company_id, base_salary, currency, signing_bonus, equity_value, equity_vesting,
+          bonus_pct, pto_days, remote_policy, health_tier, retirement_match_pct, other_benefits, notes
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ).run(
+        id, companyId,
+        data.base_salary ?? null,
+        data.currency ?? 'USD',
+        data.signing_bonus ?? null,
+        data.equity_value ?? null,
+        data.equity_vesting ?? null,
+        data.bonus_pct ?? null,
+        data.pto_days ?? null,
+        data.remote_policy ?? null,
+        data.health_tier ?? null,
+        data.retirement_match_pct ?? null,
+        data.other_benefits ?? null,
+        data.notes ?? null,
+      );
+    }
+
+    const row = db
+      .prepare<[string], OfferRow>('SELECT * FROM company_offers WHERE company_id = ?')
+      .get(companyId)!;
+
+    return Promise.resolve(mapOffer(row));
   }
 
   // ── Google Calendar tokens ───────────────────────────────────────────────────

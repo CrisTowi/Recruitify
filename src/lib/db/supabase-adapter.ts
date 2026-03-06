@@ -9,6 +9,7 @@ import type {
   InterviewStage,
   TimelineEvent,
   CreateTimelineEventPayload,
+  CompanyOffer,
 } from '@/types';
 
 function getAuthEnabled(): boolean {
@@ -320,6 +321,33 @@ export class SupabaseAdapter implements DbAdapter {
     if (error) throw new Error(error.message);
     if (!updated) throw new Error('Not found');
     return updated as TimelineEvent;
+  }
+
+  // ── Offers ──────────────────────────────────────────────────────────────────
+
+  async getOffer(companyId: string): Promise<CompanyOffer | null> {
+    const { client } = await this.getClient();
+    const { data } = await client
+      .from('company_offers')
+      .select('*')
+      .eq('company_id', companyId)
+      .maybeSingle();
+    return (data as CompanyOffer | null) ?? null;
+  }
+
+  async upsertOffer(
+    companyId: string,
+    data: Partial<Omit<CompanyOffer, 'id' | 'company_id' | 'created_at' | 'updated_at'>>,
+  ): Promise<CompanyOffer> {
+    const { client } = await this.getClient();
+    const row = { ...data, company_id: companyId, updated_at: new Date().toISOString() };
+    const { data: result, error } = await client
+      .from('company_offers')
+      .upsert(row, { onConflict: 'company_id' })
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return result as CompanyOffer;
   }
 
   // ── Google Calendar tokens ──────────────────────────────────────────────────

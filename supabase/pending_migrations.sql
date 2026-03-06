@@ -11,3 +11,11 @@
 -- ── 20260306000001_company_prep_notes.sql ────────────────────
 -- Adds prep_notes TEXT column to companies.
 -- File: supabase/migrations/20260306000001_company_prep_notes.sql
+
+-- ── 20260306000002_stage_notes.sql ───────────────────────────
+-- Adds notes TEXT column to interviews_roadmap.
+-- File: supabase/migrations/20260306000002_stage_notes.sql
+
+-- ── 20260306000003_offers.sql ─────────────────────────────────
+-- Creates company_offers table with RLS policies for offer details.
+-- File: supabase/migrations/20260306000003_offers.sql

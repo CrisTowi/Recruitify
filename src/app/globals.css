@@ -118,4 +118,26 @@ a:hover {
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--color-brand);
+  margin-right: 24px;
+}
+
+.site-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.site-nav-link {
+  padding: 5px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+}
+
+.site-nav-link:hover {
+  background: var(--color-surface-alt);
+  color: var(--color-text-primary);
 }
