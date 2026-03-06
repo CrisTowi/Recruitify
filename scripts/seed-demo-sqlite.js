@@ -78,6 +78,25 @@ db.exec(`
     calendar_event_id TEXT
   );
 
+  CREATE TABLE IF NOT EXISTS company_offers (
+    id TEXT PRIMARY KEY,
+    company_id TEXT NOT NULL REFERENCES companies(id) ON DELETE CASCADE UNIQUE,
+    base_salary INTEGER,
+    currency TEXT NOT NULL DEFAULT 'USD',
+    signing_bonus INTEGER,
+    equity_value INTEGER,
+    equity_vesting TEXT,
+    bonus_pct REAL,
+    pto_days INTEGER,
+    remote_policy TEXT,
+    health_tier TEXT,
+    retirement_match_pct REAL,
+    other_benefits TEXT,
+    notes TEXT,
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+    updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+  );
+
   CREATE TABLE IF NOT EXISTS google_tokens (
     id INTEGER PRIMARY KEY DEFAULT 1,
     access_token TEXT NOT NULL,
@@ -88,6 +107,7 @@ db.exec(`
 
 // Column migrations for existing databases
 try { db.exec(`ALTER TABLE companies ADD COLUMN prep_notes TEXT`); } catch { /* already exists */ }
+try { db.exec(`ALTER TABLE interviews_roadmap ADD COLUMN notes TEXT`); } catch { /* already exists */ }
 
 // ── Seed data ─────────────────────────────────────────────────
 const seed = db.transaction(() => {
@@ -100,7 +120,7 @@ const seed = db.transaction(() => {
 
   const companies = [
     ['aaaaaaaa-0001-0000-0000-000000000000', 'Google',   'Interviewing', 'Excited',      '2026-01-10T09:00:00Z'],
-    ['aaaaaaaa-0002-0000-0000-000000000000', 'Stripe',   'Interviewing', 'Excited',      '2026-01-14T11:00:00Z'],
+    ['aaaaaaaa-0002-0000-0000-000000000000', 'Stripe',   'Offer',        'Excited',      '2026-01-14T11:00:00Z'],
     ['aaaaaaaa-0003-0000-0000-000000000000', 'Netflix',  'Offer',        'Excited',      '2025-12-20T10:00:00Z'],
     ['aaaaaaaa-0004-0000-0000-000000000000', 'Meta',     'Rejected',     'Interested',   '2025-12-05T10:00:00Z'],
     ['aaaaaaaa-0005-0000-0000-000000000000', 'Airbnb',   'Wishlist',     'Interested',   '2026-02-01T14:00:00Z'],
@@ -108,6 +128,12 @@ const seed = db.transaction(() => {
     ['aaaaaaaa-0007-0000-0000-000000000000', 'Figma',    'Ghosted',      'Meh',          '2025-11-15T10:00:00Z'],
     ['aaaaaaaa-0008-0000-0000-000000000000', 'Vercel',   'Applied',      'Interested',   '2026-02-03T09:30:00Z'],
     ['aaaaaaaa-0009-0000-0000-000000000000', 'Linear',   'Wishlist',     'Excited',      '2026-02-10T10:00:00Z'],
+    ['aaaaaaaa-0010-0000-0000-000000000000', 'Shopify',  'Offer',        'Excited',      '2026-01-20T10:00:00Z'],
+    ['aaaaaaaa-0011-0000-0000-000000000000', 'Anthropic','Applied',      'Excited',      '2026-02-15T14:00:00Z'],
+    ['aaaaaaaa-0012-0000-0000-000000000000', 'Notion',   'Wishlist',     'Interested',   '2026-02-20T11:00:00Z'],
+    ['aaaaaaaa-0013-0000-0000-000000000000', 'Spotify',  'Interviewing', 'Interested',   '2026-01-25T09:00:00Z'],
+    ['aaaaaaaa-0014-0000-0000-000000000000', 'Amazon',   'Ghosted',      'Meh',          '2025-11-01T10:00:00Z'],
+    ['aaaaaaaa-0015-0000-0000-000000000000', 'GitHub',   'Applied',      'Interested',   '2026-02-12T10:00:00Z'],
   ];
   for (const c of companies) insertCompany.run(...c);
 
@@ -136,6 +162,16 @@ const seed = db.transaction(() => {
     ['bbbbbbbb-0004-0001-0000-000000000000', 'aaaaaaaa-0004-0000-0000-000000000000', 'Recruiter screen',        1, '2025-12-08', 0],
     ['bbbbbbbb-0004-0002-0000-000000000000', 'aaaaaaaa-0004-0000-0000-000000000000', 'Coding round',            1, '2025-12-15', 1],
     ['bbbbbbbb-0004-0003-0000-000000000000', 'aaaaaaaa-0004-0000-0000-000000000000', 'Onsite loop',             1, '2025-12-29', 2],
+    // Shopify
+    ['bbbbbbbb-0010-0001-0000-000000000000', 'aaaaaaaa-0010-0000-0000-000000000000', 'Recruiter screen',        1, '2026-01-22', 0],
+    ['bbbbbbbb-0010-0002-0000-000000000000', 'aaaaaaaa-0010-0000-0000-000000000000', 'Technical assessment',    1, '2026-01-29', 1],
+    ['bbbbbbbb-0010-0003-0000-000000000000', 'aaaaaaaa-0010-0000-0000-000000000000', 'Engineering interview',   0, '2026-03-12', 2],
+    ['bbbbbbbb-0010-0004-0000-000000000000', 'aaaaaaaa-0010-0000-0000-000000000000', 'Final panel',             0, null,         3],
+    // Spotify
+    ['bbbbbbbb-0013-0001-0000-000000000000', 'aaaaaaaa-0013-0000-0000-000000000000', 'Recruiter call',          1, '2026-01-27', 0],
+    ['bbbbbbbb-0013-0002-0000-000000000000', 'aaaaaaaa-0013-0000-0000-000000000000', 'Technical screen',        1, '2026-02-05', 1],
+    ['bbbbbbbb-0013-0003-0000-000000000000', 'aaaaaaaa-0013-0000-0000-000000000000', 'Take-home project',       0, '2026-03-15', 2],
+    ['bbbbbbbb-0013-0004-0000-000000000000', 'aaaaaaaa-0013-0000-0000-000000000000', 'Final round',             0, null,         3],
   ];
   for (const s of stages) insertStage.run(...s);
 
@@ -193,15 +229,74 @@ const seed = db.transaction(() => {
     ['cccccccc-0008-0001-0000-000000000000', 'aaaaaaaa-0008-0000-0000-000000000000', 'status_change',  'Moved to Applied', null, null, null, null, null, null, '2026-02-03T09:30:00Z'],
     ['cccccccc-0008-0002-0000-000000000000', 'aaaaaaaa-0008-0000-0000-000000000000', 'note',           'Application submitted', 'Applied for Staff Engineer role. Love the product, use it daily.', null, null, null, null, null, '2026-02-03T10:00:00Z'],
     ['cccccccc-0008-0003-0000-000000000000', 'aaaaaaaa-0008-0000-0000-000000000000', 'process_status', null, null, null, null, null, null, 'Waiting for update', '2026-02-03T10:00:00Z'],
+    // Shopify
+    ['cccccccc-0010-0001-0000-000000000000', 'aaaaaaaa-0010-0000-0000-000000000000', 'status_change',  'Moved to Interviewing', null, null, null, null, null, null, '2026-01-22T10:00:00Z'],
+    ['cccccccc-0010-0002-0000-000000000000', 'aaaaaaaa-0010-0000-0000-000000000000', 'contact',        null, 'Reached out via LinkedIn about a senior backend role on the Checkout team.', 'David Lee', 'Talent Partner', 'david.lee@shopify.com', null, null, '2026-01-21T15:00:00Z'],
+    ['cccccccc-0010-0003-0000-000000000000', 'aaaaaaaa-0010-0000-0000-000000000000', 'appointment',    'Recruiter screen', 'Great call. Role is on the Checkout infra team. Remote-first, async culture. Discussed comp range ($200-250k).', null, null, null, '2026-01-22T11:00:00Z', null, '2026-01-22T11:45:00Z'],
+    ['cccccccc-0010-0004-0000-000000000000', 'aaaaaaaa-0010-0000-0000-000000000000', 'process_status', null, null, null, null, null, null, 'Invited to next step', '2026-01-25T09:00:00Z'],
+    ['cccccccc-0010-0005-0000-000000000000', 'aaaaaaaa-0010-0000-0000-000000000000', 'note',           'Technical assessment notes', 'Take-home: refactor a Ruby on Rails service to improve throughput. Submitted Monday. Felt good about the solution.', null, null, null, null, null, '2026-01-30T20:00:00Z'],
+    ['cccccccc-0010-0006-0000-000000000000', 'aaaaaaaa-0010-0000-0000-000000000000', 'process_status', null, null, null, null, null, null, 'Invited to next step', '2026-02-03T10:00:00Z'],
+    ['cccccccc-0010-0007-0000-000000000000', 'aaaaaaaa-0010-0000-0000-000000000000', 'process_status', null, null, null, null, null, null, 'Waiting for update', '2026-02-25T09:00:00Z'],
+    // Anthropic
+    ['cccccccc-0011-0001-0000-000000000000', 'aaaaaaaa-0011-0000-0000-000000000000', 'status_change',  'Moved to Applied', null, null, null, null, null, null, '2026-02-15T14:00:00Z'],
+    ['cccccccc-0011-0002-0000-000000000000', 'aaaaaaaa-0011-0000-0000-000000000000', 'note',           'Application submitted', 'Applied for Research Engineer – Infrastructure. Referral from a friend on the pretraining team. Very excited about the mission.', null, null, null, null, null, '2026-02-15T14:30:00Z'],
+    ['cccccccc-0011-0003-0000-000000000000', 'aaaaaaaa-0011-0000-0000-000000000000', 'process_status', null, null, null, null, null, null, 'Waiting for update', '2026-02-16T09:00:00Z'],
+    // Spotify
+    ['cccccccc-0013-0001-0000-000000000000', 'aaaaaaaa-0013-0000-0000-000000000000', 'status_change',  'Moved to Interviewing', null, null, null, null, null, null, '2026-01-27T09:00:00Z'],
+    ['cccccccc-0013-0002-0000-000000000000', 'aaaaaaaa-0013-0000-0000-000000000000', 'contact',        null, 'Recruiter reached out cold. Role is on the Backend Platform team building developer tooling.', 'Emma Johansson', 'Engineering Recruiter', 'emma.j@spotify.com', null, null, '2026-01-26T16:00:00Z'],
+    ['cccccccc-0013-0003-0000-000000000000', 'aaaaaaaa-0013-0000-0000-000000000000', 'appointment',    'Recruiter call', 'Good intro. Remote-friendly, Stockholm or NYC. Discussed the platform engineering roadmap.', null, null, null, '2026-01-27T10:00:00Z', null, '2026-01-27T10:30:00Z'],
+    ['cccccccc-0013-0004-0000-000000000000', 'aaaaaaaa-0013-0000-0000-000000000000', 'appointment',    'Technical screen', 'System design + coding. Designed a distributed job scheduler. Went well overall.', 'Luca Moretti', 'Staff Engineer', null, '2026-02-05T14:00:00Z', null, '2026-02-05T16:00:00Z'],
+    ['cccccccc-0013-0005-0000-000000000000', 'aaaaaaaa-0013-0000-0000-000000000000', 'process_status', null, null, null, null, null, null, 'Invited to next step', '2026-02-10T09:00:00Z'],
+    ['cccccccc-0013-0006-0000-000000000000', 'aaaaaaaa-0013-0000-0000-000000000000', 'process_status', null, null, null, null, null, null, 'Waiting for update', '2026-02-28T09:00:00Z'],
+    // Amazon
+    ['cccccccc-0014-0001-0000-000000000000', 'aaaaaaaa-0014-0000-0000-000000000000', 'status_change',  'Moved to Applied', null, null, null, null, null, null, '2025-11-01T10:00:00Z'],
+    ['cccccccc-0014-0002-0000-000000000000', 'aaaaaaaa-0014-0000-0000-000000000000', 'note',           'Application submitted', 'Applied for Senior SDE II on the AWS Lambda team. Not super excited but a strong fallback option.', null, null, null, null, null, '2025-11-01T10:30:00Z'],
+    ['cccccccc-0014-0003-0000-000000000000', 'aaaaaaaa-0014-0000-0000-000000000000', 'status_change',  'Moved to Ghosted', null, null, null, null, null, null, '2025-12-15T09:00:00Z'],
+    ['cccccccc-0014-0004-0000-000000000000', 'aaaaaaaa-0014-0000-0000-000000000000', 'note',           'No response', 'Six weeks with zero contact. Followed up twice through the portal and on LinkedIn. Moving on.', null, null, null, null, null, '2025-12-15T09:30:00Z'],
+    // GitHub
+    ['cccccccc-0015-0001-0000-000000000000', 'aaaaaaaa-0015-0000-0000-000000000000', 'status_change',  'Moved to Applied', null, null, null, null, null, null, '2026-02-12T10:00:00Z'],
+    ['cccccccc-0015-0002-0000-000000000000', 'aaaaaaaa-0015-0000-0000-000000000000', 'note',           'Application submitted', 'Applied for Senior Engineer on the Developer Experience team. Would love to work on tooling at this scale.', null, null, null, null, null, '2026-02-12T10:30:00Z'],
+    ['cccccccc-0015-0003-0000-000000000000', 'aaaaaaaa-0015-0000-0000-000000000000', 'process_status', null, null, null, null, null, null, 'Waiting for update', '2026-02-12T11:00:00Z'],
   ];
   for (const e of events) insertEvent.run(...e);
+});
+
+  // Offer details (Netflix, Stripe, Shopify)
+  const insertOffer = db.prepare(`
+    INSERT OR IGNORE INTO company_offers
+      (id, company_id, base_salary, currency, signing_bonus, equity_value, equity_vesting,
+       bonus_pct, pto_days, remote_policy, health_tier, retirement_match_pct, other_benefits, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  const offers = [
+    // Netflix — high base, no cliff, unlimited PTO
+    ['cccccccc-0003-0000-0000-000000000000', 'aaaaaaaa-0003-0000-0000-000000000000',
+     230000, 'USD', 30000, 600000, 'No cliff, monthly vesting',
+     null, null, 'Hybrid', 'Premium', 4,
+     'Unlimited PTO, $500/mo home office stipend, top equipment budget',
+     'Deadline to decide: March 20. No performance bonus — fully baked into base.'],
+    // Stripe — strong equity, remote, solid bonus
+    ['cccccccc-0002-0000-0000-000000000000', 'aaaaaaaa-0002-0000-0000-000000000000',
+     195000, 'USD', 50000, 400000, '4yr, 1yr cliff',
+     10, 25, 'Remote', 'Premium', 4,
+     'Remote-first, $1,000 learning budget/yr, annual company offsite',
+     'Negotiation in progress — trying to bump base to $205k.'],
+    // Shopify — best bonus %, fully remote, lower base
+    ['cccccccc-0010-0000-0000-000000000000', 'aaaaaaaa-0010-0000-0000-000000000000',
+     175000, 'USD', 20000, 240000, '4yr, 1yr cliff',
+     15, 20, 'Remote', 'Basic', 5,
+     'Fully distributed team, $2,000/yr wellness credit, async culture',
+     'Great culture fit but lowest base. Could negotiate equity upward.'],
+  ];
+  for (const o of offers) insertOffer.run(...o);
 });
 
 seed();
 db.close();
 
-const companyCount = 9;
-const stageCount = 15;
-const eventCount = 41;
-console.log(`Seeded: ${companyCount} companies, ${stageCount} interview stages, ${eventCount} timeline events`);
+const companyCount = 15;
+const stageCount = 23;
+const eventCount = 64;
+console.log(`Seeded: ${companyCount} companies, ${stageCount} interview stages, ${eventCount} timeline events, 3 offers`);
 console.log('Run "npm run dev" to start the app.');
