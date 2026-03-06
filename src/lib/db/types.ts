@@ -3,6 +3,7 @@ import type {
   CompanyWithNextStep,
   ApplicationStatus,
   InterestLevel,
+  InterviewStage,
   TimelineEvent,
   CreateTimelineEventPayload,
 } from '@/types';
@@ -30,9 +31,15 @@ export interface DbAdapter {
   }): Promise<Company>;
   updateCompany(
     id: string,
-    data: { status?: ApplicationStatus; interest_level?: InterestLevel | null },
+    data: { status?: ApplicationStatus; interest_level?: InterestLevel | null; prep_notes?: string | null },
   ): Promise<Company>;
   deleteCompany(id: string): Promise<void>;
+
+  // ── Interview Roadmap ─────────────────────────────────────────────────────
+  getRoadmap(companyId: string): Promise<InterviewStage[]>;
+  createStage(companyId: string, data: { stage_name: string; scheduled_date?: string | null }): Promise<InterviewStage>;
+  updateStage(companyId: string, stageId: string, data: { is_completed?: boolean; stage_name?: string; scheduled_date?: string | null; notes?: string | null }): Promise<InterviewStage>;
+  deleteStage(companyId: string, stageId: string): Promise<void>;
 
   // ── Timeline ──────────────────────────────────────────────────────────────
   getTimeline(companyId: string): Promise<TimelineEvent[]>;

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import type {
   CompanyWithNextStep,
+  InterviewStage,
   TimelineEvent,
   TimelineEventType,
   ProcessStatusValue,
@@ -13,6 +14,31 @@ import { PROCESS_STATUS_VALUES, INTEREST_LEVELS } from '@/types';
 import styles from './CompanyDetailModal.module.css';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const URL_REGEX = /https?:\/\/[^\s<>"']+/g;
+
+function renderWithLinks(text: string): React.ReactNode[] {
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  URL_REGEX.lastIndex = 0;
+  while ((match = URL_REGEX.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+    const url = match[0];
+    parts.push(
+      <a key={match.index} href={url} target="_blank" rel="noopener noreferrer">
+        {url}
+      </a>
+    );
+    lastIndex = match.index + url.length;
+  }
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+  return parts;
+}
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, {
@@ -526,6 +552,298 @@ function AddEntryForm({ companyId, onCreated }: AddEntryFormProps) {
   );
 }
 
+// ─── Stage sub-components ─────────────────────────────────────────────────────
+
+function StageAddForm({ companyId, onCreated }: { companyId: string; onCreated: (s: InterviewStage) => void }) {
+  const [name, setName] = useState('');
+  const [date, setDate] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim()) return;
+    setSubmitting(true);
+    try {
+      const res = await fetch(`/api/companies/${companyId}/roadmap`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stage_name: name.trim(), scheduled_date: date || null }),
+      });
+      if (res.ok) {
+        const created = await res.json() as InterviewStage;
+        onCreated(created);
+        setName('');
+        setDate('');
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <form className={styles.stageAddForm} onSubmit={handleSubmit}>
+      <input
+        className={styles.stageAddInput}
+        type="text"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        placeholder="Stage name (e.g. Technical screen)"
+        disabled={submitting}
+      />
+      <input
+        className={styles.stageAddDate}
+        type="date"
+        value={date}
+        onChange={(e) => setDate(e.target.value)}
+        disabled={submitting}
+        title="Scheduled date (optional)"
+      />
+      <button className={styles.submitButton} type="submit" disabled={submitting || !name.trim()}>
+        {submitting ? 'Adding…' : 'Add'}
+      </button>
+    </form>
+  );
+}
+
+function StageItem({
+  stage, companyId, onUpdated, onDeleted, onTimelineCreated,
+}: {
+  stage: InterviewStage;
+  companyId: string;
+  onUpdated: (s: InterviewStage) => void;
+  onDeleted: (id: string) => void;
+  onTimelineCreated: (e: TimelineEvent) => void;
+}) {
+  // Notes panel
+  const [notesOpen, setNotesOpen] = useState(false);
+  const [notesDraft, setNotesDraft] = useState(stage.notes ?? '');
+  const [notesSaving, setNotesSaving] = useState(false);
+
+  // Inline edit
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState(stage.stage_name);
+  const [editDate, setEditDate] = useState(stage.scheduled_date ?? '');
+  const [editSaving, setEditSaving] = useState(false);
+
+  // Complete + log to timeline
+  const [completing, setCompleting] = useState(false);
+  const [completeNote, setCompleteNote] = useState('');
+  const [completeSaving, setCompleteSaving] = useState(false);
+
+  async function handleCheckboxClick() {
+    if (stage.is_completed) {
+      // Uncomplete immediately — no need to log
+      const res = await fetch(`/api/companies/${companyId}/roadmap/${stage.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_completed: false }),
+      });
+      if (res.ok) onUpdated(await res.json());
+    } else {
+      setCompleteNote('');
+      setCompleting(true);
+    }
+  }
+
+  async function completeAndLog() {
+    setCompleteSaving(true);
+    try {
+      const [patchRes] = await Promise.all([
+        fetch(`/api/companies/${companyId}/roadmap/${stage.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ is_completed: true }),
+        }),
+      ]);
+      if (patchRes.ok) onUpdated(await patchRes.json());
+
+      if (completeNote.trim()) {
+        const timelineRes = await fetch(`/api/companies/${companyId}/timeline`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ event_type: 'note', title: stage.stage_name, body: completeNote.trim() }),
+        });
+        if (timelineRes.ok) onTimelineCreated(await timelineRes.json());
+      }
+      setCompleting(false);
+    } finally {
+      setCompleteSaving(false);
+    }
+  }
+
+  async function completeOnly() {
+    setCompleteSaving(true);
+    try {
+      const res = await fetch(`/api/companies/${companyId}/roadmap/${stage.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_completed: true }),
+      });
+      if (res.ok) onUpdated(await res.json());
+      setCompleting(false);
+    } finally {
+      setCompleteSaving(false);
+    }
+  }
+
+  async function saveEdit() {
+    if (!editName.trim()) return;
+    setEditSaving(true);
+    try {
+      const res = await fetch(`/api/companies/${companyId}/roadmap/${stage.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stage_name: editName.trim(), scheduled_date: editDate || null }),
+      });
+      if (res.ok) { onUpdated(await res.json()); setEditing(false); }
+    } finally {
+      setEditSaving(false);
+    }
+  }
+
+  async function saveNotes() {
+    setNotesSaving(true);
+    try {
+      const res = await fetch(`/api/companies/${companyId}/roadmap/${stage.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes: notesDraft }),
+      });
+      if (res.ok) { onUpdated(await res.json()); setNotesOpen(false); }
+    } finally {
+      setNotesSaving(false);
+    }
+  }
+
+  async function deleteStage() {
+    const res = await fetch(`/api/companies/${companyId}/roadmap/${stage.id}`, { method: 'DELETE' });
+    if (res.ok) onDeleted(stage.id);
+  }
+
+  // ── Edit mode ─────────────────────────────────────────────────────────────
+  if (editing) {
+    return (
+      <li className={styles.roadmapItem}>
+        <div className={styles.stageAddForm}>
+          <input
+            className={styles.stageAddInput}
+            type="text"
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            disabled={editSaving}
+            autoFocus
+          />
+          <input
+            className={styles.stageAddDate}
+            type="date"
+            value={editDate}
+            onChange={(e) => setEditDate(e.target.value)}
+            disabled={editSaving}
+          />
+          <button className={styles.submitButton} onClick={saveEdit} disabled={editSaving || !editName.trim()}>
+            {editSaving ? 'Saving…' : 'Save'}
+          </button>
+          <button
+            className={styles.cancelButton}
+            onClick={() => { setEditName(stage.stage_name); setEditDate(stage.scheduled_date ?? ''); setEditing(false); }}
+            disabled={editSaving}
+          >
+            Cancel
+          </button>
+        </div>
+      </li>
+    );
+  }
+
+  // ── Normal view ───────────────────────────────────────────────────────────
+  return (
+    <li className={`${styles.roadmapItem} ${stage.is_completed ? styles.roadmapItemDone : ''}`}>
+      <div className={styles.roadmapRow}>
+        <button
+          className={styles.roadmapCheckbox}
+          onClick={handleCheckboxClick}
+          disabled={completing}
+          title={stage.is_completed ? 'Mark incomplete' : 'Mark complete'}
+        >
+          {stage.is_completed ? '✓' : ''}
+        </button>
+
+        <span className={styles.roadmapStageName}>{stage.stage_name}</span>
+
+        {stage.scheduled_date && (
+          <span className={styles.roadmapDate}>
+            {new Date(stage.scheduled_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+          </span>
+        )}
+
+        {!completing && (
+          <>
+            <button
+              className={`${styles.editButton} ${styles.roadmapNotesBtn}`}
+              onClick={() => { setNotesDraft(stage.notes ?? ''); setNotesOpen((o) => !o); }}
+            >
+              {stage.notes ? 'Notes' : 'Add note'}
+            </button>
+            <button
+              className={`${styles.editButton} ${styles.roadmapNotesBtn}`}
+              onClick={() => { setEditName(stage.stage_name); setEditDate(stage.scheduled_date ?? ''); setEditing(true); }}
+            >
+              Edit
+            </button>
+            <button className={styles.roadmapDeleteBtn} onClick={deleteStage} title="Remove stage">✕</button>
+          </>
+        )}
+      </div>
+
+      {/* Complete + log panel */}
+      {completing && (
+        <div className={styles.stageNotes}>
+          <p className={styles.stageCompleteLabel}>Add a note to the timeline about this interview (optional)</p>
+          <textarea
+            className={styles.prepTextarea}
+            value={completeNote}
+            onChange={(e) => setCompleteNote(e.target.value)}
+            placeholder={`How did the ${stage.stage_name} go? Impressions, feedback, next steps…`}
+            rows={3}
+            autoFocus
+          />
+          <div className={styles.stageCompleteActions}>
+            <button className={styles.cancelButton} onClick={() => setCompleting(false)} disabled={completeSaving}>
+              Cancel
+            </button>
+            <button className={styles.ghostButton} onClick={completeOnly} disabled={completeSaving}>
+              Complete without note
+            </button>
+            <button className={styles.submitButton} onClick={completeAndLog} disabled={completeSaving}>
+              {completeSaving ? 'Saving…' : 'Complete & log'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Notes panel */}
+      {notesOpen && !completing && (
+        <div className={styles.stageNotes}>
+          <textarea
+            className={styles.prepTextarea}
+            value={notesDraft}
+            onChange={(e) => setNotesDraft(e.target.value)}
+            placeholder="Prep tips, resources, post-interview thoughts…"
+            rows={4}
+            autoFocus
+          />
+          <div className={styles.prepActions}>
+            <button className={styles.cancelButton} onClick={() => setNotesOpen(false)} disabled={notesSaving}>Cancel</button>
+            <button className={styles.submitButton} onClick={saveNotes} disabled={notesSaving}>
+              {notesSaving ? 'Saving…' : 'Save'}
+            </button>
+          </div>
+        </div>
+      )}
+    </li>
+  );
+}
+
 // ─── Main Modal ───────────────────────────────────────────────────────────────
 
 interface Props {
@@ -536,6 +854,12 @@ interface Props {
 }
 
 export default function CompanyDetailModal({ company, onClose, onDeleted, onUpdated }: Props) {
+  const [activeTab, setActiveTab] = useState<'timeline' | 'stages'>('timeline');
+  const [stages, setStages] = useState<InterviewStage[]>([]);
+  const [prepNotes, setPrepNotes] = useState(company.prep_notes ?? '');
+  const [prepDraft, setPrepDraft] = useState(company.prep_notes ?? '');
+  const [prepEditing, setPrepEditing] = useState(false);
+  const [prepSaving, setPrepSaving] = useState(false);
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -558,12 +882,21 @@ export default function CompanyDetailModal({ company, onClose, onDeleted, onUpda
 
   useEffect(() => {
     setLoading(true);
-    fetch(`/api/companies/${company.id}/timeline`)
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json() as Promise<TimelineEvent[]>;
+    Promise.all([
+      fetch(`/api/companies/${company.id}/roadmap`).then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json() as Promise<InterviewStage[]>;
+      }),
+      fetch(`/api/companies/${company.id}/timeline`).then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json() as Promise<TimelineEvent[]>;
+      }),
+    ])
+      .then(([roadmap, timeline]) => {
+        setStages(roadmap);
+        setEvents(timeline);
+        setLoading(false);
       })
-      .then((data) => { setEvents(data); setLoading(false); })
       .catch((err: Error) => { setFetchError(err.message); setLoading(false); });
   }, [company.id]);
 
@@ -589,6 +922,30 @@ export default function CompanyDetailModal({ company, onClose, onDeleted, onUpda
   const handleCreated = useCallback((newEvent: TimelineEvent) => {
     setEvents((prev) => [newEvent, ...prev]);
   }, []);
+
+  const handlePrepSave = useCallback(async () => {
+    setPrepSaving(true);
+    try {
+      const res = await fetch(`/api/companies/${company.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prep_notes: prepDraft }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setPrepNotes(prepDraft);
+        onUpdated({ ...company, prep_notes: updated.prep_notes });
+        setPrepEditing(false);
+      }
+    } finally {
+      setPrepSaving(false);
+    }
+  }, [company, prepDraft, onUpdated]);
+
+  const handlePrepCancel = useCallback(() => {
+    setPrepDraft(prepNotes);
+    setPrepEditing(false);
+  }, [prepNotes]);
 
   const handleSaved = useCallback((updated: TimelineEvent) => {
     setEvents((prev) => prev.map((e) => e.id === updated.id ? updated : e));
@@ -676,71 +1033,166 @@ export default function CompanyDetailModal({ company, onClose, onDeleted, onUpda
           </div>
         </div>
 
+        {/* Tab bar */}
+        <div className={styles.tabBar}>
+          <button
+            className={`${styles.tab} ${activeTab === 'timeline' ? styles.tabActive : ''}`}
+            onClick={() => setActiveTab('timeline')}
+          >
+            Timeline
+          </button>
+          <button
+            className={`${styles.tab} ${activeTab === 'stages' ? styles.tabActive : ''}`}
+            onClick={() => setActiveTab('stages')}
+          >
+            Interview &amp; Prep{stages.length > 0 && <span className={styles.tabCount}>{stages.length}</span>}
+          </button>
+        </div>
+
         {/* Scrollable body */}
         <div className={styles.modalBody}>
-          <AddEntryForm companyId={company.id} onCreated={handleCreated} />
+          {activeTab === 'timeline' && (
+            <>
+              <AddEntryForm companyId={company.id} onCreated={handleCreated} />
 
-          <div className={styles.timelineSection}>
-            <h3 className={styles.timelineSectionTitle}>Timeline</h3>
+              <div className={styles.timelineSection}>
+                <h3 className={styles.timelineSectionTitle}>Timeline</h3>
 
-            {loading && <p className={styles.timelineLoading}>Loading timeline…</p>}
-            {fetchError && <p className={styles.timelineError}>Failed to load: {fetchError}</p>}
-            {!loading && !fetchError && events.length === 0 && (
-              <p className={styles.timelineEmpty}>No entries yet. Add one above.</p>
-            )}
+                {loading && <p className={styles.timelineLoading}>Loading…</p>}
+                {fetchError && <p className={styles.timelineError}>Failed to load: {fetchError}</p>}
+                {!loading && !fetchError && events.length === 0 && (
+                  <p className={styles.timelineEmpty}>No entries yet. Add one above.</p>
+                )}
 
-            {!loading && !fetchError && events.length > 0 && (
-              <ol className={styles.timeline}>
-                {events.map((event) => (
-                  <li key={event.id} className={styles.timelineItem}>
-                    <div className={styles.timelineIcon} data-type={event.event_type}>
-                      {event.event_type === 'note' && 'N'}
-                      {event.event_type === 'contact' && 'C'}
-                      {event.event_type === 'appointment' && 'A'}
-                      {event.event_type === 'process_status' && 'S'}
-                      {event.event_type === 'status_change' && '→'}
-                    </div>
-                    <div className={styles.timelineContent}>
-                      <div className={styles.timelineItemHeader}>
-                        <span className={styles.eventTypeLabel}>
-                          {EVENT_TYPE_LABELS[event.event_type]}
-                        </span>
-                        <div className={styles.itemHeaderRight}>
-                          <time className={styles.eventDate} dateTime={event.created_at}>
-                            {formatDate(event.created_at)}
-                          </time>
-                          {event.event_type !== 'status_change' && editingId !== event.id && (
-                            <button
-                              className={styles.editButton}
-                              onClick={() => setEditingId(event.id)}
-                            >
-                              Edit
-                            </button>
+                {!loading && !fetchError && events.length > 0 && (
+                  <ol className={styles.timeline}>
+                    {events.map((event) => (
+                      <li key={event.id} className={styles.timelineItem}>
+                        <div className={styles.timelineIcon} data-type={event.event_type}>
+                          {event.event_type === 'note' && 'N'}
+                          {event.event_type === 'contact' && 'C'}
+                          {event.event_type === 'appointment' && 'A'}
+                          {event.event_type === 'process_status' && 'S'}
+                          {event.event_type === 'status_change' && '→'}
+                        </div>
+                        <div className={styles.timelineContent}>
+                          <div className={styles.timelineItemHeader}>
+                            <span className={styles.eventTypeLabel}>
+                              {EVENT_TYPE_LABELS[event.event_type]}
+                            </span>
+                            <div className={styles.itemHeaderRight}>
+                              <time className={styles.eventDate} dateTime={event.created_at}>
+                                {formatDate(event.created_at)}
+                              </time>
+                              {event.event_type !== 'status_change' && editingId !== event.id && (
+                                <button
+                                  className={styles.editButton}
+                                  onClick={() => setEditingId(event.id)}
+                                >
+                                  Edit
+                                </button>
+                              )}
+                            </div>
+                          </div>
+
+                          {editingId === event.id ? (
+                            <TimelineItemEditForm
+                              event={event}
+                              onSaved={handleSaved}
+                              onCancel={() => setEditingId(null)}
+                            />
+                          ) : (
+                            <>
+                              {event.event_type === 'note' && <NoteItem event={event} />}
+                              {event.event_type === 'contact' && <ContactItem event={event} />}
+                              {event.event_type === 'appointment' && <AppointmentItem event={event} />}
+                              {event.event_type === 'process_status' && <ProcessStatusItem event={event} />}
+                              {event.event_type === 'status_change' && <StatusChangeItem event={event} />}
+                            </>
                           )}
                         </div>
-                      </div>
+                      </li>
+                    ))}
+                  </ol>
+                )}
+              </div>
+            </>
+          )}
 
-                      {editingId === event.id ? (
-                        <TimelineItemEditForm
-                          event={event}
-                          onSaved={handleSaved}
-                          onCancel={() => setEditingId(null)}
-                        />
-                      ) : (
-                        <>
-                          {event.event_type === 'note' && <NoteItem event={event} />}
-                          {event.event_type === 'contact' && <ContactItem event={event} />}
-                          {event.event_type === 'appointment' && <AppointmentItem event={event} />}
-                          {event.event_type === 'process_status' && <ProcessStatusItem event={event} />}
-                          {event.event_type === 'status_change' && <StatusChangeItem event={event} />}
-                        </>
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ol>
-            )}
-          </div>
+          {activeTab === 'stages' && (
+            <div className={styles.roadmapSection}>
+              {/* Add stage form */}
+              <StageAddForm companyId={company.id} onCreated={(s) => setStages((prev) => [...prev, s])} />
+
+              {loading && <p className={styles.timelineLoading}>Loading…</p>}
+              {!loading && stages.length === 0 && (
+                <p className={styles.timelineEmpty}>No stages yet. Add your first one above.</p>
+              )}
+              {!loading && stages.length > 0 && (
+                <ol className={styles.roadmap}>
+                  {stages.map((stage) => (
+                    <StageItem
+                      key={stage.id}
+                      stage={stage}
+                      companyId={company.id}
+                      onUpdated={(updated) => setStages((prev) => prev.map((s) => s.id === updated.id ? updated : s))}
+                      onDeleted={(id) => setStages((prev) => prev.filter((s) => s.id !== id))}
+                      onTimelineCreated={handleCreated}
+                    />
+                  ))}
+                </ol>
+              )}
+
+              {!loading && (
+                <div className={styles.prepSection}>
+                  <div className={styles.prepHeader}>
+                    <span className={styles.prepLabel}>Prep Notes</span>
+                    {!prepEditing && (
+                      <button
+                        className={styles.prepEditButton}
+                        onClick={() => { setPrepDraft(prepNotes); setPrepEditing(true); }}
+                      >
+                        {prepNotes ? 'Edit' : 'Add notes'}
+                      </button>
+                    )}
+                  </div>
+
+                  {prepEditing ? (
+                    <>
+                      <textarea
+                        className={styles.prepTextarea}
+                        value={prepDraft}
+                        onChange={(e) => setPrepDraft(e.target.value)}
+                        placeholder="Links, resources, topics to study, interviewer tips…"
+                        rows={6}
+                        autoFocus
+                      />
+                      <div className={styles.prepActions}>
+                        <button
+                          className={styles.cancelButton}
+                          onClick={handlePrepCancel}
+                          disabled={prepSaving}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          className={styles.submitButton}
+                          onClick={handlePrepSave}
+                          disabled={prepSaving}
+                        >
+                          {prepSaving ? 'Saving…' : 'Save'}
+                        </button>
+                      </div>
+                    </>
+                  ) : prepNotes ? (
+                    <p className={styles.prepRendered} onClick={() => { setPrepDraft(prepNotes); setPrepEditing(true); }}>
+                      {renderWithLinks(prepNotes)}
+                    </p>
+                  ) : null}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

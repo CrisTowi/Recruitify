@@ -6,6 +6,7 @@ import type {
   CompanyWithNextStep,
   ApplicationStatus,
   InterestLevel,
+  InterviewStage,
   TimelineEvent,
   CreateTimelineEventPayload,
 } from '@/types';
@@ -141,7 +142,7 @@ export class SupabaseAdapter implements DbAdapter {
 
   async updateCompany(
     id: string,
-    data: { status?: ApplicationStatus; interest_level?: InterestLevel | null },
+    data: { status?: ApplicationStatus; interest_level?: InterestLevel | null; prep_notes?: string | null },
   ): Promise<Company> {
     const { client } = await this.getClient();
 
@@ -164,6 +165,76 @@ export class SupabaseAdapter implements DbAdapter {
       .from('companies')
       .delete()
       .eq('id', id);
+
+    if (error) throw new Error(error.message);
+  }
+
+  // ── Interview Roadmap ────────────────────────────────────────────────────────
+
+  async getRoadmap(companyId: string): Promise<InterviewStage[]> {
+    const { client } = await this.getClient();
+
+    const { data, error } = await client
+      .from('interviews_roadmap')
+      .select('*')
+      .eq('company_id', companyId)
+      .order('order_index', { ascending: true });
+
+    if (error) throw new Error(error.message);
+    return (data ?? []) as InterviewStage[];
+  }
+
+  async createStage(companyId: string, data: { stage_name: string; scheduled_date?: string | null }): Promise<InterviewStage> {
+    const { client } = await this.getClient();
+
+    const { data: maxData } = await client
+      .from('interviews_roadmap')
+      .select('order_index')
+      .eq('company_id', companyId)
+      .order('order_index', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const order_index = (maxData?.order_index ?? -1) + 1;
+
+    const { data: created, error } = await client
+      .from('interviews_roadmap')
+      .insert({ company_id: companyId, stage_name: data.stage_name, scheduled_date: data.scheduled_date ?? null, order_index })
+      .select()
+      .single();
+
+    if (error) throw new Error(error.message);
+    return created as InterviewStage;
+  }
+
+  async updateStage(
+    companyId: string,
+    stageId: string,
+    data: { is_completed?: boolean; stage_name?: string; scheduled_date?: string | null; notes?: string | null },
+  ): Promise<InterviewStage> {
+    const { client } = await this.getClient();
+
+    const { data: updated, error } = await client
+      .from('interviews_roadmap')
+      .update(data as Record<string, unknown>)
+      .eq('id', stageId)
+      .eq('company_id', companyId)
+      .select()
+      .single();
+
+    if (error) throw new Error(error.message);
+    if (!updated) throw new Error('Not found');
+    return updated as InterviewStage;
+  }
+
+  async deleteStage(companyId: string, stageId: string): Promise<void> {
+    const { client } = await this.getClient();
+
+    const { error } = await client
+      .from('interviews_roadmap')
+      .delete()
+      .eq('id', stageId)
+      .eq('company_id', companyId);
 
     if (error) throw new Error(error.message);
   }

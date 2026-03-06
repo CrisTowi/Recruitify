@@ -23,6 +23,7 @@ export interface Company {
   logo_url: string | null;
   status: ApplicationStatus;
   interest_level: InterestLevel | null;
+  prep_notes: string | null;
   created_at: string;
 }
 
@@ -33,6 +34,7 @@ export interface InterviewStage {
   is_completed: boolean;
   scheduled_date: string | null;
   order_index: number;
+  notes: string | null;
 }
 
 export interface Offer {

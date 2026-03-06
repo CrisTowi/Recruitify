@@ -15,9 +15,13 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const body = await request.json() as { status?: ApplicationStatus; interest_level?: InterestLevel | null };
+  const body = await request.json() as {
+    status?: ApplicationStatus;
+    interest_level?: InterestLevel | null;
+    prep_notes?: string | null;
+  };
 
-  const update: { status?: ApplicationStatus; interest_level?: InterestLevel | null } = {};
+  const update: { status?: ApplicationStatus; interest_level?: InterestLevel | null; prep_notes?: string | null } = {};
 
   if ('status' in body) {
     if (!body.status || !VALID_STATUSES.includes(body.status)) {
@@ -31,6 +35,10 @@ export async function PATCH(
       return NextResponse.json({ error: 'Invalid interest_level' }, { status: 400 });
     }
     update.interest_level = body.interest_level ?? null;
+  }
+
+  if ('prep_notes' in body) {
+    update.prep_notes = typeof body.prep_notes === 'string' ? body.prep_notes : null;
   }
 
   if (Object.keys(update).length === 0) {

@@ -1,11 +1,13 @@
 {
   "name": "recruitify",
   "version": "0.1.0",
-  "private": true,
+  "license": "MIT",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "invite": "node scripts/invite.js",
+    "seed-demo": "node scripts/seed-demo-sqlite.js"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

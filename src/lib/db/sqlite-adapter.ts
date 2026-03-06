@@ -5,6 +5,7 @@ import type {
   CompanyWithNextStep,
   ApplicationStatus,
   InterestLevel,
+  InterviewStage,
   TimelineEvent,
   TimelineEventType,
   ProcessStatusValue,
@@ -43,6 +44,7 @@ function initSchema(db: Database.Database): void {
       logo_url TEXT,
       status TEXT NOT NULL DEFAULT 'Wishlist',
       interest_level TEXT,
+      prep_notes TEXT,
       created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
     );
 
@@ -52,7 +54,8 @@ function initSchema(db: Database.Database): void {
       stage_name TEXT NOT NULL,
       is_completed INTEGER NOT NULL DEFAULT 0,
       scheduled_date TEXT,
-      order_index INTEGER NOT NULL DEFAULT 0
+      order_index INTEGER NOT NULL DEFAULT 0,
+      notes TEXT
     );
 
     CREATE TABLE IF NOT EXISTS timeline_events (
@@ -81,6 +84,11 @@ function initSchema(db: Database.Database): void {
       expires_at TEXT NOT NULL
     );
   `);
+
+  // Column migrations for existing databases
+  // ALTER TABLE ... ADD COLUMN is idempotent via try/catch (SQLite has no IF NOT EXISTS for columns)
+  try { db.exec(`ALTER TABLE companies ADD COLUMN prep_notes TEXT`); } catch { /* already exists */ }
+  try { db.exec(`ALTER TABLE interviews_roadmap ADD COLUMN notes TEXT`); } catch { /* already exists */ }
 }
 
 // ── Raw row types returned by better-sqlite3 ──────────────────────────────────
@@ -91,6 +99,7 @@ interface CompanyRow {
   logo_url: string | null;
   status: string;
   interest_level: string | null;
+  prep_notes: string | null;
   created_at: string;
 }
 
@@ -101,6 +110,7 @@ interface InterviewsRoadmapRow {
   is_completed: number;
   scheduled_date: string | null;
   order_index: number;
+  notes: string | null;
 }
 
 interface TimelineEventRow {
@@ -134,7 +144,20 @@ function mapCompany(row: CompanyRow): Company {
     logo_url: row.logo_url,
     status: row.status as ApplicationStatus,
     interest_level: row.interest_level as InterestLevel | null,
+    prep_notes: row.prep_notes,
     created_at: row.created_at,
+  };
+}
+
+function mapStage(row: InterviewsRoadmapRow): InterviewStage {
+  return {
+    id: row.id,
+    company_id: row.company_id,
+    stage_name: row.stage_name,
+    is_completed: row.is_completed === 1,
+    scheduled_date: row.scheduled_date,
+    order_index: row.order_index,
+    notes: row.notes,
   };
 }
 
@@ -211,7 +234,7 @@ export class SqliteAdapter implements DbAdapter {
 
   updateCompany(
     id: string,
-    data: { status?: ApplicationStatus; interest_level?: InterestLevel | null },
+    data: { status?: ApplicationStatus; interest_level?: InterestLevel | null; prep_notes?: string | null },
   ): Promise<Company> {
     const db = getDb();
 
@@ -225,6 +248,10 @@ export class SqliteAdapter implements DbAdapter {
     if ('interest_level' in data) {
       setClauses.push('interest_level = ?');
       values.push(data.interest_level ?? null);
+    }
+    if ('prep_notes' in data) {
+      setClauses.push('prep_notes = ?');
+      values.push(data.prep_notes ?? null);
     }
 
     if (setClauses.length > 0) {
@@ -242,6 +269,80 @@ export class SqliteAdapter implements DbAdapter {
   deleteCompany(id: string): Promise<void> {
     const db = getDb();
     db.prepare('DELETE FROM companies WHERE id = ?').run(id);
+    return Promise.resolve();
+  }
+
+  // ── Interview Roadmap ─────────────────────────────────────────────────────────
+
+  getRoadmap(companyId: string): Promise<InterviewStage[]> {
+    const db = getDb();
+
+    const rows = db
+      .prepare<[string], InterviewsRoadmapRow>(
+        `SELECT * FROM interviews_roadmap WHERE company_id = ? ORDER BY order_index ASC`,
+      )
+      .all(companyId);
+
+    return Promise.resolve(rows.map(mapStage));
+  }
+
+  createStage(companyId: string, data: { stage_name: string; scheduled_date?: string | null }): Promise<InterviewStage> {
+    const db = getDb();
+    const id = crypto.randomUUID();
+
+    const maxRow = db
+      .prepare<[string], { max_order: number | null }>(
+        `SELECT MAX(order_index) as max_order FROM interviews_roadmap WHERE company_id = ?`,
+      )
+      .get(companyId);
+
+    const order_index = (maxRow?.max_order ?? -1) + 1;
+
+    db.prepare(
+      `INSERT INTO interviews_roadmap (id, company_id, stage_name, scheduled_date, order_index)
+       VALUES (?, ?, ?, ?, ?)`,
+    ).run(id, companyId, data.stage_name, data.scheduled_date ?? null, order_index);
+
+    const row = db
+      .prepare<[string], InterviewsRoadmapRow>('SELECT * FROM interviews_roadmap WHERE id = ?')
+      .get(id)!;
+
+    return Promise.resolve(mapStage(row));
+  }
+
+  updateStage(
+    companyId: string,
+    stageId: string,
+    data: { is_completed?: boolean; stage_name?: string; scheduled_date?: string | null; notes?: string | null },
+  ): Promise<InterviewStage> {
+    const db = getDb();
+    const setClauses: string[] = [];
+    const values: unknown[] = [];
+
+    if (data.is_completed !== undefined) { setClauses.push('is_completed = ?'); values.push(data.is_completed ? 1 : 0); }
+    if (data.stage_name !== undefined)   { setClauses.push('stage_name = ?');   values.push(data.stage_name); }
+    if ('scheduled_date' in data)        { setClauses.push('scheduled_date = ?'); values.push(data.scheduled_date ?? null); }
+    if ('notes' in data)                 { setClauses.push('notes = ?');          values.push(data.notes ?? null); }
+
+    if (setClauses.length > 0) {
+      values.push(stageId, companyId);
+      db.prepare(
+        `UPDATE interviews_roadmap SET ${setClauses.join(', ')} WHERE id = ? AND company_id = ?`,
+      ).run(...values);
+    }
+
+    const row = db
+      .prepare<[string, string], InterviewsRoadmapRow>(
+        'SELECT * FROM interviews_roadmap WHERE id = ? AND company_id = ?',
+      )
+      .get(stageId, companyId)!;
+
+    return Promise.resolve(mapStage(row));
+  }
+
+  deleteStage(companyId: string, stageId: string): Promise<void> {
+    const db = getDb();
+    db.prepare('DELETE FROM interviews_roadmap WHERE id = ? AND company_id = ?').run(stageId, companyId);
     return Promise.resolve();
   }
 

@@ -20,6 +20,20 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
 
+    // Check invitation before sending magic link
+    const inviteRes = await fetch('/api/auth/check-invitation', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+
+    if (!inviteRes.ok) {
+      const { error: inviteError } = await inviteRes.json().catch(() => ({ error: 'Access denied.' }));
+      setError(inviteError ?? 'Access denied.');
+      setLoading(false);
+      return;
+    }
+
     const { error: authError } = await supabase.auth.signInWithOtp({
       email,
       options: {
