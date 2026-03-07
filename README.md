@@ -132,29 +132,23 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
 4. Click **Deploy**. Vercel will build and publish your app automatically.
 
-### 5. Add your first user (if using auth)
+### 5. Add users (if using auth)
 
-After deploying, add yourself as an invited user. You can do this two ways:
+Run the invite script from your local clone, pointing at your deployed app:
 
-**Option 1 — SQL Editor:**
-```sql
-INSERT INTO invitations (email) VALUES ('you@example.com');
-```
-
-**Option 2 — CLI script** (from your local clone):
 ```bash
+# Add APP_URL to .env.local so the login link points to the right place
+APP_URL=https://your-app.vercel.app
+
 npm run invite -- you@example.com
 ```
 
-Then visit your deployed app URL, enter your email, and click the magic link you receive.
+The script will:
+1. Add the email to the `invitations` table
+2. Generate a ready-to-use magic login link (expires in 1 hour)
+3. Print the link — copy and send it to the user however you like (DM, email, etc.)
 
-### 6. Invite additional users
-
-Each person who needs access requires an entry in the `invitations` table:
-
-```bash
-npm run invite -- friend@example.com
-```
+To add more users, run the command again with a different email. That's the only way to grant access — there is no self-serve signup.
 
 ### Without auth (simpler single-user mode)
 
@@ -164,17 +158,15 @@ If you skipped migration 2 and omitted `SUPABASE_AUTH`, the app runs without a l
 
 ## Option C — Request access to the hosted app
 
-The hosted version uses invitation-only magic-link authentication. To get access:
+The hosted version is invitation-only. There is no self-serve signup — access is granted manually by the maintainer.
 
-1. **Open an issue** on this repository titled `"Access request: your@email.com"`, or
-2. **Email the maintainer** directly (contact details in the GitHub profile)
+To request access, **reach out directly** (contact details on the GitHub profile). Once your email is added:
 
-Once your email is added to the invitation list:
+1. You will receive a login link via the channel you used to reach out
+2. Click the link — you are signed in immediately, no password needed
+3. Your data is fully isolated from other users
 
-1. Go to the app URL shared with you
-2. Enter your email on the login page and click **Send magic link**
-3. Open your inbox and click the link in the email — no password needed
-4. You're in. Your data is fully isolated from other users
+> For maintainers: use `npm run invite -- email@example.com` to add a user and generate their login link.
 
 ---
 
@@ -188,6 +180,7 @@ Once your email is added to the invitation list:
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase mode | Public anon key (safe to expose) |
 | `SUPABASE_AUTH` | Auth mode | Set to `true` to enable magic-link login + invitation checks |
 | `SUPABASE_SERVICE_ROLE_KEY` | Auth mode | Service role key for server-side invitation checks — **never expose to the browser** |
+| `APP_URL` | Invite script | Your deployed app URL, used as the redirect target in generated login links |
 | `GOOGLE_CLIENT_ID` | Calendar sync | Google OAuth client ID |
 | `GOOGLE_CLIENT_SECRET` | Calendar sync | Google OAuth client secret |
 
@@ -230,7 +223,7 @@ npm install
 npm run dev        # dev server at http://localhost:3000
 npm run build      # production build
 npm start          # start production server
-npm run invite -- email@example.com   # add an invited user (Supabase auth only)
+npm run invite -- email@example.com   # add user + generate their login link (Supabase auth only)
 npm run seed-demo                      # populate demo data (SQLite only)
 ```
 
