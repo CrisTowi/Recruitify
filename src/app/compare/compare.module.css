@@ -215,3 +215,196 @@
   color: var(--color-text-muted);
   font-weight: 400;
 }
+
+/* ── Expectations panel ── */
+.expPanel {
+  margin-bottom: 24px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.expToggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: var(--color-surface-alt);
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  gap: 12px;
+}
+
+.expToggle:hover {
+  background: color-mix(in srgb, var(--color-brand) 5%, var(--color-surface-alt));
+}
+
+.expToggleLabel {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.expSummary {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  flex: 1;
+  text-align: left;
+  margin-left: 8px;
+}
+
+.expSummaryEmpty {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  flex: 1;
+  text-align: left;
+  margin-left: 8px;
+  font-style: italic;
+}
+
+.expChevron {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  transition: transform 0.2s;
+}
+
+.expChevronOpen {
+  transform: rotate(180deg);
+}
+
+.expForm {
+  padding: 16px;
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+}
+
+.expGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px 16px;
+  margin-bottom: 16px;
+}
+
+.expField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.expLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.expInput {
+  padding: 7px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font-size: 0.875rem;
+  font-family: var(--font-sans);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.expInput:focus {
+  outline: none;
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-brand) 20%, transparent);
+}
+
+.expInputGroup {
+  display: flex;
+  gap: 4px;
+}
+
+.expInputGroup .expInput {
+  flex: 1;
+  min-width: 0;
+}
+
+.expCurrencySelect {
+  padding: 7px 6px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font-size: 0.875rem;
+  font-family: var(--font-sans);
+  cursor: pointer;
+}
+
+.expActions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.expSave {
+  padding: 7px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--color-brand);
+  color: #fff;
+  border: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: var(--font-sans);
+  cursor: pointer;
+}
+
+.expSave:hover {
+  opacity: 0.9;
+}
+
+.expSave:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.expCancel {
+  padding: 7px 14px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+  font-size: 0.875rem;
+  font-family: var(--font-sans);
+  cursor: pointer;
+}
+
+.expCancel:hover {
+  background: var(--color-surface-alt);
+}
+
+/* ── Star indicator ── */
+.expBadge {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  font-weight: 400;
+  margin-top: 2px;
+  font-style: italic;
+}
+
+.star {
+  color: #f59e0b;
+  margin-left: 4px;
+  font-size: 0.9em;
+}
+
+.legend {
+  margin-top: 10px;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  text-align: right;
+}
+
+.valueCellMeetsExp {
+  background: color-mix(in srgb, #f59e0b 8%, transparent) !important;
+}

@@ -11,6 +11,7 @@ import type {
   ProcessStatusValue,
   CreateTimelineEventPayload,
   CompanyOffer,
+  OfferExpectations,
   RemotePolicy,
   HealthTier,
 } from '@/types';
@@ -96,6 +97,20 @@ function initSchema(db: Database.Database): void {
       other_benefits TEXT,
       notes TEXT,
       created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+      updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS offer_expectations (
+      id INTEGER PRIMARY KEY DEFAULT 1,
+      base_salary INTEGER,
+      currency TEXT NOT NULL DEFAULT 'USD',
+      signing_bonus INTEGER,
+      equity_value INTEGER,
+      bonus_pct REAL,
+      pto_days INTEGER,
+      remote_policy TEXT,
+      health_tier TEXT,
+      retirement_match_pct REAL,
       updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
     );
 
@@ -574,6 +589,54 @@ export class SqliteAdapter implements DbAdapter {
       .get(companyId)!;
 
     return Promise.resolve(mapOffer(row));
+  }
+
+  // ── Offer expectations ────────────────────────────────────────────────────────
+
+  getExpectations(): Promise<OfferExpectations | null> {
+    const db = getDb();
+    const row = db.prepare('SELECT * FROM offer_expectations WHERE id = 1').get() as Record<string, unknown> | undefined;
+    if (!row) return Promise.resolve(null);
+    return Promise.resolve({
+      base_salary: row.base_salary as number | null,
+      currency: (row.currency as string) ?? 'USD',
+      signing_bonus: row.signing_bonus as number | null,
+      equity_value: row.equity_value as number | null,
+      bonus_pct: row.bonus_pct as number | null,
+      pto_days: row.pto_days as number | null,
+      remote_policy: (row.remote_policy as RemotePolicy | null) ?? null,
+      health_tier: (row.health_tier as HealthTier | null) ?? null,
+      retirement_match_pct: row.retirement_match_pct as number | null,
+    });
+  }
+
+  upsertExpectations(data: Partial<OfferExpectations>): Promise<OfferExpectations> {
+    const db = getDb();
+    const existing = db.prepare('SELECT id FROM offer_expectations WHERE id = 1').get();
+
+    const fields = ['base_salary', 'currency', 'signing_bonus', 'equity_value',
+      'bonus_pct', 'pto_days', 'remote_policy', 'health_tier', 'retirement_match_pct'] as const;
+
+    if (existing) {
+      const setClauses = fields.filter((f) => f in data).map((f) => `${f} = ?`);
+      setClauses.push('updated_at = ?');
+      const values = [...fields.filter((f) => f in data).map((f) => (data as Record<string, unknown>)[f] ?? null), new Date().toISOString()];
+      if (setClauses.length > 1) {
+        db.prepare(`UPDATE offer_expectations SET ${setClauses.join(', ')} WHERE id = 1`).run(...values);
+      }
+    } else {
+      db.prepare(
+        `INSERT INTO offer_expectations (id, base_salary, currency, signing_bonus, equity_value,
+           bonus_pct, pto_days, remote_policy, health_tier, retirement_match_pct)
+         VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ).run(
+        data.base_salary ?? null, data.currency ?? 'USD', data.signing_bonus ?? null,
+        data.equity_value ?? null, data.bonus_pct ?? null, data.pto_days ?? null,
+        data.remote_policy ?? null, data.health_tier ?? null, data.retirement_match_pct ?? null,
+      );
+    }
+
+    return this.getExpectations() as Promise<OfferExpectations>;
   }
 
   // ── Google Calendar tokens ───────────────────────────────────────────────────

@@ -10,6 +10,7 @@ import type {
   TimelineEvent,
   CreateTimelineEventPayload,
   CompanyOffer,
+  OfferExpectations,
 } from '@/types';
 
 function getAuthEnabled(): boolean {
@@ -348,6 +349,37 @@ export class SupabaseAdapter implements DbAdapter {
       .single();
     if (error) throw new Error(error.message);
     return result as CompanyOffer;
+  }
+
+  // ── Offer expectations ───────────────────────────────────────────────────────
+
+  async getExpectations(): Promise<OfferExpectations | null> {
+    const { client, userId } = await this.getClient();
+    let query = client.from('offer_expectations').select('*');
+    if (getAuthEnabled() && userId) {
+      query = query.eq('user_id', userId);
+    } else {
+      query = query.eq('id', 1);
+    }
+    const { data } = await query.maybeSingle();
+    return (data as OfferExpectations | null) ?? null;
+  }
+
+  async upsertExpectations(data: Partial<OfferExpectations>): Promise<OfferExpectations> {
+    const { client, userId } = await this.getClient();
+    const row: Record<string, unknown> = { ...data, updated_at: new Date().toISOString() };
+    if (getAuthEnabled() && userId) {
+      row.user_id = userId;
+    } else {
+      row.id = 1;
+    }
+    const { data: result, error } = await client
+      .from('offer_expectations')
+      .upsert(row, { onConflict: getAuthEnabled() && userId ? 'user_id' : 'id' })
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return result as OfferExpectations;
   }
 
   // ── Google Calendar tokens ──────────────────────────────────────────────────

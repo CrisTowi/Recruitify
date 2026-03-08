@@ -42,6 +42,22 @@ export type HealthTier = 'None' | 'Basic' | 'Premium';
 export const REMOTE_POLICIES: RemotePolicy[] = ['Remote', 'Hybrid', 'On-site'];
 export const HEALTH_TIERS: HealthTier[] = ['None', 'Basic', 'Premium'];
 
+// Ordinal rank for comparison (higher = better)
+export const REMOTE_RANK: Record<RemotePolicy, number> = { 'Remote': 3, 'Hybrid': 2, 'On-site': 1 };
+export const HEALTH_RANK: Record<HealthTier, number> = { 'Premium': 3, 'Basic': 2, 'None': 1 };
+
+export interface OfferExpectations {
+  base_salary: number | null;
+  currency: string;
+  signing_bonus: number | null;
+  equity_value: number | null;
+  bonus_pct: number | null;
+  pto_days: number | null;
+  remote_policy: RemotePolicy | null;
+  health_tier: HealthTier | null;
+  retirement_match_pct: number | null;
+}
+
 export interface CompanyOffer {
   id: string;
   company_id: string;
