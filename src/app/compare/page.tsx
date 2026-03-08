@@ -91,6 +91,7 @@ function best(entries: CompareEntry[], getter: (o: CompanyOffer) => number | nul
 interface RowDef {
   label: string;
   render: (o: CompanyOffer | null) => React.ReactNode;
+  renderSub?: (o: CompanyOffer | null) => React.ReactNode;
   bestGetter?: (o: CompanyOffer) => number | null | undefined;
   expField?: keyof OfferExpectations;
 }
@@ -116,13 +117,8 @@ const ROWS: RowDef[] = [
   },
   {
     label: 'Equity / RSU',
-    render: (o) =>
-      o ? (
-        <>
-          {fmt(o.equity_value, o.currency, 'currency')}
-          {o.equity_vesting && <span className={styles.sub}>{o.equity_vesting}</span>}
-        </>
-      ) : '—',
+    render: (o) => o ? fmt(o.equity_value, o.currency, 'currency') : '—',
+    renderSub: (o) => o?.equity_vesting ? <span className={styles.sub}>{o.equity_vesting}</span> : null,
     bestGetter: (o) => o.equity_value,
     expField: 'equity_value',
   },
@@ -449,6 +445,7 @@ export default function ComparePage() {
                                   {row.render(offer)}
                                   {meetsExp && <span className={styles.star} title="Meets your target">★</span>}
                                 </span>
+                                {row.renderSub?.(offer)}
                               </td>
                             );
                           })}

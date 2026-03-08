@@ -393,13 +393,14 @@
 }
 
 .valueCellContent {
-  white-space: nowrap;
+  display: inline;
 }
 
 .star {
   color: #f59e0b;
   margin-left: 4px;
   font-size: 0.9em;
+  white-space: nowrap;
 }
 
 .legend {
