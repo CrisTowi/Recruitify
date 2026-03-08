@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { CompanyWithNextStep, CompanyOffer, RemotePolicy, HealthTier } from '@/types';
 import { REMOTE_POLICIES, HEALTH_TIERS } from '@/types';
+import { fmtCommas } from '@/lib/formatInput';
 import styles from './OfferModal.module.css';
 
 interface Props {
@@ -97,11 +98,11 @@ export default function OfferModal({ company, onSaved, onSkip }: Props) {
                 </select>
                 <input
                   className={styles.input}
-                  type="number"
-                  min={0}
-                  placeholder="150000"
-                  value={baseSalary}
-                  onChange={(e) => setBaseSalary(e.target.value)}
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="150,000"
+                  value={fmtCommas(baseSalary)}
+                  onChange={(e) => setBaseSalary(e.target.value.replace(/[^0-9]/g, ''))}
                   disabled={submitting}
                 />
               </div>
@@ -110,11 +111,11 @@ export default function OfferModal({ company, onSaved, onSkip }: Props) {
               <label className={styles.label}>Signing Bonus</label>
               <input
                 className={styles.input}
-                type="number"
-                min={0}
-                placeholder="10000"
-                value={signingBonus}
-                onChange={(e) => setSigningBonus(e.target.value)}
+                type="text"
+                inputMode="numeric"
+                placeholder="10,000"
+                value={fmtCommas(signingBonus)}
+                onChange={(e) => setSigningBonus(e.target.value.replace(/[^0-9]/g, ''))}
                 disabled={submitting}
               />
             </div>
@@ -154,11 +155,11 @@ export default function OfferModal({ company, onSaved, onSkip }: Props) {
               <label className={styles.label}>Equity / RSU Total Value</label>
               <input
                 className={styles.input}
-                type="number"
-                min={0}
-                placeholder="200000"
-                value={equityValue}
-                onChange={(e) => setEquityValue(e.target.value)}
+                type="text"
+                inputMode="numeric"
+                placeholder="200,000"
+                value={fmtCommas(equityValue)}
+                onChange={(e) => setEquityValue(e.target.value.replace(/[^0-9]/g, ''))}
                 disabled={submitting}
               />
             </div>

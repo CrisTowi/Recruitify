@@ -9,6 +9,7 @@ import type {
   HealthTier,
 } from '@/types';
 import { REMOTE_POLICIES, HEALTH_TIERS, REMOTE_RANK, HEALTH_RANK } from '@/types';
+import { fmtCommas } from '@/lib/formatInput';
 import styles from './compare.module.css';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -244,12 +245,12 @@ function ExpectationsPanel({
                 <select className={styles.expCurrencySelect} value={currency} onChange={(e) => setCurrency(e.target.value)} disabled={saving}>
                   {['USD', 'EUR', 'GBP', 'CAD', 'AUD'].map((c) => <option key={c} value={c}>{c}</option>)}
                 </select>
-                <input className={styles.expInput} type="number" min={0} placeholder="180000" value={baseSalary} onChange={(e) => setBaseSalary(e.target.value)} disabled={saving} />
+                <input className={styles.expInput} type="text" inputMode="numeric" placeholder="180,000" value={fmtCommas(baseSalary)} onChange={(e) => setBaseSalary(e.target.value.replace(/[^0-9]/g, ''))} disabled={saving} />
               </div>
             </div>
             <div className={styles.expField}>
               <label className={styles.expLabel}>Signing Bonus</label>
-              <input className={styles.expInput} type="number" min={0} placeholder="15000" value={signingBonus} onChange={(e) => setSigningBonus(e.target.value)} disabled={saving} />
+              <input className={styles.expInput} type="text" inputMode="numeric" placeholder="15,000" value={fmtCommas(signingBonus)} onChange={(e) => setSigningBonus(e.target.value.replace(/[^0-9]/g, ''))} disabled={saving} />
             </div>
             <div className={styles.expField}>
               <label className={styles.expLabel}>Performance Bonus %</label>
@@ -257,7 +258,7 @@ function ExpectationsPanel({
             </div>
             <div className={styles.expField}>
               <label className={styles.expLabel}>Equity / RSU Value</label>
-              <input className={styles.expInput} type="number" min={0} placeholder="300000" value={equityValue} onChange={(e) => setEquityValue(e.target.value)} disabled={saving} />
+              <input className={styles.expInput} type="text" inputMode="numeric" placeholder="300,000" value={fmtCommas(equityValue)} onChange={(e) => setEquityValue(e.target.value.replace(/[^0-9]/g, ''))} disabled={saving} />
             </div>
             <div className={styles.expField}>
               <label className={styles.expLabel}>PTO Days</label>

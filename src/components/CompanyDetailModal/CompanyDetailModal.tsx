@@ -14,6 +14,7 @@ import type {
   HealthTier,
 } from '@/types';
 import { PROCESS_STATUS_VALUES, INTEREST_LEVELS, REMOTE_POLICIES, HEALTH_TIERS } from '@/types';
+import { fmtCommas } from '@/lib/formatInput';
 import styles from './CompanyDetailModal.module.css';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -1010,12 +1011,12 @@ function OfferSection({ companyId, offer, onUpdated }: OfferSectionProps) {
               <select className={styles.offerCurrencySelect} value={currency} onChange={(e) => setCurrency(e.target.value)} disabled={saving}>
                 {['USD', 'EUR', 'GBP', 'CAD', 'AUD'].map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
-              <input className={styles.input} type="number" min={0} placeholder="150000" value={baseSalary} onChange={(e) => setBaseSalary(e.target.value)} disabled={saving} />
+              <input className={styles.input} type="text" inputMode="numeric" placeholder="150,000" value={fmtCommas(baseSalary)} onChange={(e) => setBaseSalary(e.target.value.replace(/[^0-9]/g, ''))} disabled={saving} />
             </div>
           </div>
           <div className={styles.field}>
             <label className={styles.label}>Signing Bonus</label>
-            <input className={styles.input} type="number" min={0} placeholder="10000" value={signingBonus} onChange={(e) => setSigningBonus(e.target.value)} disabled={saving} />
+            <input className={styles.input} type="text" inputMode="numeric" placeholder="10,000" value={fmtCommas(signingBonus)} onChange={(e) => setSigningBonus(e.target.value.replace(/[^0-9]/g, ''))} disabled={saving} />
           </div>
         </div>
         <div className={styles.offerEditRow}>
@@ -1031,7 +1032,7 @@ function OfferSection({ companyId, offer, onUpdated }: OfferSectionProps) {
         <div className={styles.offerEditRow}>
           <div className={styles.field}>
             <label className={styles.label}>Equity / RSU Value</label>
-            <input className={styles.input} type="number" min={0} placeholder="200000" value={equityValue} onChange={(e) => setEquityValue(e.target.value)} disabled={saving} />
+            <input className={styles.input} type="text" inputMode="numeric" placeholder="200,000" value={fmtCommas(equityValue)} onChange={(e) => setEquityValue(e.target.value.replace(/[^0-9]/g, ''))} disabled={saving} />
           </div>
           <div className={styles.field}>
             <label className={styles.label}>Vesting Schedule</label>
