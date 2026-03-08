@@ -103,6 +103,20 @@ db.exec(`
     refresh_token TEXT NOT NULL,
     expires_at TEXT NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS offer_expectations (
+    id         INTEGER PRIMARY KEY DEFAULT 1,
+    base_salary INTEGER,
+    currency   TEXT NOT NULL DEFAULT 'USD',
+    signing_bonus INTEGER,
+    equity_value INTEGER,
+    bonus_pct  REAL,
+    pto_days   INTEGER,
+    remote_policy TEXT,
+    health_tier TEXT,
+    retirement_match_pct REAL,
+    updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+  );
 `);
 
 // Column migrations for existing databases
@@ -293,10 +307,29 @@ const seed = db.transaction(() => {
 });
 
 seed();
+
+// Offer expectations (singleton row, id=1)
+db.prepare(`
+  INSERT INTO offer_expectations
+    (id, base_salary, currency, signing_bonus, equity_value, bonus_pct, pto_days,
+     remote_policy, health_tier, retirement_match_pct, updated_at)
+  VALUES (1, 200000, 'USD', 20000, 300000, 10, 20, 'Remote', 'Basic', 4, strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+  ON CONFLICT(id) DO UPDATE SET
+    base_salary = excluded.base_salary,
+    signing_bonus = excluded.signing_bonus,
+    equity_value = excluded.equity_value,
+    bonus_pct = excluded.bonus_pct,
+    pto_days = excluded.pto_days,
+    remote_policy = excluded.remote_policy,
+    health_tier = excluded.health_tier,
+    retirement_match_pct = excluded.retirement_match_pct,
+    updated_at = excluded.updated_at
+`).run();
+
 db.close();
 
 const companyCount = 15;
 const stageCount = 23;
 const eventCount = 64;
-console.log(`Seeded: ${companyCount} companies, ${stageCount} interview stages, ${eventCount} timeline events, 3 offers`);
+console.log(`Seeded: ${companyCount} companies, ${stageCount} interview stages, ${eventCount} timeline events, 3 offers, 1 expectations row`);
 console.log('Run "npm run dev" to start the app.');

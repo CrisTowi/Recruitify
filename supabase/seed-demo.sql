@@ -350,3 +350,22 @@ VALUES
    'Great culture fit but lowest base. Could negotiate equity upward.')
 
 ON CONFLICT (id) DO NOTHING;
+
+-- ────────────────────────────────────────────────────────────
+-- Offer expectations (personal targets)
+-- ────────────────────────────────────────────────────────────
+INSERT INTO offer_expectations
+  (id, base_salary, currency, signing_bonus, equity_value, bonus_pct, pto_days,
+   remote_policy, health_tier, retirement_match_pct)
+VALUES
+  (1, 200000, 'USD', 20000, 300000, 10, 20, 'Remote', 'Basic', 4)
+ON CONFLICT (id) DO UPDATE SET
+  base_salary          = excluded.base_salary,
+  signing_bonus        = excluded.signing_bonus,
+  equity_value         = excluded.equity_value,
+  bonus_pct            = excluded.bonus_pct,
+  pto_days             = excluded.pto_days,
+  remote_policy        = excluded.remote_policy,
+  health_tier          = excluded.health_tier,
+  retirement_match_pct = excluded.retirement_match_pct,
+  updated_at           = now();
