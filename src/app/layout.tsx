@@ -49,10 +49,12 @@ export default async function RootLayout({
       <body suppressHydrationWarning>
         <header className="site-header">
           <span className="site-logo">Recruitify</span>
-          <nav className="site-nav">
-            <Link href="/" className="site-nav-link">Board</Link>
-            <Link href="/compare" className="site-nav-link">Compare Offers</Link>
-          </nav>
+          {(!authEnabled || user) && (
+            <nav className="site-nav">
+              <Link href="/" className="site-nav-link">Board</Link>
+              <Link href="/compare" className="site-nav-link">Compare Offers</Link>
+            </nav>
+          )}
           {authEnabled && user && (
             <form
               action="/api/auth/signout"
