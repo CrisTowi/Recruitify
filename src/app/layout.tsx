@@ -56,26 +56,8 @@ export default async function RootLayout({
             </nav>
           )}
           {authEnabled && user && (
-            <form
-              action="/api/auth/signout"
-              method="POST"
-              style={{ marginLeft: 'auto' }}
-            >
-              <button
-                type="submit"
-                style={{
-                  background: 'none',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: 'var(--radius-md)',
-                  color: 'var(--color-text-secondary)',
-                  cursor: 'pointer',
-                  fontSize: '0.8125rem',
-                  fontWeight: 500,
-                  fontFamily: 'var(--font-sans)',
-                  padding: '6px 14px',
-                  transition: 'border-color 0.15s ease, color 0.15s ease',
-                }}
-              >
+            <form action="/api/auth/signout" method="POST" className="signout-form">
+              <button type="submit" className="signout-button">
                 Sign out
               </button>
             </form>
