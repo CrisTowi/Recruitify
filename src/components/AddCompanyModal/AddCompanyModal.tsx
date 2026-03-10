@@ -25,15 +25,15 @@ export default function AddCompanyModal({ onClose, onCreated }: Props) {
 
   // Close on Escape
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+    const handler = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
   }, [onClose]);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleSubmit(event: React.FormEvent) {
+    event.preventDefault();
     if (!name.trim()) {
       setError('Company name is required.');
       return;
@@ -64,7 +64,7 @@ export default function AddCompanyModal({ onClose, onCreated }: Props) {
   return (
     <div
       className={styles.backdrop}
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}
     >
       <div
         className={styles.modal}
@@ -85,7 +85,7 @@ export default function AddCompanyModal({ onClose, onCreated }: Props) {
               type="text"
               className={styles.input}
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(event) => setName(event.target.value)}
               placeholder="e.g. Acme Corp"
               disabled={submitting}
             />
@@ -100,7 +100,7 @@ export default function AddCompanyModal({ onClose, onCreated }: Props) {
               type="url"
               className={styles.input}
               value={logoUrl}
-              onChange={(e) => setLogoUrl(e.target.value)}
+              onChange={(event) => setLogoUrl(event.target.value)}
               placeholder="https://example.com/logo.png"
               disabled={submitting}
             />
@@ -112,11 +112,11 @@ export default function AddCompanyModal({ onClose, onCreated }: Props) {
               id="status"
               className={styles.select}
               value={status}
-              onChange={(e) => setStatus(e.target.value as ApplicationStatus)}
+              onChange={(event) => setStatus(event.target.value as ApplicationStatus)}
               disabled={submitting}
             >
-              {STATUSES.map((s) => (
-                <option key={s} value={s}>{s}</option>
+              {STATUSES.map((status) => (
+                <option key={status} value={status}>{status}</option>
               ))}
             </select>
           </div>

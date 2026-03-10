@@ -33,8 +33,8 @@ export default function TimelineItemEditForm({ event, onSaved, onCancel }: EditF
     event.process_status ?? PROCESS_STATUS_VALUES[0]
   );
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleSubmit(formEvent: React.FormEvent) {
+    formEvent.preventDefault();
     setError(null);
 
     if (event.event_type === 'contact' && !contactName.trim()) {
@@ -91,12 +91,12 @@ export default function TimelineItemEditForm({ event, onSaved, onCancel }: EditF
           <div className={styles.field}>
             <label className={styles.label}>Title <span className={styles.optional}>(optional)</span></label>
             <input type="text" className={styles.input} value={noteTitle}
-              onChange={(e) => setNoteTitle(e.target.value)} disabled={submitting} />
+              onChange={(event) => setNoteTitle(event.target.value)} disabled={submitting} />
           </div>
           <div className={styles.field}>
             <label className={styles.label}>Body</label>
             <textarea className={styles.textarea} value={noteBody} rows={3}
-              onChange={(e) => setNoteBody(e.target.value)} disabled={submitting} />
+              onChange={(event) => setNoteBody(event.target.value)} disabled={submitting} />
           </div>
         </>
       )}
@@ -106,24 +106,24 @@ export default function TimelineItemEditForm({ event, onSaved, onCancel }: EditF
           <div className={styles.field}>
             <label className={styles.label}>Name <span className={styles.required}>*</span></label>
             <input type="text" className={styles.input} value={contactName}
-              onChange={(e) => setContactName(e.target.value)} disabled={submitting} />
+              onChange={(event) => setContactName(event.target.value)} disabled={submitting} />
           </div>
           <div className={styles.fieldRow}>
             <div className={styles.field}>
               <label className={styles.label}>Role <span className={styles.optional}>(optional)</span></label>
               <input type="text" className={styles.input} value={contactRole}
-                onChange={(e) => setContactRole(e.target.value)} disabled={submitting} />
+                onChange={(event) => setContactRole(event.target.value)} disabled={submitting} />
             </div>
             <div className={styles.field}>
               <label className={styles.label}>Email <span className={styles.optional}>(optional)</span></label>
               <input type="email" className={styles.input} value={contactEmail}
-                onChange={(e) => setContactEmail(e.target.value)} disabled={submitting} />
+                onChange={(event) => setContactEmail(event.target.value)} disabled={submitting} />
             </div>
           </div>
           <div className={styles.field}>
             <label className={styles.label}>Notes <span className={styles.optional}>(optional)</span></label>
             <textarea className={styles.textarea} value={contactNotes} rows={2}
-              onChange={(e) => setContactNotes(e.target.value)} disabled={submitting} />
+              onChange={(event) => setContactNotes(event.target.value)} disabled={submitting} />
           </div>
         </>
       )}
@@ -133,17 +133,17 @@ export default function TimelineItemEditForm({ event, onSaved, onCancel }: EditF
           <div className={styles.field}>
             <label className={styles.label}>Title <span className={styles.optional}>(optional)</span></label>
             <input type="text" className={styles.input} value={apptTitle}
-              onChange={(e) => setApptTitle(e.target.value)} disabled={submitting} />
+              onChange={(event) => setApptTitle(event.target.value)} disabled={submitting} />
           </div>
           <div className={styles.field}>
             <label className={styles.label}>Date &amp; Time <span className={styles.optional}>(optional)</span></label>
             <input type="datetime-local" className={styles.input} value={apptDate}
-              onChange={(e) => setApptDate(e.target.value)} disabled={submitting} />
+              onChange={(event) => setApptDate(event.target.value)} disabled={submitting} />
           </div>
           <div className={styles.field}>
             <label className={styles.label}>Notes <span className={styles.optional}>(optional)</span></label>
             <textarea className={styles.textarea} value={apptNotes} rows={2}
-              onChange={(e) => setApptNotes(e.target.value)} disabled={submitting} />
+              onChange={(event) => setApptNotes(event.target.value)} disabled={submitting} />
           </div>
         </>
       )}
@@ -152,8 +152,8 @@ export default function TimelineItemEditForm({ event, onSaved, onCancel }: EditF
         <div className={styles.field}>
           <label className={styles.label}>Status</label>
           <select className={styles.select} value={processStatus} disabled={submitting}
-            onChange={(e) => setProcessStatus(e.target.value as ProcessStatusValue)}>
-            {PROCESS_STATUS_VALUES.map((v) => <option key={v} value={v}>{v}</option>)}
+            onChange={(event) => setProcessStatus(event.target.value as ProcessStatusValue)}>
+            {PROCESS_STATUS_VALUES.map((statusValue) => <option key={statusValue} value={statusValue}>{statusValue}</option>)}
           </select>
         </div>
       )}

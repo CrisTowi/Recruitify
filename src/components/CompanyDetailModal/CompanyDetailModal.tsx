@@ -52,7 +52,7 @@ export default function CompanyDetailModal({ company, onClose, onDeleted, onUpda
   }, []);
 
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    const handler = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose(); };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
   }, [onClose]);
@@ -130,7 +130,7 @@ export default function CompanyDetailModal({ company, onClose, onDeleted, onUpda
   }, [prepNotes]);
 
   const handleSaved = useCallback((updated: TimelineEvent) => {
-    setEvents((prev) => prev.map((e) => e.id === updated.id ? updated : e));
+    setEvents((prev) => prev.map((entry) => entry.id === updated.id ? updated : entry));
     setEditingId(null);
   }, []);
 
@@ -151,7 +151,7 @@ export default function CompanyDetailModal({ company, onClose, onDeleted, onUpda
   return (
     <div
       className={styles.backdrop}
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}
     >
       <div
         className={styles.modal}
@@ -316,7 +316,7 @@ export default function CompanyDetailModal({ company, onClose, onDeleted, onUpda
 
           {activeTab === 'stages' && (
             <div className={styles.roadmapSection}>
-              <StageAddForm companyId={company.id} onCreated={(s) => setStages((prev) => [...prev, s])} />
+              <StageAddForm companyId={company.id} onCreated={(stage) => setStages((prev) => [...prev, stage])} />
 
               {loading && <p className={styles.timelineLoading}>Loading…</p>}
               {!loading && stages.length === 0 && (
@@ -329,8 +329,8 @@ export default function CompanyDetailModal({ company, onClose, onDeleted, onUpda
                       key={stage.id}
                       stage={stage}
                       companyId={company.id}
-                      onUpdated={(updated) => setStages((prev) => prev.map((s) => s.id === updated.id ? updated : s))}
-                      onDeleted={(id) => setStages((prev) => prev.filter((s) => s.id !== id))}
+                      onUpdated={(updated) => setStages((prev) => prev.map((stage) => stage.id === updated.id ? updated : stage))}
+                      onDeleted={(id) => setStages((prev) => prev.filter((stage) => stage.id !== id))}
                       onTimelineCreated={handleCreated}
                     />
                   ))}
@@ -356,7 +356,7 @@ export default function CompanyDetailModal({ company, onClose, onDeleted, onUpda
                       <textarea
                         className={styles.prepTextarea}
                         value={prepDraft}
-                        onChange={(e) => setPrepDraft(e.target.value)}
+                        onChange={(event) => setPrepDraft(event.target.value)}
                         placeholder="Links, resources, topics to study, interviewer tips…"
                         rows={6}
                         autoFocus

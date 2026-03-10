@@ -75,8 +75,8 @@ export default function OfferSection({ companyId, offer, onUpdated }: OfferSecti
       const updated = await res.json() as CompanyOffer;
       onUpdated(updated);
       setEditing(false);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Failed to save');
+    } catch (err) {
+      setErr(err instanceof Error ? err.message : 'Failed to save');
     } finally {
       setSaving(false);
     }
@@ -158,66 +158,66 @@ export default function OfferSection({ companyId, offer, onUpdated }: OfferSecti
           <div className={styles.field}>
             <label className={styles.label}>Base Salary</label>
             <div className={styles.offerInputGroup}>
-              <select className={styles.offerCurrencySelect} value={currency} onChange={(e) => setCurrency(e.target.value)} disabled={saving}>
-                {['USD', 'EUR', 'GBP', 'CAD', 'AUD'].map((c) => <option key={c} value={c}>{c}</option>)}
+              <select className={styles.offerCurrencySelect} value={currency} onChange={(event) => setCurrency(event.target.value)} disabled={saving}>
+                {['USD', 'EUR', 'GBP', 'CAD', 'AUD'].map((currency) => <option key={currency} value={currency}>{currency}</option>)}
               </select>
-              <input className={styles.input} type="text" inputMode="numeric" placeholder="150,000" value={fmtCommas(baseSalary)} onChange={(e) => setBaseSalary(e.target.value.replace(/[^0-9]/g, ''))} disabled={saving} />
+              <input className={styles.input} type="text" inputMode="numeric" placeholder="150,000" value={fmtCommas(baseSalary)} onChange={(event) => setBaseSalary(event.target.value.replace(/[^0-9]/g, ''))} disabled={saving} />
             </div>
           </div>
           <div className={styles.field}>
             <label className={styles.label}>Signing Bonus</label>
-            <input className={styles.input} type="text" inputMode="numeric" placeholder="10,000" value={fmtCommas(signingBonus)} onChange={(e) => setSigningBonus(e.target.value.replace(/[^0-9]/g, ''))} disabled={saving} />
+            <input className={styles.input} type="text" inputMode="numeric" placeholder="10,000" value={fmtCommas(signingBonus)} onChange={(event) => setSigningBonus(event.target.value.replace(/[^0-9]/g, ''))} disabled={saving} />
           </div>
         </div>
         <div className={styles.offerEditRow}>
           <div className={styles.field}>
             <label className={styles.label}>Performance Bonus %</label>
-            <input className={styles.input} type="number" min={0} placeholder="15" value={bonusPct} onChange={(e) => setBonusPct(e.target.value)} disabled={saving} />
+            <input className={styles.input} type="number" min={0} placeholder="15" value={bonusPct} onChange={(event) => setBonusPct(event.target.value)} disabled={saving} />
           </div>
           <div className={styles.field}>
             <label className={styles.label}>401k Match %</label>
-            <input className={styles.input} type="number" min={0} placeholder="4" value={retirementMatch} onChange={(e) => setRetirementMatch(e.target.value)} disabled={saving} />
+            <input className={styles.input} type="number" min={0} placeholder="4" value={retirementMatch} onChange={(event) => setRetirementMatch(event.target.value)} disabled={saving} />
           </div>
         </div>
         <div className={styles.offerEditRow}>
           <div className={styles.field}>
             <label className={styles.label}>Equity / RSU Value</label>
-            <input className={styles.input} type="text" inputMode="numeric" placeholder="200,000" value={fmtCommas(equityValue)} onChange={(e) => setEquityValue(e.target.value.replace(/[^0-9]/g, ''))} disabled={saving} />
+            <input className={styles.input} type="text" inputMode="numeric" placeholder="200,000" value={fmtCommas(equityValue)} onChange={(event) => setEquityValue(event.target.value.replace(/[^0-9]/g, ''))} disabled={saving} />
           </div>
           <div className={styles.field}>
             <label className={styles.label}>Vesting Schedule</label>
-            <input className={styles.input} type="text" placeholder="4yr, 1yr cliff" value={equityVesting} onChange={(e) => setEquityVesting(e.target.value)} disabled={saving} />
+            <input className={styles.input} type="text" placeholder="4yr, 1yr cliff" value={equityVesting} onChange={(event) => setEquityVesting(event.target.value)} disabled={saving} />
           </div>
         </div>
         <div className={styles.offerEditRow}>
           <div className={styles.field}>
             <label className={styles.label}>PTO Days</label>
-            <input className={styles.input} type="number" min={0} placeholder="20" value={ptoDays} onChange={(e) => setPtoDays(e.target.value)} disabled={saving} />
+            <input className={styles.input} type="number" min={0} placeholder="20" value={ptoDays} onChange={(event) => setPtoDays(event.target.value)} disabled={saving} />
           </div>
           <div className={styles.field}>
             <label className={styles.label}>Remote Policy</label>
-            <select className={styles.input} value={remotePolicy} onChange={(e) => setRemotePolicy(e.target.value as RemotePolicy | '')} disabled={saving}>
+            <select className={styles.input} value={remotePolicy} onChange={(event) => setRemotePolicy(event.target.value as RemotePolicy | '')} disabled={saving}>
               <option value="">— Select —</option>
-              {REMOTE_POLICIES.map((p) => <option key={p} value={p}>{p}</option>)}
+              {REMOTE_POLICIES.map((policy) => <option key={policy} value={policy}>{policy}</option>)}
             </select>
           </div>
         </div>
         <div className={styles.offerEditRow}>
           <div className={styles.field}>
             <label className={styles.label}>Health Insurance</label>
-            <select className={styles.input} value={healthTier} onChange={(e) => setHealthTier(e.target.value as HealthTier | '')} disabled={saving}>
+            <select className={styles.input} value={healthTier} onChange={(event) => setHealthTier(event.target.value as HealthTier | '')} disabled={saving}>
               <option value="">— Select —</option>
-              {HEALTH_TIERS.map((t) => <option key={t} value={t}>{t}</option>)}
+              {HEALTH_TIERS.map((tier) => <option key={tier} value={tier}>{tier}</option>)}
             </select>
           </div>
         </div>
         <div className={styles.field}>
           <label className={styles.label}>Other Benefits</label>
-          <textarea className={styles.prepTextarea} rows={2} placeholder="Home office stipend, gym…" value={otherBenefits} onChange={(e) => setOtherBenefits(e.target.value)} disabled={saving} />
+          <textarea className={styles.prepTextarea} rows={2} placeholder="Home office stipend, gym…" value={otherBenefits} onChange={(event) => setOtherBenefits(event.target.value)} disabled={saving} />
         </div>
         <div className={styles.field}>
           <label className={styles.label}>Notes</label>
-          <textarea className={styles.prepTextarea} rows={2} placeholder="Deadline, negotiation notes…" value={offerNotes} onChange={(e) => setOfferNotes(e.target.value)} disabled={saving} />
+          <textarea className={styles.prepTextarea} rows={2} placeholder="Deadline, negotiation notes…" value={offerNotes} onChange={(event) => setOfferNotes(event.target.value)} disabled={saving} />
         </div>
       </div>
       {err && <p className={styles.formError}>{err}</p>}

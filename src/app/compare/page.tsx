@@ -18,58 +18,58 @@ import styles from './compare.module.css';
 const ROWS: RowDef[] = [
   {
     label: 'Base Salary',
-    render: (o) => o ? fmt(o.base_salary, o.currency, 'currency') : '—',
-    bestGetter: (o) => o.base_salary,
+    render: (offer) => offer ? fmt(offer.base_salary, offer.currency, 'currency') : '—',
+    bestGetter: (offer) => offer.base_salary,
     expField: 'base_salary',
   },
   {
     label: 'Signing Bonus',
-    render: (o) => o ? fmt(o.signing_bonus, o.currency, 'currency') : '—',
-    bestGetter: (o) => o.signing_bonus,
+    render: (offer) => offer ? fmt(offer.signing_bonus, offer.currency, 'currency') : '—',
+    bestGetter: (offer) => offer.signing_bonus,
     expField: 'signing_bonus',
   },
   {
     label: 'Performance Bonus',
-    render: (o) => o ? fmt(o.bonus_pct, o.currency, 'pct') : '—',
-    bestGetter: (o) => o.bonus_pct,
+    render: (offer) => offer ? fmt(offer.bonus_pct, offer.currency, 'pct') : '—',
+    bestGetter: (offer) => offer.bonus_pct,
     expField: 'bonus_pct',
   },
   {
     label: 'Equity / RSU',
-    render: (o) => o ? fmt(o.equity_value, o.currency, 'currency') : '—',
-    renderSub: (o) => o?.equity_vesting ? <span className={styles.sub}>{o.equity_vesting}</span> : null,
-    bestGetter: (o) => o.equity_value,
+    render: (offer) => offer ? fmt(offer.equity_value, offer.currency, 'currency') : '—',
+    renderSub: (offer) => offer?.equity_vesting ? <span className={styles.sub}>{offer.equity_vesting}</span> : null,
+    bestGetter: (offer) => offer.equity_value,
     expField: 'equity_value',
   },
   {
     label: 'PTO Days',
-    render: (o) => o ? fmt(o.pto_days, o.currency, 'days') : '—',
-    bestGetter: (o) => o.pto_days,
+    render: (offer) => offer ? fmt(offer.pto_days, offer.currency, 'days') : '—',
+    bestGetter: (offer) => offer.pto_days,
     expField: 'pto_days',
   },
   {
     label: '401k / Retirement Match',
-    render: (o) => o ? fmt(o.retirement_match_pct, o.currency, 'pct') : '—',
-    bestGetter: (o) => o.retirement_match_pct,
+    render: (offer) => offer ? fmt(offer.retirement_match_pct, offer.currency, 'pct') : '—',
+    bestGetter: (offer) => offer.retirement_match_pct,
     expField: 'retirement_match_pct',
   },
   {
     label: 'Remote Policy',
-    render: (o) => o?.remote_policy ?? '—',
+    render: (offer) => offer?.remote_policy ?? '—',
     expField: 'remote_policy',
   },
   {
     label: 'Health Insurance',
-    render: (o) => o?.health_tier ?? '—',
+    render: (offer) => offer?.health_tier ?? '—',
     expField: 'health_tier',
   },
   {
     label: 'Other Benefits',
-    render: (o) => o?.other_benefits ?? '—',
+    render: (offer) => offer?.other_benefits ?? '—',
   },
   {
     label: 'Notes',
-    render: (o) => o?.notes ?? '—',
+    render: (offer) => offer?.notes ?? '—',
   },
 ];
 
@@ -95,7 +95,7 @@ export default function ComparePage() {
     ])
       .then(([compareData, expData]) => {
         setEntries(compareData);
-        setSelected(new Set(compareData.map((e) => e.company.id)));
+        setSelected(new Set(compareData.map((entry) => entry.company.id)));
         setExpectations(expData);
         setLoading(false);
       })
@@ -113,9 +113,9 @@ export default function ComparePage() {
     });
   }
 
-  const visible = entries.filter((e) => selected.has(e.company.id));
+  const visible = entries.filter((entry) => selected.has(entry.company.id));
   const hasExpectations = expectations && Object.values(expectations).some(
-    (v) => v !== null && v !== undefined && v !== 'USD'
+    (statusValue) => statusValue !== null && statusValue !== undefined && statusValue !== 'USD'
   );
 
   return (

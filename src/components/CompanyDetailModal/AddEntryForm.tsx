@@ -38,8 +38,8 @@ export default function AddEntryForm({ companyId, onCreated }: AddEntryFormProps
     setError(null);
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleSubmit(event: React.FormEvent) {
+    event.preventDefault();
     setError(null);
 
     if (eventType === 'contact' && !contactName.trim()) {
@@ -115,7 +115,7 @@ export default function AddEntryForm({ companyId, onCreated }: AddEntryFormProps
               type="text"
               className={styles.input}
               value={noteTitle}
-              onChange={(e) => setNoteTitle(e.target.value)}
+              onChange={(event) => setNoteTitle(event.target.value)}
               placeholder="e.g. Post-interview thoughts"
               disabled={submitting}
             />
@@ -125,7 +125,7 @@ export default function AddEntryForm({ companyId, onCreated }: AddEntryFormProps
             <textarea
               className={styles.textarea}
               value={noteBody}
-              onChange={(e) => setNoteBody(e.target.value)}
+              onChange={(event) => setNoteBody(event.target.value)}
               placeholder="Write your note here…"
               rows={3}
               disabled={submitting}
@@ -144,7 +144,7 @@ export default function AddEntryForm({ companyId, onCreated }: AddEntryFormProps
               type="text"
               className={styles.input}
               value={contactName}
-              onChange={(e) => setContactName(e.target.value)}
+              onChange={(event) => setContactName(event.target.value)}
               placeholder="e.g. Jane Smith"
               disabled={submitting}
             />
@@ -158,7 +158,7 @@ export default function AddEntryForm({ companyId, onCreated }: AddEntryFormProps
                 type="text"
                 className={styles.input}
                 value={contactRole}
-                onChange={(e) => setContactRole(e.target.value)}
+                onChange={(event) => setContactRole(event.target.value)}
                 placeholder="e.g. Engineering Manager"
                 disabled={submitting}
               />
@@ -171,7 +171,7 @@ export default function AddEntryForm({ companyId, onCreated }: AddEntryFormProps
                 type="email"
                 className={styles.input}
                 value={contactEmail}
-                onChange={(e) => setContactEmail(e.target.value)}
+                onChange={(event) => setContactEmail(event.target.value)}
                 placeholder="jane@example.com"
                 disabled={submitting}
               />
@@ -184,7 +184,7 @@ export default function AddEntryForm({ companyId, onCreated }: AddEntryFormProps
             <textarea
               className={styles.textarea}
               value={contactNotes}
-              onChange={(e) => setContactNotes(e.target.value)}
+              onChange={(event) => setContactNotes(event.target.value)}
               placeholder="Notes about this contact…"
               rows={2}
               disabled={submitting}
@@ -203,7 +203,7 @@ export default function AddEntryForm({ companyId, onCreated }: AddEntryFormProps
               type="text"
               className={styles.input}
               value={apptTitle}
-              onChange={(e) => setApptTitle(e.target.value)}
+              onChange={(event) => setApptTitle(event.target.value)}
               placeholder="e.g. Technical Screen"
               disabled={submitting}
             />
@@ -216,7 +216,7 @@ export default function AddEntryForm({ companyId, onCreated }: AddEntryFormProps
               type="datetime-local"
               className={styles.input}
               value={apptDate}
-              onChange={(e) => setApptDate(e.target.value)}
+              onChange={(event) => setApptDate(event.target.value)}
               disabled={submitting}
             />
           </div>
@@ -227,7 +227,7 @@ export default function AddEntryForm({ companyId, onCreated }: AddEntryFormProps
             <textarea
               className={styles.textarea}
               value={apptNotes}
-              onChange={(e) => setApptNotes(e.target.value)}
+              onChange={(event) => setApptNotes(event.target.value)}
               placeholder="e.g. 45 min, Zoom link TBD"
               rows={2}
               disabled={submitting}
@@ -242,11 +242,11 @@ export default function AddEntryForm({ companyId, onCreated }: AddEntryFormProps
           <select
             className={styles.select}
             value={processStatus}
-            onChange={(e) => setProcessStatus(e.target.value as ProcessStatusValue)}
+            onChange={(event) => setProcessStatus(event.target.value as ProcessStatusValue)}
             disabled={submitting}
           >
-            {PROCESS_STATUS_VALUES.map((v) => (
-              <option key={v} value={v}>{v}</option>
+            {PROCESS_STATUS_VALUES.map((statusValue) => (
+              <option key={statusValue} value={statusValue}>{statusValue}</option>
             ))}
           </select>
         </div>

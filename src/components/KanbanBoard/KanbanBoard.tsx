@@ -56,7 +56,7 @@ export default function KanbanBoard() {
       const updatedCard: CompanyWithNextStep = { ...data.company, status: newStatus };
       return {
         ...prev,
-        [oldStatus]: prev[oldStatus].filter((c) => c.id !== cardId),
+        [oldStatus]: prev[oldStatus].filter((company) => company.id !== cardId),
         [newStatus]: [updatedCard, ...prev[newStatus]],
       };
     });
@@ -124,7 +124,7 @@ export default function KanbanBoard() {
             setBoard((prev) => {
               if (!prev) return prev;
               const status = selectedCompany.status;
-              return { ...prev, [status]: prev[status].filter((c) => c.id !== id) };
+              return { ...prev, [status]: prev[status].filter((company) => company.id !== id) };
             });
           }}
           onUpdated={(updated) => {
@@ -133,7 +133,7 @@ export default function KanbanBoard() {
               if (!prev) return prev;
               return {
                 ...prev,
-                [updated.status]: prev[updated.status].map((c) => c.id === updated.id ? updated : c),
+                [updated.status]: prev[updated.status].map((company) => company.id === updated.id ? updated : company),
               };
             });
           }}

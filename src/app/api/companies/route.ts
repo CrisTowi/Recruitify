@@ -17,7 +17,7 @@ export async function GET(req: Request) {
     const companies = await db.getAllCompanies();
 
     // Group by status into kanban columns
-    const board = Object.fromEntries(STATUSES.map((s) => [s, []])) as unknown as KanbanBoard;
+    const board = Object.fromEntries(STATUSES.map((status) => [status, []])) as unknown as KanbanBoard;
     for (const company of companies) {
       board[company.status].push(company);
     }

@@ -11,7 +11,7 @@ export async function GET(req: Request) {
   try {
     const db = await getDb(req);
     const all = await db.getAllCompanies();
-    const offerCompanies = all.filter((c) => c.status === 'Offer');
+    const offerCompanies = all.filter((company) => company.status === 'Offer');
     const entries: CompareEntry[] = await Promise.all(
       offerCompanies.map(async (company) => ({
         company,

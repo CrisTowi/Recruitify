@@ -29,8 +29,8 @@ export default function OfferModal({ company, onSaved, onSkip }: Props) {
   const [otherBenefits, setOtherBenefits] = useState('');
   const [notes, setNotes] = useState('');
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleSubmit(event: React.FormEvent) {
+    event.preventDefault();
     setError(null);
     setSubmitting(true);
 
@@ -70,7 +70,7 @@ export default function OfferModal({ company, onSaved, onSkip }: Props) {
   return (
     <div
       className={styles.backdrop}
-      onClick={(e) => { if (e.target === e.currentTarget) onSkip(); }}
+      onClick={(event) => { if (event.target === event.currentTarget) onSkip(); }}
     >
       <div className={styles.modal} role="dialog" aria-modal="true">
         <div className={styles.header}>
@@ -89,11 +89,11 @@ export default function OfferModal({ company, onSaved, onSkip }: Props) {
                 <select
                   className={styles.currencySelect}
                   value={currency}
-                  onChange={(e) => setCurrency(e.target.value)}
+                  onChange={(event) => setCurrency(event.target.value)}
                   disabled={submitting}
                 >
-                  {['USD', 'EUR', 'GBP', 'CAD', 'AUD'].map((c) => (
-                    <option key={c} value={c}>{c}</option>
+                  {['USD', 'EUR', 'GBP', 'CAD', 'AUD'].map((currency) => (
+                    <option key={currency} value={currency}>{currency}</option>
                   ))}
                 </select>
                 <input
@@ -102,7 +102,7 @@ export default function OfferModal({ company, onSaved, onSkip }: Props) {
                   inputMode="numeric"
                   placeholder="150,000"
                   value={fmtCommas(baseSalary)}
-                  onChange={(e) => setBaseSalary(e.target.value.replace(/[^0-9]/g, ''))}
+                  onChange={(event) => setBaseSalary(event.target.value.replace(/[^0-9]/g, ''))}
                   disabled={submitting}
                 />
               </div>
@@ -115,7 +115,7 @@ export default function OfferModal({ company, onSaved, onSkip }: Props) {
                 inputMode="numeric"
                 placeholder="10,000"
                 value={fmtCommas(signingBonus)}
-                onChange={(e) => setSigningBonus(e.target.value.replace(/[^0-9]/g, ''))}
+                onChange={(event) => setSigningBonus(event.target.value.replace(/[^0-9]/g, ''))}
                 disabled={submitting}
               />
             </div>
@@ -131,7 +131,7 @@ export default function OfferModal({ company, onSaved, onSkip }: Props) {
                 max={100}
                 placeholder="15"
                 value={bonusPct}
-                onChange={(e) => setBonusPct(e.target.value)}
+                onChange={(event) => setBonusPct(event.target.value)}
                 disabled={submitting}
               />
             </div>
@@ -144,7 +144,7 @@ export default function OfferModal({ company, onSaved, onSkip }: Props) {
                 max={100}
                 placeholder="4"
                 value={retirementMatch}
-                onChange={(e) => setRetirementMatch(e.target.value)}
+                onChange={(event) => setRetirementMatch(event.target.value)}
                 disabled={submitting}
               />
             </div>
@@ -159,7 +159,7 @@ export default function OfferModal({ company, onSaved, onSkip }: Props) {
                 inputMode="numeric"
                 placeholder="200,000"
                 value={fmtCommas(equityValue)}
-                onChange={(e) => setEquityValue(e.target.value.replace(/[^0-9]/g, ''))}
+                onChange={(event) => setEquityValue(event.target.value.replace(/[^0-9]/g, ''))}
                 disabled={submitting}
               />
             </div>
@@ -170,7 +170,7 @@ export default function OfferModal({ company, onSaved, onSkip }: Props) {
                 type="text"
                 placeholder="4yr, 1yr cliff"
                 value={equityVesting}
-                onChange={(e) => setEquityVesting(e.target.value)}
+                onChange={(event) => setEquityVesting(event.target.value)}
                 disabled={submitting}
               />
             </div>
@@ -185,7 +185,7 @@ export default function OfferModal({ company, onSaved, onSkip }: Props) {
                 min={0}
                 placeholder="20"
                 value={ptoDays}
-                onChange={(e) => setPtoDays(e.target.value)}
+                onChange={(event) => setPtoDays(event.target.value)}
                 disabled={submitting}
               />
             </div>
@@ -194,11 +194,11 @@ export default function OfferModal({ company, onSaved, onSkip }: Props) {
               <select
                 className={styles.input}
                 value={remotePolicy}
-                onChange={(e) => setRemotePolicy(e.target.value as RemotePolicy | '')}
+                onChange={(event) => setRemotePolicy(event.target.value as RemotePolicy | '')}
                 disabled={submitting}
               >
                 <option value="">— Select —</option>
-                {REMOTE_POLICIES.map((p) => <option key={p} value={p}>{p}</option>)}
+                {REMOTE_POLICIES.map((policy) => <option key={policy} value={policy}>{policy}</option>)}
               </select>
             </div>
           </div>
@@ -209,11 +209,11 @@ export default function OfferModal({ company, onSaved, onSkip }: Props) {
               <select
                 className={styles.input}
                 value={healthTier}
-                onChange={(e) => setHealthTier(e.target.value as HealthTier | '')}
+                onChange={(event) => setHealthTier(event.target.value as HealthTier | '')}
                 disabled={submitting}
               >
                 <option value="">— Select —</option>
-                {HEALTH_TIERS.map((t) => <option key={t} value={t}>{t}</option>)}
+                {HEALTH_TIERS.map((tier) => <option key={tier} value={tier}>{tier}</option>)}
               </select>
             </div>
           </div>
@@ -225,7 +225,7 @@ export default function OfferModal({ company, onSaved, onSkip }: Props) {
               placeholder="Home office stipend, gym membership, meal allowance…"
               rows={2}
               value={otherBenefits}
-              onChange={(e) => setOtherBenefits(e.target.value)}
+              onChange={(event) => setOtherBenefits(event.target.value)}
               disabled={submitting}
             />
           </div>
@@ -237,7 +237,7 @@ export default function OfferModal({ company, onSaved, onSkip }: Props) {
               placeholder="Deadline to decide, negotiation notes…"
               rows={2}
               value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              onChange={(event) => setNotes(event.target.value)}
               disabled={submitting}
             />
           </div>

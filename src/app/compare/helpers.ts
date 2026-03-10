@@ -15,9 +15,9 @@ export interface CompareEntry {
 
 export interface RowDef {
   label: string;
-  render: (o: CompanyOffer | null) => ReactNode;
-  renderSub?: (o: CompanyOffer | null) => ReactNode;
-  bestGetter?: (o: CompanyOffer) => number | null | undefined;
+  render: (offer: CompanyOffer | null) => ReactNode;
+  renderSub?: (offer: CompanyOffer | null) => ReactNode;
+  bestGetter?: (offer: CompanyOffer) => number | null | undefined;
   expField?: keyof OfferExpectations;
 }
 
@@ -31,18 +31,18 @@ export function fmt(n: number | null | undefined, currency: string, type: 'curre
 }
 
 export function fmtExpectation(exp: OfferExpectations, field: keyof OfferExpectations): string {
-  const v = exp[field];
-  if (v === null || v === undefined) return '';
+  const value = exp[field];
+  if (value === null || value === undefined) return '';
   if (field === 'base_salary' || field === 'signing_bonus' || field === 'equity_value') {
-    return `≥ ${fmt(v as number, exp.currency, 'currency')}`;
+    return `≥ ${fmt(value as number, exp.currency, 'currency')}`;
   }
   if (field === 'bonus_pct' || field === 'retirement_match_pct') {
-    return `≥ ${v}%`;
+    return `≥ ${value}%`;
   }
-  if (field === 'pto_days') return `≥ ${v} days`;
-  if (field === 'remote_policy') return `${v} or better`;
-  if (field === 'health_tier') return `${v} or better`;
-  return String(v);
+  if (field === 'pto_days') return `≥ ${value} days`;
+  if (field === 'remote_policy') return `${value} or better`;
+  if (field === 'health_tier') return `${value} or better`;
+  return String(value);
 }
 
 export function meetsExpectation(
@@ -74,8 +74,8 @@ export function best(entries: CompareEntry[], getter: (o: CompanyOffer) => numbe
   let max = -Infinity;
   for (const { offer } of entries) {
     if (!offer) continue;
-    const v = getter(offer);
-    if (v !== null && v !== undefined && v > max) max = v;
+    const value = getter(offer);
+    if (value !== null && value !== undefined && value > max) max = value;
   }
   const ids = new Set<string>();
   if (max === -Infinity) return ids;

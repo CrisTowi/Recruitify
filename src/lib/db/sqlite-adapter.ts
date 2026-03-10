@@ -553,9 +553,9 @@ export class SqliteAdapter implements DbAdapter {
     if (existing) {
       const fields = Object.keys(data) as (keyof typeof data)[];
       if (fields.length > 0) {
-        const setClauses = fields.map((f) => `${f} = ?`);
+        const setClauses = fields.map((field) => `${field} = ?`);
         setClauses.push('updated_at = ?');
-        const values = [...fields.map((f) => data[f] ?? null), new Date().toISOString(), existing.id, companyId];
+        const values = [...fields.map((field) => data[field] ?? null), new Date().toISOString(), existing.id, companyId];
         db.prepare(
           `UPDATE company_offers SET ${setClauses.join(', ')} WHERE id = ? AND company_id = ?`,
         ).run(...values);
@@ -618,9 +618,9 @@ export class SqliteAdapter implements DbAdapter {
       'bonus_pct', 'pto_days', 'remote_policy', 'health_tier', 'retirement_match_pct'] as const;
 
     if (existing) {
-      const setClauses = fields.filter((f) => f in data).map((f) => `${f} = ?`);
+      const setClauses = fields.filter((field) => field in data).map((field) => `${field} = ?`);
       setClauses.push('updated_at = ?');
-      const values = [...fields.filter((f) => f in data).map((f) => (data as Record<string, unknown>)[f] ?? null), new Date().toISOString()];
+      const values = [...fields.filter((field) => field in data).map((field) => (data as Record<string, unknown>)[field] ?? null), new Date().toISOString()];
       if (setClauses.length > 1) {
         db.prepare(`UPDATE offer_expectations SET ${setClauses.join(', ')} WHERE id = 1`).run(...values);
       }
