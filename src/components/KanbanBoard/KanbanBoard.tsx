@@ -12,28 +12,8 @@ import AddCompanyModal from '@/components/AddCompanyModal/AddCompanyModal';
 import CompanyDetailModal from '@/components/CompanyDetailModal/CompanyDetailModal';
 import OfferModal from '@/components/OfferModal/OfferModal';
 import type { ApplicationStatus, CompanyWithNextStep, KanbanBoard as KanbanBoardType } from '@/types';
+import { COLUMNS, fetchBoard, patchStatus } from './helpers';
 import styles from './KanbanBoard.module.css';
-
-const COLUMNS: ApplicationStatus[] = ['Wishlist', 'Applied', 'Interviewing', 'Offer', 'Rejected', 'Ghosted'];
-
-function fetchBoard(): Promise<KanbanBoardType> {
-  return fetch('/api/companies').then((res) => {
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return res.json() as Promise<KanbanBoardType>;
-  });
-}
-
-async function patchStatus(id: string, status: ApplicationStatus): Promise<void> {
-  const res = await fetch(`/api/companies/${id}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ status }),
-  });
-  if (!res.ok) {
-    const json = await res.json().catch(() => ({})) as { error?: string };
-    throw new Error(json.error ?? `HTTP ${res.status}`);
-  }
-}
 
 export default function KanbanBoard() {
   const [board, setBoard] = useState<KanbanBoardType | null>(null);

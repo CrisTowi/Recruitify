@@ -2,16 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { ApplicationStatus } from '@/types';
+import { STATUSES } from './helpers';
 import styles from './AddCompanyModal.module.css';
-
-const STATUSES: ApplicationStatus[] = [
-  'Wishlist',
-  'Applied',
-  'Interviewing',
-  'Offer',
-  'Rejected',
-  'Ghosted',
-];
 
 interface Props {
   onClose: () => void;
