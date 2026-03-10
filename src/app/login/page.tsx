@@ -28,8 +28,9 @@ export default function LoginPage() {
     });
 
     if (!inviteRes.ok) {
-      const { error: inviteError } = await inviteRes.json().catch(() => ({ error: 'Access denied.' }));
-      setError(inviteError ?? 'Access denied.');
+      let inviteBody: { error?: string } = { error: 'Access denied.' };
+      try { inviteBody = await inviteRes.json(); } catch { /* use default */ }
+      setError(inviteBody.error ?? 'Access denied.');
       setLoading(false);
       return;
     }

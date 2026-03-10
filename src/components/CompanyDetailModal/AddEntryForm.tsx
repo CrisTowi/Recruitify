@@ -73,7 +73,8 @@ export default function AddEntryForm({ companyId, onCreated }: AddEntryFormProps
         body: JSON.stringify(payload),
       });
       if (!res.ok) {
-        const json = await res.json().catch(() => ({})) as { error?: string };
+        let json: { error?: string } = {};
+        try { json = await res.json(); } catch { /* ignore */ }
         throw new Error(json.error ?? `HTTP ${res.status}`);
       }
       const created = await res.json() as TimelineEvent;

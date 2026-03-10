@@ -56,7 +56,8 @@ export default function OfferModal({ company, onSaved, onSkip }: Props) {
         body: JSON.stringify(payload),
       });
       if (!res.ok) {
-        const json = await res.json().catch(() => ({})) as { error?: string };
+        let json: { error?: string } = {};
+        try { json = await res.json(); } catch { /* ignore */ }
         throw new Error(json.error ?? `HTTP ${res.status}`);
       }
       const offer = await res.json() as CompanyOffer;

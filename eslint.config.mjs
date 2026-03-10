@@ -3,6 +3,7 @@ import tsParser from '@typescript-eslint/parser';
 import reactPlugin from 'eslint-plugin-react';
 import reactHooksPlugin from 'eslint-plugin-react-hooks';
 import nextPlugin from '@next/eslint-plugin-next';
+import promisePlugin from 'eslint-plugin-promise';
 
 export default [
   { ignores: ['.next/**', 'node_modules/**', 'scripts/**'] },
@@ -21,6 +22,7 @@ export default [
       react: reactPlugin,
       'react-hooks': reactHooksPlugin,
       '@next/next': nextPlugin,
+      promise: promisePlugin,
     },
     settings: {
       react: { version: 'detect' },
@@ -43,6 +45,9 @@ export default [
       // Next.js
       ...nextPlugin.configs.recommended.rules,
       '@next/next/no-img-element': 'off', // external dynamic URLs — disabled at config level
+
+      // Promises — prefer async/await over .then()/.catch()
+      'promise/prefer-await-to-then': 'error',
 
       // General
       'no-console': ['warn', { allow: ['warn', 'error'] }],

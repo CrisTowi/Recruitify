@@ -58,28 +58,36 @@ export default function CompanyDetailModal({ company, onClose, onDeleted, onUpda
   }, [onClose]);
 
   useEffect(() => {
-    setLoading(true);
-    Promise.all([
-      fetch(`/api/companies/${company.id}/roadmap`).then((r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json() as Promise<InterviewStage[]>;
-      }),
-      fetch(`/api/companies/${company.id}/timeline`).then((r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json() as Promise<TimelineEvent[]>;
-      }),
-      fetch(`/api/companies/${company.id}/offer`).then((r) => {
-        if (!r.ok) return null;
-        return r.json() as Promise<CompanyOffer | null>;
-      }),
-    ])
-      .then(([roadmap, timeline, offerData]) => {
+    async function load() {
+      setLoading(true);
+      try {
+        const [roadmap, timeline, offerData] = await Promise.all([
+          (async () => {
+            const r = await fetch(`/api/companies/${company.id}/roadmap`);
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            return r.json() as Promise<InterviewStage[]>;
+          })(),
+          (async () => {
+            const r = await fetch(`/api/companies/${company.id}/timeline`);
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            return r.json() as Promise<TimelineEvent[]>;
+          })(),
+          (async () => {
+            const r = await fetch(`/api/companies/${company.id}/offer`);
+            if (!r.ok) return null;
+            return r.json() as Promise<CompanyOffer | null>;
+          })(),
+        ]);
         setStages(roadmap);
         setEvents(timeline);
         setOffer(offerData);
+      } catch (err) {
+        setFetchError((err as Error).message);
+      } finally {
         setLoading(false);
-      })
-      .catch((err: Error) => { setFetchError(err.message); setLoading(false); });
+      }
+    }
+    load();
   }, [company.id]);
 
   const handleInterestChange = useCallback(async (value: InterestLevel | null) => {

@@ -83,26 +83,30 @@ export default function ComparePage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    Promise.all([
-      fetch('/api/compare').then((r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json() as Promise<CompareEntry[]>;
-      }),
-      fetch('/api/expectations').then((r) => {
-        if (!r.ok) return null;
-        return r.json() as Promise<OfferExpectations | null>;
-      }),
-    ])
-      .then(([compareData, expData]) => {
+    async function load() {
+      try {
+        const [compareData, expData] = await Promise.all([
+          (async () => {
+            const r = await fetch('/api/compare');
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            return r.json() as Promise<CompareEntry[]>;
+          })(),
+          (async () => {
+            const r = await fetch('/api/expectations');
+            if (!r.ok) return null;
+            return r.json() as Promise<OfferExpectations | null>;
+          })(),
+        ]);
         setEntries(compareData);
         setSelected(new Set(compareData.map((entry) => entry.company.id)));
         setExpectations(expData);
+      } catch (err) {
+        setError((err as Error).message);
+      } finally {
         setLoading(false);
-      })
-      .catch((err: Error) => {
-        setError(err.message);
-        setLoading(false);
-      });
+      }
+    }
+    load();
   }, []);
 
   function toggleSelected(id: string) {

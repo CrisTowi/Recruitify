@@ -28,7 +28,14 @@ export default function KanbanBoard() {
   );
 
   useEffect(() => {
-    fetchBoard().then(setBoard).catch((err: Error) => setError(err.message));
+    async function load() {
+      try {
+        setBoard(await fetchBoard());
+      } catch (err) {
+        setError((err as Error).message);
+      }
+    }
+    load();
   }, []);
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
@@ -36,7 +43,7 @@ export default function KanbanBoard() {
     if (data?.company) setActiveCard(data.company);
   }, []);
 
-  const handleDragEnd = useCallback((event: DragEndEvent) => {
+  const handleDragEnd = useCallback(async (event: DragEndEvent) => {
     setActiveCard(null);
     const { active, over } = event;
     if (!over || !board) return;
@@ -61,27 +68,31 @@ export default function KanbanBoard() {
       };
     });
 
-    patchStatus(cardId, newStatus)
-      .then(() => {
-        fetch(`/api/companies/${cardId}/timeline`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            event_type: 'status_change',
-            title: oldStatus,
-            body: newStatus,
-          }),
-        }).catch(() => { /* fire-and-forget */ });
+    try {
+      await patchStatus(cardId, newStatus);
 
-        // Show offer modal when moving to Offer column
-        if (newStatus === 'Offer') {
-          setOfferModalCompany({ ...data.company, status: 'Offer' });
-        }
-      })
-      .catch(() => {
-        setBoard(snapshot);
-        setError('Failed to move card. Please try again.');
-      });
+      void (async () => {
+        try {
+          await fetch(`/api/companies/${cardId}/timeline`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              event_type: 'status_change',
+              title: oldStatus,
+              body: newStatus,
+            }),
+          });
+        } catch { /* fire-and-forget */ }
+      })();
+
+      // Show offer modal when moving to Offer column
+      if (newStatus === 'Offer') {
+        setOfferModalCompany({ ...data.company, status: 'Offer' });
+      }
+    } catch {
+      setBoard(snapshot);
+      setError('Failed to move card. Please try again.');
+    }
   }, [board]);
 
   const handleCardClick = useCallback((company: CompanyWithNextStep) => {
@@ -109,9 +120,13 @@ export default function KanbanBoard() {
       {showModal && (
         <AddCompanyModal
           onClose={() => setShowModal(false)}
-          onCreated={() => {
+          onCreated={async () => {
             setShowModal(false);
-            fetchBoard().then(setBoard).catch((err: Error) => setError(err.message));
+            try {
+              setBoard(await fetchBoard());
+            } catch (err) {
+              setError((err as Error).message);
+            }
           }}
         />
       )}
