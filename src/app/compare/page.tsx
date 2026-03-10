@@ -228,7 +228,6 @@ export default function ComparePage() {
                 onClick={() => toggleSelected(company.id)}
               >
                 {company.logo_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
                   <img src={company.logo_url} alt="" className={styles.pillLogo} />
                 ) : (
                   <span className={styles.pillLogoFallback}>{company.name.charAt(0)}</span>
@@ -255,7 +254,6 @@ export default function ComparePage() {
                       {visible.map(({ company }) => (
                         <th key={company.id} className={styles.companyCell}>
                           {company.logo_url ? (
-                            // eslint-disable-next-line @next/next/no-img-element
                             <img src={company.logo_url} alt={company.name} className={styles.thLogo} />
                           ) : (
                             <span className={styles.thLogoFallback}>{company.name.charAt(0)}</span>

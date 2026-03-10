@@ -163,7 +163,6 @@ export default function CompanyDetailModal({ company, onClose, onDeleted, onUpda
         <div className={styles.modalHeader}>
           <div className={styles.companyInfo}>
             {logo_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
               <img src={logo_url} alt={`${name} logo`} className={styles.logo} />
             ) : (
               <div className={styles.logoFallback}>

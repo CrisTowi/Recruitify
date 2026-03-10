@@ -28,7 +28,6 @@ export default function CompanyCard({ company }: Props) {
     <article className={styles.card}>
       <div className={styles.header}>
         {logo_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
           <img src={logo_url} alt={`${name} logo`} className={styles.logo} />
         ) : (
           <div className={styles.logoFallback}>
