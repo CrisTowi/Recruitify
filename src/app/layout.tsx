@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
+import ClientLayout from '@/components/ClientLayout';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -63,7 +64,9 @@ export default async function RootLayout({
             </form>
           )}
         </header>
-        <main>{children}</main>
+        <ClientLayout>
+          <main>{children}</main>
+        </ClientLayout>
       </body>
     </html>
   );

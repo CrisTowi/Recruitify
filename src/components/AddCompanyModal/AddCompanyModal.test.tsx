@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
+import { renderWithProviders as render } from '@/test/renderWithProviders';
 import userEvent from '@testing-library/user-event';
 import AddCompanyModal from './AddCompanyModal';
 
@@ -94,7 +95,7 @@ describe('AddCompanyModal', () => {
     await user.type(screen.getByLabelText(/Company name/i), 'Stripe');
     await user.click(screen.getByRole('button', { name: 'Add Company' }));
 
-    await waitFor(() => expect(screen.getByText('Internal server error')).toBeTruthy());
+    await waitFor(() => expect(screen.getAllByText('Internal server error').length).toBeGreaterThan(0));
   });
 
   it('shows the status select with Wishlist as the default', () => {

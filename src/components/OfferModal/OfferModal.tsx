@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { CompanyWithNextStep, CompanyOffer, RemotePolicy, HealthTier } from '@/types';
 import { REMOTE_POLICIES, HEALTH_TIERS } from '@/types';
 import { fmtCommas } from '@/lib/formatInput';
+import { useToast } from '@/components/Toast/ToastProvider';
 import styles from './OfferModal.module.css';
 
 interface Props {
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export default function OfferModal({ company, onSaved, onSkip }: Props) {
+  const { toast } = useToast();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -63,7 +65,9 @@ export default function OfferModal({ company, onSaved, onSkip }: Props) {
       const offer = await res.json() as CompanyOffer;
       onSaved(offer);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong.');
+      const message = err instanceof Error ? err.message : 'Something went wrong.';
+      setError(message);
+      toast(message);
       setSubmitting(false);
     }
   }

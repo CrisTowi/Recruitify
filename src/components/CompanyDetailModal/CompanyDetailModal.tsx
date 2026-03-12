@@ -11,6 +11,7 @@ import type {
 import { INTEREST_LEVELS } from '@/types';
 import styles from './CompanyDetailModal.module.css';
 import { renderWithLinks, formatDate, EVENT_TYPE_LABELS } from './helpers';
+import { useToast } from '@/components/Toast/ToastProvider';
 import NoteItem from './NoteItem';
 import ContactItem from './ContactItem';
 import AppointmentItem from './AppointmentItem';
@@ -30,6 +31,7 @@ interface Props {
 }
 
 export default function CompanyDetailModal({ company, onClose, onDeleted, onUpdated }: Props) {
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<'timeline' | 'stages' | 'offer'>('timeline');
   const [stages, setStages] = useState<InterviewStage[]>([]);
   const [offer, setOffer] = useState<CompanyOffer | null>(null);
@@ -82,13 +84,15 @@ export default function CompanyDetailModal({ company, onClose, onDeleted, onUpda
         setEvents(timeline);
         setOffer(offerData);
       } catch (err) {
-        setFetchError((err as Error).message);
+        const message = (err as Error).message;
+        setFetchError(message);
+        toast(message);
       } finally {
         setLoading(false);
       }
     }
     load();
-  }, [company.id]);
+  }, [company.id, toast]);
 
   const handleInterestChange = useCallback(async (value: InterestLevel | null) => {
     const prev = interestLevel;
@@ -104,10 +108,11 @@ export default function CompanyDetailModal({ company, onClose, onDeleted, onUpda
       onUpdated({ ...company, interest_level: value });
     } catch {
       setInterestLevel(prev);
+      toast('Failed to update interest level');
     } finally {
       setSavingInterest(false);
     }
-  }, [company, interestLevel, onUpdated]);
+  }, [company, interestLevel, onUpdated, toast]);
 
   const handleCreated = useCallback((newEvent: TimelineEvent) => {
     setEvents((prev) => [newEvent, ...prev]);
@@ -121,16 +126,17 @@ export default function CompanyDetailModal({ company, onClose, onDeleted, onUpda
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prep_notes: prepDraft }),
       });
-      if (res.ok) {
-        const updated = await res.json();
-        setPrepNotes(prepDraft);
-        onUpdated({ ...company, prep_notes: updated.prep_notes });
-        setPrepEditing(false);
-      }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const updated = await res.json();
+      setPrepNotes(prepDraft);
+      onUpdated({ ...company, prep_notes: updated.prep_notes });
+      setPrepEditing(false);
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Failed to save notes');
     } finally {
       setPrepSaving(false);
     }
-  }, [company, prepDraft, onUpdated]);
+  }, [company, prepDraft, onUpdated, toast]);
 
   const handlePrepCancel = useCallback(() => {
     setPrepDraft(prepNotes);
@@ -149,6 +155,7 @@ export default function CompanyDetailModal({ company, onClose, onDeleted, onUpda
     if (res.ok) {
       onDeleted(company.id);
     } else {
+      toast('Failed to delete company');
       setDeleting(false);
       setConfirmDelete(false);
     }

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { TimelineEvent, ProcessStatusValue } from '@/types';
 import { PROCESS_STATUS_VALUES } from '@/types';
+import { useToast } from '@/components/Toast/ToastProvider';
 import styles from './CompanyDetailModal.module.css';
 
 interface EditFormProps {
@@ -12,6 +13,7 @@ interface EditFormProps {
 }
 
 export default function TimelineItemEditForm({ event, onSaved, onCancel }: EditFormProps) {
+  const { toast } = useToast();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -80,7 +82,9 @@ export default function TimelineItemEditForm({ event, onSaved, onCancel }: EditF
       const updated = await res.json() as TimelineEvent;
       onSaved(updated);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong.');
+      const message = err instanceof Error ? err.message : 'Something went wrong.';
+      setError(message);
+      toast(message);
       setSubmitting(false);
     }
   }

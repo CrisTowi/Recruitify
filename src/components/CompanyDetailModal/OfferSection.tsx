@@ -5,6 +5,7 @@ import type { CompanyOffer, RemotePolicy, HealthTier } from '@/types';
 import { REMOTE_POLICIES, HEALTH_TIERS } from '@/types';
 import { fmtCommas } from '@/lib/formatInput';
 import { fmt } from './helpers';
+import { useToast } from '@/components/Toast/ToastProvider';
 import styles from './CompanyDetailModal.module.css';
 
 interface OfferSectionProps {
@@ -14,6 +15,7 @@ interface OfferSectionProps {
 }
 
 export default function OfferSection({ companyId, offer, onUpdated }: OfferSectionProps) {
+  const { toast } = useToast();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -76,7 +78,9 @@ export default function OfferSection({ companyId, offer, onUpdated }: OfferSecti
       onUpdated(updated);
       setEditing(false);
     } catch (err) {
-      setErr(err instanceof Error ? err.message : 'Failed to save');
+      const message = err instanceof Error ? err.message : 'Failed to save';
+      setErr(message);
+      toast(message);
     } finally {
       setSaving(false);
     }

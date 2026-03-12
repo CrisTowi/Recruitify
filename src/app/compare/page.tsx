@@ -11,6 +11,7 @@ import {
   type RowDef,
 } from './helpers';
 import ExpectationsPanel from './components/ExpectationsPanel';
+import { useToast } from '@/components/Toast/ToastProvider';
 import styles from './compare.module.css';
 
 // ─── Row definitions ──────────────────────────────────────────────────────────
@@ -76,6 +77,7 @@ const ROWS: RowDef[] = [
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function ComparePage() {
+  const { toast } = useToast();
   const [entries, setEntries] = useState<CompareEntry[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [expectations, setExpectations] = useState<OfferExpectations | null>(null);
@@ -101,13 +103,15 @@ export default function ComparePage() {
         setSelected(new Set(compareData.map((entry) => entry.company.id)));
         setExpectations(expData);
       } catch (err) {
-        setError((err as Error).message);
+        const message = (err as Error).message;
+        setError(message);
+        toast(message);
       } finally {
         setLoading(false);
       }
     }
     load();
-  }, []);
+  }, [toast]);
 
   function toggleSelected(id: string) {
     setSelected((prev) => {
@@ -135,18 +139,18 @@ export default function ComparePage() {
 
       {loading && <p className={styles.state}>Loading…</p>}
       {error && <p className={styles.stateError}>Failed to load: {error}</p>}
-      {!loading && !error && entries.length === 0 && (
-        <div className={styles.empty}>
-          <p className={styles.emptyTitle}>No offers yet</p>
-          <p className={styles.emptyBody}>Move companies to the <strong>Offer</strong> column on the board to start comparing.</p>
-        </div>
-      )}
-
       {!loading && !error && (
         <ExpectationsPanel
           expectations={expectations}
           onSaved={setExpectations}
         />
+      )}
+
+      {!loading && !error && entries.length === 0 && (
+        <div className={styles.empty}>
+          <p className={styles.emptyTitle}>No offers yet</p>
+          <p className={styles.emptyBody}>Move companies to the <strong>Offer</strong> column on the board to start comparing.</p>
+        </div>
       )}
 
       {!loading && !error && entries.length > 0 && (

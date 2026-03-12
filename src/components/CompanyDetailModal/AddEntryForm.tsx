@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { TimelineEvent, TimelineEventType, ProcessStatusValue, CreateTimelineEventPayload } from '@/types';
 import { PROCESS_STATUS_VALUES } from '@/types';
 import { EVENT_TYPE_LABELS, USER_EVENT_TYPES } from './helpers';
+import { useToast } from '@/components/Toast/ToastProvider';
 import styles from './CompanyDetailModal.module.css';
 
 interface AddEntryFormProps {
@@ -12,6 +13,7 @@ interface AddEntryFormProps {
 }
 
 export default function AddEntryForm({ companyId, onCreated }: AddEntryFormProps) {
+  const { toast } = useToast();
   const [eventType, setEventType] = useState<TimelineEventType>('note');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -81,7 +83,9 @@ export default function AddEntryForm({ companyId, onCreated }: AddEntryFormProps
       resetFields();
       onCreated(created);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong.');
+      const message = err instanceof Error ? err.message : 'Something went wrong.';
+      setError(message);
+      toast(message);
     } finally {
       setSubmitting(false);
     }

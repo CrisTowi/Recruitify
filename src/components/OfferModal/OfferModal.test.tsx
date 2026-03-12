@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
+import { renderWithProviders as render } from '@/test/renderWithProviders';
 import userEvent from '@testing-library/user-event';
 import OfferModal from './OfferModal';
 import type { CompanyWithNextStep, CompanyOffer } from '@/types';
@@ -113,7 +114,7 @@ describe('OfferModal', () => {
     render(<OfferModal company={makeCompany()} onSaved={vi.fn()} onSkip={vi.fn()} />);
     await user.click(screen.getByRole('button', { name: 'Save offer details' }));
 
-    await waitFor(() => expect(screen.getByText('Server error')).toBeTruthy());
+    await waitFor(() => expect(screen.getAllByText('Server error').length).toBeGreaterThan(0));
   });
 
   it('formats the base salary input with commas as the user types', async () => {

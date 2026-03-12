@@ -13,11 +13,13 @@ import CompanyDetailModal from '@/components/CompanyDetailModal/CompanyDetailMod
 import OfferModal from '@/components/OfferModal/OfferModal';
 import type { ApplicationStatus, CompanyWithNextStep, KanbanBoard as KanbanBoardType } from '@/types';
 import { COLUMNS, fetchBoard, patchStatus } from './helpers';
+import { useToast } from '@/components/Toast/ToastProvider';
 import styles from './KanbanBoard.module.css';
 
 export default function KanbanBoard() {
+  const { toast } = useToast();
   const [board, setBoard] = useState<KanbanBoardType | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [activeCard, setActiveCard] = useState<CompanyWithNextStep | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<CompanyWithNextStep | null>(null);
@@ -32,11 +34,13 @@ export default function KanbanBoard() {
       try {
         setBoard(await fetchBoard());
       } catch (err) {
-        setError((err as Error).message);
+        const message = (err as Error).message;
+        setLoadError(message);
+        toast(message);
       }
     }
     load();
-  }, []);
+  }, [toast]);
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
     const data = event.active.data.current as { company: CompanyWithNextStep } | undefined;
@@ -91,15 +95,15 @@ export default function KanbanBoard() {
       }
     } catch {
       setBoard(snapshot);
-      setError('Failed to move card. Please try again.');
+      toast('Failed to move card. Please try again.');
     }
-  }, [board]);
+  }, [board, toast]);
 
   const handleCardClick = useCallback((company: CompanyWithNextStep) => {
     setSelectedCompany(company);
   }, []);
 
-  if (error) return <p className={styles.error}>Failed to load board: {error}</p>;
+  if (loadError) return <p className={styles.error}>Failed to load board: {loadError}</p>;
   if (!board) return <p className={styles.loading}>Loading…</p>;
 
   return (
@@ -125,7 +129,7 @@ export default function KanbanBoard() {
             try {
               setBoard(await fetchBoard());
             } catch (err) {
-              setError((err as Error).message);
+              toast((err as Error).message);
             }
           }}
         />

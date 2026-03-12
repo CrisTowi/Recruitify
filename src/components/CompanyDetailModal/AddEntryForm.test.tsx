@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
+import { renderWithProviders as render } from '@/test/renderWithProviders';
 import userEvent from '@testing-library/user-event';
 import AddEntryForm from './AddEntryForm';
 import type { TimelineEvent } from '@/types';
@@ -113,6 +114,6 @@ describe('AddEntryForm', () => {
 
     render(<AddEntryForm companyId="company-1" onCreated={vi.fn()} />);
     await user.click(screen.getByRole('button', { name: 'Add Entry' }));
-    await waitFor(() => expect(screen.getByText('Server error')).toBeTruthy());
+    await waitFor(() => expect(screen.getAllByText('Server error').length).toBeGreaterThan(0));
   });
 });

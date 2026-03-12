@@ -5,6 +5,7 @@ import type { OfferExpectations, RemotePolicy, HealthTier } from '@/types';
 import { REMOTE_POLICIES, HEALTH_TIERS } from '@/types';
 import { fmtCommas } from '@/lib/formatInput';
 import { fmt } from '../helpers';
+import { useToast } from '@/components/Toast/ToastProvider';
 import styles from '../compare.module.css';
 
 export default function ExpectationsPanel({
@@ -14,6 +15,7 @@ export default function ExpectationsPanel({
   expectations: OfferExpectations | null;
   onSaved: (e: OfferExpectations) => void;
 }) {
+  const { toast } = useToast();
   const [open, setOpen] = useState(!!expectations);
   const [saving, setSaving] = useState(false);
 
@@ -46,11 +48,16 @@ export default function ExpectationsPanel({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      if (res.ok) {
-        const saved = await res.json() as OfferExpectations;
-        onSaved(saved);
-        setOpen(false);
+      if (!res.ok) {
+        let json: { error?: string } = {};
+        try { json = await res.json(); } catch { /* ignore */ }
+        throw new Error(json.error ?? `HTTP ${res.status}`);
       }
+      const saved = await res.json() as OfferExpectations;
+      onSaved(saved);
+      setOpen(false);
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Failed to save targets');
     } finally {
       setSaving(false);
     }

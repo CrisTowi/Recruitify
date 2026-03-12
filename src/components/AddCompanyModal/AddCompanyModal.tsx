@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ApplicationStatus } from '@/types';
 import { STATUSES } from './helpers';
+import { useToast } from '@/components/Toast/ToastProvider';
 import styles from './AddCompanyModal.module.css';
 
 interface Props {
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export default function AddCompanyModal({ onClose, onCreated }: Props) {
+  const { toast } = useToast();
   const [name, setName] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
   const [status, setStatus] = useState<ApplicationStatus>('Wishlist');
@@ -56,7 +58,9 @@ export default function AddCompanyModal({ onClose, onCreated }: Props) {
 
       onCreated();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong.');
+      const message = err instanceof Error ? err.message : 'Something went wrong.';
+      setError(message);
+      toast(message);
       setSubmitting(false);
     }
   }

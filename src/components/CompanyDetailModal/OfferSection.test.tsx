@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
+import { renderWithProviders as render } from '@/test/renderWithProviders';
 import userEvent from '@testing-library/user-event';
 import OfferSection from './OfferSection';
 import type { CompanyOffer } from '@/types';
@@ -115,7 +116,7 @@ describe('OfferSection', () => {
       await user.click(screen.getByRole('button', { name: 'Edit' }));
       await user.click(screen.getByRole('button', { name: 'Save' }));
 
-      await waitFor(() => expect(screen.getByText(/HTTP 500/)).toBeTruthy());
+      await waitFor(() => expect(screen.getAllByText(/HTTP 500/).length).toBeGreaterThan(0));
     });
   });
 });
