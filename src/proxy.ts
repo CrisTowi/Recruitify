@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   // Auth only active in Supabase mode with SUPABASE_AUTH=true
   if (process.env.SUPABASE_AUTH !== 'true' || process.env.STORAGE_MODE === 'sqlite') {
     return NextResponse.next();
