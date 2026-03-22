@@ -22,6 +22,7 @@ import AddEntryForm from './AddEntryForm';
 import StageAddForm from './StageAddForm';
 import StageItem from './StageItem';
 import OfferSection from './OfferSection';
+import SimulationConfigModal from '@/components/SimulationConfigModal/SimulationConfigModal';
 
 interface Props {
   company: CompanyWithNextStep;
@@ -45,6 +46,7 @@ export default function CompanyDetailModal({ company, onClose, onDeleted, onUpda
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [simulatingStage, setSimulatingStage] = useState<InterviewStage | null>(null);
   const [interestLevel, setInterestLevel] = useState<InterestLevel | null>(company.interest_level);
   const [savingInterest, setSavingInterest] = useState(false);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -347,6 +349,7 @@ export default function CompanyDetailModal({ company, onClose, onDeleted, onUpda
                       onUpdated={(updated) => setStages((prev) => prev.map((stage) => stage.id === updated.id ? updated : stage))}
                       onDeleted={(id) => setStages((prev) => prev.filter((stage) => stage.id !== id))}
                       onTimelineCreated={handleCreated}
+                      onSimulate={setSimulatingStage}
                     />
                   ))}
                 </ol>
@@ -404,6 +407,14 @@ export default function CompanyDetailModal({ company, onClose, onDeleted, onUpda
           )}
         </div>
       </div>
+
+      {simulatingStage && (
+        <SimulationConfigModal
+          company={company}
+          stage={simulatingStage}
+          onClose={() => setSimulatingStage(null)}
+        />
+      )}
     </div>
   );
 }

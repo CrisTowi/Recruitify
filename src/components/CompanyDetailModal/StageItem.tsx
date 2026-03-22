@@ -5,13 +5,14 @@ import type { InterviewStage, TimelineEvent } from '@/types';
 import styles from './CompanyDetailModal.module.css';
 
 export default function StageItem({
-  stage, companyId, onUpdated, onDeleted, onTimelineCreated,
+  stage, companyId, onUpdated, onDeleted, onTimelineCreated, onSimulate,
 }: {
   stage: InterviewStage;
   companyId: string;
   onUpdated: (s: InterviewStage) => void;
   onDeleted: (id: string) => void;
   onTimelineCreated: (e: TimelineEvent) => void;
+  onSimulate?: (stage: InterviewStage) => void;
 }) {
   const [notesOpen, setNotesOpen] = useState(false);
   const [notesDraft, setNotesDraft] = useState(stage.notes ?? '');
@@ -171,6 +172,15 @@ export default function StageItem({
 
         {!completing && (
           <>
+            {onSimulate && (
+              <button
+                className={`${styles.editButton} ${styles.roadmapNotesBtn} ${styles.simulateBtn}`}
+                onClick={() => onSimulate(stage)}
+                title="Simulate this interview"
+              >
+                Simulate
+              </button>
+            )}
             <button
               className={`${styles.editButton} ${styles.roadmapNotesBtn}`}
               onClick={() => { setNotesDraft(stage.notes ?? ''); setNotesOpen((o) => !o); }}
