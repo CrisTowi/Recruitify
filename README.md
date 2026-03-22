@@ -11,6 +11,7 @@ A personal job search tracker with a Kanban board interface. Track every applica
 - Interest levels — mark companies as Excited / Interested / Meh / Not interested
 - Prep notes — save links, resources, and tips per company
 - Google Calendar sync — import interview appointments automatically
+- **Interview Simulator** — AI-powered mock interviews with voice support, per-question feedback, and a structured debrief (requires an OpenAI / Anthropic / Gemini / OpenRouter API key)
 - Two storage backends — SQLite (local file, zero infrastructure) or Supabase (hosted, multi-device)
 
 ---
@@ -50,6 +51,13 @@ That's it. By default the database is created as `recruitify.db` in the project 
 ```env
 STORAGE_MODE=sqlite
 SQLITE_PATH=/Users/you/data/recruitify.db
+```
+
+**To use the Interview Simulator**, add an encryption key (required to store AI provider keys securely):
+
+```env
+STORAGE_MODE=sqlite
+ENCRYPTION_KEY=your-32-char-random-string   # generate with: openssl rand -base64 32
 ```
 
 ### 3. Start the app
@@ -102,8 +110,12 @@ Run each file below in the SQL Editor **in order**. Copy the contents of each fi
 | 3 | `supabase/migrations/20260306000001_company_prep_notes.sql` | Prep notes column |
 | 4 | `supabase/migrations/20260306000002_stage_notes.sql` | Per-stage notes column |
 | 5 | `supabase/migrations/20260306000003_offers.sql` | Offer details table |
+| 6 | `supabase/migrations/20260322000000_ai_settings.sql` | AI settings table (LLM + voice provider keys) |
+| 7 | `supabase/migrations/20260322000001_interview_sessions.sql` | Interview sessions and questions tables |
 
 > **Skip migration 2** if you want a simpler single-user setup with no login screen. In that case also omit `SUPABASE_AUTH` and `SUPABASE_SERVICE_ROLE_KEY` below.
+
+> **Migrations 6 and 7** are required for the Interview Simulator. Without them the simulator will not start and you will see a database error. They are safe to run even if you don't plan to use the simulator yet.
 
 ### 3. Get your Supabase credentials
 
@@ -124,6 +136,9 @@ The service role key looks like a long JWT starting with `eyJ...`. Keep it secre
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+
+# Required for the Interview Simulator (encrypts AI provider keys at rest):
+ENCRYPTION_KEY=your-32-char-random-string   # generate with: openssl rand -base64 32
 
 # Include these only if you want invitation-gated magic-link login:
 SUPABASE_AUTH=true
@@ -181,6 +196,7 @@ To request access, **reach out directly** (contact details on the GitHub profile
 | `SUPABASE_AUTH` | Auth mode | Set to `true` to enable magic-link login + invitation checks |
 | `SUPABASE_SERVICE_ROLE_KEY` | Auth mode | Service role key for server-side invitation checks — **never expose to the browser** |
 | `APP_URL` | Invite script | Your deployed app URL, used as the redirect target in generated login links |
+| `ENCRYPTION_KEY` | Interview Simulator | A random 32-character string used to encrypt AI provider keys at rest. **Required** to use the simulator. Generate one with `openssl rand -base64 32` |
 | `GOOGLE_CLIENT_ID` | Calendar sync | Google OAuth client ID |
 | `GOOGLE_CLIENT_SECRET` | Calendar sync | Google OAuth client secret |
 
