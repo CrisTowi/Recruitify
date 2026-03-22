@@ -29,10 +29,16 @@ export function useSpeechSynthesis(): UseSpeechSynthesisReturn {
 
     window.speechSynthesis.cancel();
 
+    // Chrome bug: speechSynthesis can get stuck in a paused state after navigation.
+    // Calling resume() ensures queued utterances actually play.
+    if (window.speechSynthesis.paused) {
+      window.speechSynthesis.resume();
+    }
+
     const utterance = new SpeechSynthesisUtterance(text);
     utteranceRef.current = utterance;
 
-    utterance.onstart = () => setIsSpeaking(true);
+    setIsSpeaking(true);
     utterance.onend = () => {
       setIsSpeaking(false);
       utteranceRef.current = null;

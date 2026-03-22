@@ -113,6 +113,7 @@ export default function VoiceControls({
               className={`${styles.micButton} ${isListening ? styles.micButtonActive : ''}`}
               onClick={isListening ? onStopListening : onStartListening}
               disabled={disabled}
+              aria-pressed={isListening}
               title={isListening ? 'Stop listening' : 'Start listening'}
             >
               <span className={`${styles.micIcon} ${isListening ? styles.micPulse : ''}`} aria-hidden="true">
@@ -123,7 +124,7 @@ export default function VoiceControls({
           )}
 
           {isSpeaking && (
-            <div className={styles.speakingIndicator}>
+            <div className={styles.speakingIndicator} role="status" aria-label="Speaking">
               <span className={styles.speakingDot} aria-hidden="true" />
               <span className={styles.speakingLabel}>Speaking…</span>
               <button

@@ -23,6 +23,7 @@ import StageAddForm from './StageAddForm';
 import StageItem from './StageItem';
 import OfferSection from './OfferSection';
 import SimulationConfigModal from '@/components/SimulationConfigModal/SimulationConfigModal';
+import SessionHistory from '@/components/SessionHistory/SessionHistory';
 
 interface Props {
   company: CompanyWithNextStep;
@@ -33,7 +34,7 @@ interface Props {
 
 export default function CompanyDetailModal({ company, onClose, onDeleted, onUpdated }: Props) {
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<'timeline' | 'stages' | 'offer'>('timeline');
+  const [activeTab, setActiveTab] = useState<'timeline' | 'stages' | 'offer' | 'simulations'>('timeline');
   const [stages, setStages] = useState<InterviewStage[]>([]);
   const [offer, setOffer] = useState<CompanyOffer | null>(null);
   const [prepNotes, setPrepNotes] = useState(company.prep_notes ?? '');
@@ -251,6 +252,12 @@ export default function CompanyDetailModal({ company, onClose, onDeleted, onUpda
           >
             Offer{offer && <span className={styles.tabCount}>✓</span>}
           </button>
+          <button
+            className={`${styles.tab} ${activeTab === 'simulations' ? styles.tabActive : ''}`}
+            onClick={() => setActiveTab('simulations')}
+          >
+            Simulations
+          </button>
         </div>
 
         {/* Scrollable body */}
@@ -321,6 +328,12 @@ export default function CompanyDetailModal({ company, onClose, onDeleted, onUpda
                 )}
               </div>
             </>
+          )}
+
+          {activeTab === 'simulations' && (
+            <div className={styles.roadmapSection}>
+              <SessionHistory companyId={company.id} />
+            </div>
           )}
 
           {activeTab === 'offer' && (

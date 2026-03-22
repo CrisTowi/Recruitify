@@ -1,6 +1,44 @@
 import type { FeedbackData } from '@/components/FeedbackCard/FeedbackCard';
 import type { AISettings, TTSProvider } from '@/types';
 
+// ── Error classification ──────────────────────────────────────────────────────
+
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+    readonly code?: string,
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
+export type ErrorKind = 'rate_limit' | 'network' | 'invalid_key' | 'fatal';
+
+export interface ClassifiedError {
+  kind: ErrorKind;
+  retryable: boolean;
+  message: string;
+}
+
+export function classifyError(err: unknown): ClassifiedError {
+  if (err instanceof ApiError) {
+    if (err.status === 429) {
+      return { kind: 'rate_limit', retryable: true, message: 'Rate limit reached. Wait a moment and try again.' };
+    }
+    if (err.status === 403 || err.code === 'NO_AI_SETTINGS') {
+      return { kind: 'invalid_key', retryable: false, message: err.message || 'AI settings not configured.' };
+    }
+    return { kind: 'fatal', retryable: false, message: err.message };
+  }
+  if (err instanceof TypeError) {
+    return { kind: 'network', retryable: true, message: 'Network error. Check your connection and try again.' };
+  }
+  const message = err instanceof Error ? err.message : 'An unexpected error occurred.';
+  return { kind: 'fatal', retryable: false, message };
+}
+
 export interface CurrentQuestion {
   id: string;
   question_number: number;
@@ -24,8 +62,8 @@ export interface AnswerResponse {
 export async function startSession(sessionId: string): Promise<StartResponse> {
   const res = await fetch(`/api/sessions/${sessionId}/start`, { method: 'POST' });
   if (!res.ok) {
-    const json = await res.json() as { error?: string };
-    throw new Error(json.error ?? `HTTP ${res.status}`);
+    const json = await res.json() as { error?: string; code?: string };
+    throw new ApiError(json.error ?? `HTTP ${res.status}`, res.status, json.code);
   }
   return res.json() as Promise<StartResponse>;
 }
@@ -46,8 +84,8 @@ export async function submitAnswer(
     }),
   });
   if (!res.ok) {
-    const json = await res.json() as { error?: string };
-    throw new Error(json.error ?? `HTTP ${res.status}`);
+    const json = await res.json() as { error?: string; code?: string };
+    throw new ApiError(json.error ?? `HTTP ${res.status}`, res.status, json.code);
   }
   return res.json() as Promise<AnswerResponse>;
 }
@@ -55,16 +93,16 @@ export async function submitAnswer(
 export async function completeSession(sessionId: string): Promise<void> {
   const res = await fetch(`/api/sessions/${sessionId}/complete`, { method: 'POST' });
   if (!res.ok) {
-    const json = await res.json() as { error?: string };
-    throw new Error(json.error ?? `HTTP ${res.status}`);
+    const json = await res.json() as { error?: string; code?: string };
+    throw new ApiError(json.error ?? `HTTP ${res.status}`, res.status, json.code);
   }
 }
 
 export async function cancelSession(sessionId: string): Promise<void> {
   const res = await fetch(`/api/sessions/${sessionId}/cancel`, { method: 'POST' });
   if (!res.ok) {
-    const json = await res.json() as { error?: string };
-    throw new Error(json.error ?? `HTTP ${res.status}`);
+    const json = await res.json() as { error?: string; code?: string };
+    throw new ApiError(json.error ?? `HTTP ${res.status}`, res.status, json.code);
   }
 }
 
