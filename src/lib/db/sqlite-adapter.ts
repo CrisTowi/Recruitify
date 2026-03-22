@@ -19,6 +19,14 @@ import type {
   LLMProvider,
   TTSProvider,
   STTProvider,
+  InterviewSession,
+  InterviewSessionFull,
+  SessionQuestion,
+  CreateSessionInput,
+  SessionFilters,
+  SessionStatus,
+  FeedbackMode,
+  Difficulty,
 } from '@/types';
 import type { DbAdapter, GoogleTokens } from './types';
 import { DuplicateCalendarEventError } from './types';
@@ -127,6 +135,41 @@ function initSchema(db: Database.Database): void {
       expires_at TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS interview_sessions (
+      id TEXT PRIMARY KEY,
+      user_id TEXT,
+      company_id TEXT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      stage_id TEXT NOT NULL REFERENCES interviews_roadmap(id) ON DELETE CASCADE,
+      status TEXT NOT NULL DEFAULT 'configuring',
+      feedback_mode TEXT NOT NULL DEFAULT 'immediate',
+      num_questions INTEGER NOT NULL DEFAULT 5,
+      interviewer_persona TEXT,
+      difficulty TEXT NOT NULL DEFAULT 'medium',
+      focus_areas TEXT NOT NULL DEFAULT '[]',
+      overall_score REAL,
+      debrief_summary TEXT,
+      debrief_strengths TEXT NOT NULL DEFAULT '[]',
+      debrief_improvements TEXT NOT NULL DEFAULT '[]',
+      debrief_resources TEXT NOT NULL DEFAULT '[]',
+      started_at TEXT,
+      completed_at TEXT,
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS session_questions (
+      id TEXT PRIMARY KEY,
+      session_id TEXT NOT NULL REFERENCES interview_sessions(id) ON DELETE CASCADE,
+      question_number INTEGER NOT NULL,
+      question_text TEXT NOT NULL,
+      answer_transcript TEXT,
+      score REAL,
+      feedback_strengths TEXT,
+      feedback_improvements TEXT,
+      feedback_suggested_answer TEXT,
+      duration_seconds INTEGER,
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+    );
+
     CREATE TABLE IF NOT EXISTS ai_settings (
       id INTEGER PRIMARY KEY DEFAULT 1,
       llm_provider TEXT NOT NULL DEFAULT 'openai',
@@ -225,6 +268,41 @@ interface AISettingsRow {
   updated_at: string;
 }
 
+interface InterviewSessionRow {
+  id: string;
+  user_id: string | null;
+  company_id: string;
+  stage_id: string;
+  status: string;
+  feedback_mode: string;
+  num_questions: number;
+  interviewer_persona: string | null;
+  difficulty: string;
+  focus_areas: string;
+  overall_score: number | null;
+  debrief_summary: string | null;
+  debrief_strengths: string;
+  debrief_improvements: string;
+  debrief_resources: string;
+  started_at: string | null;
+  completed_at: string | null;
+  created_at: string;
+}
+
+interface SessionQuestionRow {
+  id: string;
+  session_id: string;
+  question_number: number;
+  question_text: string;
+  answer_transcript: string | null;
+  score: number | null;
+  feedback_strengths: string | null;
+  feedback_improvements: string | null;
+  feedback_suggested_answer: string | null;
+  duration_seconds: number | null;
+  created_at: string;
+}
+
 // ── Row-to-domain mappers ─────────────────────────────────────────────────────
 
 function mapOffer(row: OfferRow): CompanyOffer {
@@ -285,6 +363,49 @@ function mapTimelineEvent(row: TimelineEventRow): TimelineEvent {
     contact_email: row.contact_email,
     scheduled_at: row.scheduled_at,
     process_status: row.process_status as ProcessStatusValue | null,
+  };
+}
+
+function parseJsonArray(value: string): string[] {
+  try { return JSON.parse(value) as string[]; } catch { return []; }
+}
+
+function mapSession(row: InterviewSessionRow): InterviewSession {
+  return {
+    id: row.id,
+    user_id: row.user_id,
+    company_id: row.company_id,
+    stage_id: row.stage_id,
+    status: row.status as SessionStatus,
+    feedback_mode: row.feedback_mode as FeedbackMode,
+    num_questions: row.num_questions,
+    interviewer_persona: row.interviewer_persona,
+    difficulty: row.difficulty as Difficulty,
+    focus_areas: parseJsonArray(row.focus_areas),
+    overall_score: row.overall_score,
+    debrief_summary: row.debrief_summary,
+    debrief_strengths: parseJsonArray(row.debrief_strengths),
+    debrief_improvements: parseJsonArray(row.debrief_improvements),
+    debrief_resources: parseJsonArray(row.debrief_resources),
+    started_at: row.started_at,
+    completed_at: row.completed_at,
+    created_at: row.created_at,
+  };
+}
+
+function mapQuestion(row: SessionQuestionRow): SessionQuestion {
+  return {
+    id: row.id,
+    session_id: row.session_id,
+    question_number: row.question_number,
+    question_text: row.question_text,
+    answer_transcript: row.answer_transcript,
+    score: row.score,
+    feedback_strengths: row.feedback_strengths,
+    feedback_improvements: row.feedback_improvements,
+    feedback_suggested_answer: row.feedback_suggested_answer,
+    duration_seconds: row.duration_seconds,
+    created_at: row.created_at,
   };
 }
 
@@ -716,6 +837,152 @@ export class SqliteAdapter implements DbAdapter {
     ).run(tokens.access_token, tokens.refresh_token, tokens.expires_at);
 
     return Promise.resolve();
+  }
+
+  // ── Interview Sessions ────────────────────────────────────────────────────────
+
+  createSession(input: CreateSessionInput): Promise<InterviewSession> {
+    const db = getDb();
+    const id = crypto.randomUUID();
+    db.prepare(
+      `INSERT INTO interview_sessions (
+         id, company_id, stage_id, feedback_mode, num_questions,
+         interviewer_persona, difficulty, focus_areas
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(
+      id,
+      input.company_id,
+      input.stage_id,
+      input.feedback_mode,
+      input.num_questions,
+      input.interviewer_persona ?? null,
+      input.difficulty,
+      JSON.stringify(input.focus_areas ?? []),
+    );
+    const row = db.prepare<[string], InterviewSessionRow>('SELECT * FROM interview_sessions WHERE id = ?').get(id)!;
+    return Promise.resolve(mapSession(row));
+  }
+
+  getSession(sessionId: string): Promise<InterviewSession | null> {
+    const db = getDb();
+    const row = db.prepare<[string], InterviewSessionRow>('SELECT * FROM interview_sessions WHERE id = ?').get(sessionId);
+    return Promise.resolve(row ? mapSession(row) : null);
+  }
+
+  getSessionWithQuestions(sessionId: string): Promise<InterviewSessionFull | null> {
+    const db = getDb();
+    const sessionRow = db.prepare<[string], InterviewSessionRow>('SELECT * FROM interview_sessions WHERE id = ?').get(sessionId);
+    if (!sessionRow) return Promise.resolve(null);
+    const questionRows = db.prepare<[string], SessionQuestionRow>(
+      'SELECT * FROM session_questions WHERE session_id = ? ORDER BY question_number ASC',
+    ).all(sessionId);
+    return Promise.resolve({ ...mapSession(sessionRow), questions: questionRows.map(mapQuestion) });
+  }
+
+  listSessions(filters: SessionFilters): Promise<{ sessions: InterviewSession[]; total: number }> {
+    const db = getDb();
+    const conditions: string[] = [];
+    const values: unknown[] = [];
+
+    if (filters.company_id) { conditions.push('company_id = ?'); values.push(filters.company_id); }
+    if (filters.stage_id) { conditions.push('stage_id = ?'); values.push(filters.stage_id); }
+    if (filters.status) { conditions.push('status = ?'); values.push(filters.status); }
+
+    const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+    const total = (db.prepare(`SELECT COUNT(*) as count FROM interview_sessions ${where}`).get(...values) as { count: number }).count;
+
+    const limit = filters.limit ?? 20;
+    const offset = filters.offset ?? 0;
+    const rows = db.prepare<unknown[], InterviewSessionRow>(
+      `SELECT * FROM interview_sessions ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+    ).all(...values, limit, offset);
+
+    return Promise.resolve({ sessions: rows.map(mapSession), total });
+  }
+
+  updateSession(sessionId: string, updates: Partial<InterviewSession>): Promise<InterviewSession> {
+    const db = getDb();
+    const allowed = [
+      'status', 'feedback_mode', 'num_questions', 'interviewer_persona', 'difficulty',
+      'overall_score', 'debrief_summary', 'started_at', 'completed_at',
+    ] as const;
+    const jsonFields = ['focus_areas', 'debrief_strengths', 'debrief_improvements', 'debrief_resources'] as const;
+
+    const setClauses: string[] = [];
+    const values: unknown[] = [];
+
+    for (const field of allowed) {
+      if (field in updates) {
+        setClauses.push(`${field} = ?`);
+        values.push((updates as Record<string, unknown>)[field] ?? null);
+      }
+    }
+    for (const field of jsonFields) {
+      if (field in updates) {
+        setClauses.push(`${field} = ?`);
+        values.push(JSON.stringify((updates as Record<string, unknown>)[field] ?? []));
+      }
+    }
+
+    if (setClauses.length > 0) {
+      db.prepare(`UPDATE interview_sessions SET ${setClauses.join(', ')} WHERE id = ?`).run(...values, sessionId);
+    }
+
+    const row = db.prepare<[string], InterviewSessionRow>('SELECT * FROM interview_sessions WHERE id = ?').get(sessionId);
+    if (!row) throw new Error('Session not found');
+    return Promise.resolve(mapSession(row));
+  }
+
+  deleteSession(sessionId: string): Promise<void> {
+    const db = getDb();
+    db.prepare('DELETE FROM interview_sessions WHERE id = ?').run(sessionId);
+    return Promise.resolve();
+  }
+
+  // ── Session Questions ─────────────────────────────────────────────────────────
+
+  createQuestion(input: { session_id: string; question_number: number; question_text: string }): Promise<SessionQuestion> {
+    const db = getDb();
+    const id = crypto.randomUUID();
+    db.prepare(
+      `INSERT INTO session_questions (id, session_id, question_number, question_text) VALUES (?, ?, ?, ?)`,
+    ).run(id, input.session_id, input.question_number, input.question_text);
+    const row = db.prepare<[string], SessionQuestionRow>('SELECT * FROM session_questions WHERE id = ?').get(id)!;
+    return Promise.resolve(mapQuestion(row));
+  }
+
+  updateQuestion(questionId: string, updates: Partial<SessionQuestion>): Promise<SessionQuestion> {
+    const db = getDb();
+    const allowed = [
+      'answer_transcript', 'score', 'feedback_strengths', 'feedback_improvements',
+      'feedback_suggested_answer', 'duration_seconds',
+    ] as const;
+
+    const setClauses: string[] = [];
+    const values: unknown[] = [];
+
+    for (const field of allowed) {
+      if (field in updates) {
+        setClauses.push(`${field} = ?`);
+        values.push((updates as Record<string, unknown>)[field] ?? null);
+      }
+    }
+
+    if (setClauses.length > 0) {
+      db.prepare(`UPDATE session_questions SET ${setClauses.join(', ')} WHERE id = ?`).run(...values, questionId);
+    }
+
+    const row = db.prepare<[string], SessionQuestionRow>('SELECT * FROM session_questions WHERE id = ?').get(questionId);
+    if (!row) throw new Error('Question not found');
+    return Promise.resolve(mapQuestion(row));
+  }
+
+  getSessionQuestions(sessionId: string): Promise<SessionQuestion[]> {
+    const db = getDb();
+    const rows = db.prepare<[string], SessionQuestionRow>(
+      'SELECT * FROM session_questions WHERE session_id = ? ORDER BY question_number ASC',
+    ).all(sessionId);
+    return Promise.resolve(rows.map(mapQuestion));
   }
 
   // ── AI Settings ──────────────────────────────────────────────────────────────

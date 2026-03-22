@@ -147,7 +147,70 @@ export interface CreateTimelineEventPayload {
   process_status?: ProcessStatusValue;
 }
 
-// ─── Interview Simulator Types ────────────────────────────────────────────────
+// ─── Interview Simulator — Sessions ──────────────────────────────────────────
+
+export type SessionStatus = 'configuring' | 'in_progress' | 'completed' | 'cancelled';
+export type FeedbackMode = 'immediate' | 'full_simulation';
+export type Difficulty = 'easy' | 'medium' | 'hard';
+
+export interface InterviewSession {
+  id: string;
+  user_id: string | null;
+  company_id: string;
+  stage_id: string;
+  status: SessionStatus;
+  feedback_mode: FeedbackMode;
+  num_questions: number;
+  interviewer_persona: string | null;
+  difficulty: Difficulty;
+  focus_areas: string[];
+  overall_score: number | null;
+  debrief_summary: string | null;
+  debrief_strengths: string[];
+  debrief_improvements: string[];
+  debrief_resources: string[];
+  started_at: string | null;
+  completed_at: string | null;
+  created_at: string;
+}
+
+export interface SessionQuestion {
+  id: string;
+  session_id: string;
+  question_number: number;
+  question_text: string;
+  answer_transcript: string | null;
+  score: number | null;
+  feedback_strengths: string | null;
+  feedback_improvements: string | null;
+  feedback_suggested_answer: string | null;
+  duration_seconds: number | null;
+  created_at: string;
+}
+
+export interface CreateSessionInput {
+  company_id: string;
+  stage_id: string;
+  feedback_mode: FeedbackMode;
+  num_questions: number;
+  interviewer_persona?: string | null;
+  difficulty: Difficulty;
+  focus_areas?: string[];
+}
+
+export interface SessionFilters {
+  company_id?: string;
+  stage_id?: string;
+  status?: SessionStatus;
+  limit?: number;
+  offset?: number;
+}
+
+export interface InterviewSessionFull extends InterviewSession {
+  questions: SessionQuestion[];
+}
+
+// ─── Interview Simulator — AI Settings ───────────────────────────────────────
 
 export type LLMProvider = 'openai' | 'anthropic' | 'gemini' | 'openrouter';
 export type TTSProvider = 'browser' | 'elevenlabs' | 'openai';
