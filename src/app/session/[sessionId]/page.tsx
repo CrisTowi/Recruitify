@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import type { InterviewSessionFull } from '@/types';
+import InterviewSession from '@/components/InterviewSession/InterviewSession';
 import styles from './page.module.css';
 
 export default function SessionPage() {
@@ -18,10 +19,10 @@ export default function SessionPage() {
       try {
         const res = await fetch(`/api/sessions/${sessionId}`);
         if (!res.ok) {
-          const json = await res.json();
+          const json = await res.json() as { error?: string };
           throw new Error(json.error ?? `HTTP ${res.status}`);
         }
-        setSession(await res.json());
+        setSession(await res.json() as InterviewSessionFull);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load session');
       } finally {
@@ -44,6 +45,12 @@ export default function SessionPage() {
     );
   }
 
+  // Active session — render the live interview UI
+  if (session.status === 'in_progress') {
+    return <InterviewSession session={session} />;
+  }
+
+  // Session config summary (configuring status)
   const focusAreaDisplay = session.focus_areas.length > 0 ? session.focus_areas.join(', ') : '—';
   const difficultyLabel = session.difficulty.charAt(0).toUpperCase() + session.difficulty.slice(1);
   const feedbackLabel = session.feedback_mode === 'immediate' ? 'Immediate feedback' : 'Full simulation';
@@ -87,13 +94,25 @@ export default function SessionPage() {
           <button className={styles.backButton} onClick={() => router.push('/')}>
             ← Back to board
           </button>
-          <button
-            className={styles.startButton}
-            disabled={session.status !== 'configuring'}
-            title={session.status !== 'configuring' ? 'Session already started' : undefined}
-          >
-            Begin Interview
-          </button>
+          {session.status === 'configuring' && (
+            <button
+              className={styles.startButton}
+              onClick={() => setSession((prev) => prev ? { ...prev, status: 'in_progress' } : prev)}
+            >
+              Begin Interview
+            </button>
+          )}
+          {session.status === 'completed' && (
+            <button
+              className={styles.startButton}
+              onClick={() => router.push(`/session/${sessionId}/debrief`)}
+            >
+              View Debrief →
+            </button>
+          )}
+          {(session.status === 'cancelled') && (
+            <span className={styles.configValue}>This session was cancelled.</span>
+          )}
         </div>
       </div>
     </div>

@@ -255,6 +255,22 @@ export class SupabaseAdapter implements DbAdapter {
     if (error) throw new Error(error.message);
   }
 
+  // ── Single-record lookups ────────────────────────────────────────────────────
+
+  async getCompany(id: string): Promise<Company | null> {
+    const { client } = await this.getClient();
+    const { data } = await client.from('companies').select('*').eq('id', id).maybeSingle();
+    if (!data) return null;
+    return data as Company;
+  }
+
+  async getStage(stageId: string): Promise<InterviewStage | null> {
+    const { client } = await this.getClient();
+    const { data } = await client.from('interviews_roadmap').select('*').eq('id', stageId).maybeSingle();
+    if (!data) return null;
+    return data as InterviewStage;
+  }
+
   // ── Timeline ────────────────────────────────────────────────────────────────
 
   async getTimeline(companyId: string): Promise<TimelineEvent[]> {

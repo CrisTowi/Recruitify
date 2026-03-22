@@ -75,6 +75,10 @@ export interface DbAdapter {
   getGoogleTokens(): Promise<GoogleTokens | null>;
   upsertGoogleTokens(tokens: GoogleTokens): Promise<void>;
 
+  // ── Single-record lookups ─────────────────────────────────────────────────
+  getCompany(id: string): Promise<Company | null>;
+  getStage(stageId: string): Promise<InterviewStage | null>;
+
   // ── Interview Sessions ────────────────────────────────────────────────────
   createSession(session: CreateSessionInput): Promise<InterviewSession>;
   getSession(sessionId: string): Promise<InterviewSession | null>;

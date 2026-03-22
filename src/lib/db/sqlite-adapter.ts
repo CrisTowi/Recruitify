@@ -428,6 +428,20 @@ function mapAISettings(row: AISettingsRow): AISettings {
 // ── SqliteAdapter ─────────────────────────────────────────────────────────────
 
 export class SqliteAdapter implements DbAdapter {
+  // ── Single-record lookups ─────────────────────────────────────────────────────
+
+  getCompany(id: string): Promise<Company | null> {
+    const db = getDb();
+    const row = db.prepare<[string], CompanyRow>('SELECT * FROM companies WHERE id = ?').get(id);
+    return Promise.resolve(row ? mapCompany(row) : null);
+  }
+
+  getStage(stageId: string): Promise<InterviewStage | null> {
+    const db = getDb();
+    const row = db.prepare<[string], InterviewsRoadmapRow>('SELECT * FROM interviews_roadmap WHERE id = ?').get(stageId);
+    return Promise.resolve(row ? mapStage(row) : null);
+  }
+
   // ── Companies ───────────────────────────────────────────────────────────────
 
   getAllCompanies(): Promise<CompanyWithNextStep[]> {
