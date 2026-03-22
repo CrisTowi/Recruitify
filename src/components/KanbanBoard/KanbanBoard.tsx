@@ -11,6 +11,7 @@ import CompanyCard from '@/components/CompanyCard/CompanyCard';
 import AddCompanyModal from '@/components/AddCompanyModal/AddCompanyModal';
 import CompanyDetailModal from '@/components/CompanyDetailModal/CompanyDetailModal';
 import OfferModal from '@/components/OfferModal/OfferModal';
+import AISettingsModal from '@/components/AISettingsModal/AISettingsModal';
 import type { ApplicationStatus, CompanyWithNextStep, KanbanBoard as KanbanBoardType } from '@/types';
 import { COLUMNS, fetchBoard, patchStatus } from './helpers';
 import { useToast } from '@/components/Toast/ToastProvider';
@@ -21,6 +22,7 @@ export default function KanbanBoard() {
   const [board, setBoard] = useState<KanbanBoardType | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [showAISettings, setShowAISettings] = useState(false);
   const [activeCard, setActiveCard] = useState<CompanyWithNextStep | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<CompanyWithNextStep | null>(null);
   const [offerModalCompany, setOfferModalCompany] = useState<CompanyWithNextStep | null>(null);
@@ -109,6 +111,9 @@ export default function KanbanBoard() {
   return (
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       <div className={styles.toolbar}>
+        <button className={styles.settingsButton} onClick={() => setShowAISettings(true)} aria-label="AI Settings">
+          ⚙ AI
+        </button>
         <button className={styles.addButton} onClick={() => setShowModal(true)}>
           + Add Company
         </button>
@@ -164,6 +169,9 @@ export default function KanbanBoard() {
           onSaved={() => setOfferModalCompany(null)}
           onSkip={() => setOfferModalCompany(null)}
         />
+      )}
+      {showAISettings && (
+        <AISettingsModal onClose={() => setShowAISettings(false)} />
       )}
     </DndContext>
   );

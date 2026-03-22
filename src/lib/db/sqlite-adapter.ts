@@ -14,9 +14,15 @@ import type {
   OfferExpectations,
   RemotePolicy,
   HealthTier,
+  AISettings,
+  AISettingsInput,
+  LLMProvider,
+  TTSProvider,
+  STTProvider,
 } from '@/types';
 import type { DbAdapter, GoogleTokens } from './types';
 import { DuplicateCalendarEventError } from './types';
+import { encrypt, decrypt } from '@/lib/crypto';
 
 // ── Singleton DB instance ──────────────────────────────────────────────────────
 
@@ -120,6 +126,20 @@ function initSchema(db: Database.Database): void {
       refresh_token TEXT NOT NULL,
       expires_at TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS ai_settings (
+      id INTEGER PRIMARY KEY DEFAULT 1,
+      llm_provider TEXT NOT NULL DEFAULT 'openai',
+      llm_model TEXT NOT NULL DEFAULT 'gpt-4o',
+      llm_api_key_encrypted TEXT,
+      tts_provider TEXT,
+      tts_api_key_encrypted TEXT,
+      tts_voice_id TEXT,
+      stt_provider TEXT,
+      stt_api_key_encrypted TEXT,
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+      updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+    );
   `);
 
   // Column migrations for existing databases
@@ -191,6 +211,20 @@ interface GoogleTokensRow {
   expires_at: string;
 }
 
+interface AISettingsRow {
+  id: number;
+  llm_provider: string;
+  llm_model: string;
+  llm_api_key_encrypted: string | null;
+  tts_provider: string | null;
+  tts_api_key_encrypted: string | null;
+  tts_voice_id: string | null;
+  stt_provider: string | null;
+  stt_api_key_encrypted: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 // ── Row-to-domain mappers ─────────────────────────────────────────────────────
 
 function mapOffer(row: OfferRow): CompanyOffer {
@@ -251,6 +285,22 @@ function mapTimelineEvent(row: TimelineEventRow): TimelineEvent {
     contact_email: row.contact_email,
     scheduled_at: row.scheduled_at,
     process_status: row.process_status as ProcessStatusValue | null,
+  };
+}
+
+function mapAISettings(row: AISettingsRow): AISettings {
+  return {
+    id: String(row.id),
+    llm_provider: row.llm_provider as LLMProvider,
+    llm_model: row.llm_model,
+    has_llm_key: row.llm_api_key_encrypted !== null,
+    tts_provider: row.tts_provider as TTSProvider | null,
+    has_tts_key: row.tts_api_key_encrypted !== null,
+    tts_voice_id: row.tts_voice_id,
+    stt_provider: row.stt_provider as STTProvider | null,
+    has_stt_key: row.stt_api_key_encrypted !== null,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
   };
 }
 
@@ -666,5 +716,84 @@ export class SqliteAdapter implements DbAdapter {
     ).run(tokens.access_token, tokens.refresh_token, tokens.expires_at);
 
     return Promise.resolve();
+  }
+
+  // ── AI Settings ──────────────────────────────────────────────────────────────
+
+  getAISettings(_userId?: string): Promise<AISettings | null> {
+    const db = getDb();
+    const row = db.prepare<[], AISettingsRow>('SELECT * FROM ai_settings WHERE id = 1').get();
+    if (!row) return Promise.resolve(null);
+    return Promise.resolve(mapAISettings(row));
+  }
+
+  upsertAISettings(_userId: string | null, settings: AISettingsInput): Promise<AISettings> {
+    const db = getDb();
+    const existing = db.prepare<[], AISettingsRow>('SELECT * FROM ai_settings WHERE id = 1').get();
+
+    const now = new Date().toISOString();
+
+    if (existing) {
+      const setClauses: string[] = [
+        'llm_provider = ?',
+        'llm_model = ?',
+        'tts_provider = ?',
+        'tts_voice_id = ?',
+        'stt_provider = ?',
+        'updated_at = ?',
+      ];
+      const values: unknown[] = [
+        settings.llm_provider,
+        settings.llm_model,
+        settings.tts_provider ?? null,
+        settings.tts_voice_id ?? null,
+        settings.stt_provider ?? null,
+        now,
+      ];
+
+      if (settings.llm_api_key != null) {
+        setClauses.push('llm_api_key_encrypted = ?');
+        values.push(encrypt(settings.llm_api_key));
+      }
+      if (settings.tts_api_key != null) {
+        setClauses.push('tts_api_key_encrypted = ?');
+        values.push(encrypt(settings.tts_api_key));
+      }
+      if (settings.stt_api_key != null) {
+        setClauses.push('stt_api_key_encrypted = ?');
+        values.push(encrypt(settings.stt_api_key));
+      }
+
+      db.prepare(`UPDATE ai_settings SET ${setClauses.join(', ')} WHERE id = 1`).run(...values);
+    } else {
+      db.prepare(
+        `INSERT INTO ai_settings (id, llm_provider, llm_model, llm_api_key_encrypted,
+           tts_provider, tts_api_key_encrypted, tts_voice_id, stt_provider, stt_api_key_encrypted)
+         VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ).run(
+        settings.llm_provider,
+        settings.llm_model,
+        settings.llm_api_key ? encrypt(settings.llm_api_key) : null,
+        settings.tts_provider ?? null,
+        settings.tts_api_key ? encrypt(settings.tts_api_key) : null,
+        settings.tts_voice_id ?? null,
+        settings.stt_provider ?? null,
+        settings.stt_api_key ? encrypt(settings.stt_api_key) : null,
+      );
+    }
+
+    const row = db.prepare<[], AISettingsRow>('SELECT * FROM ai_settings WHERE id = 1').get()!;
+    return Promise.resolve(mapAISettings(row));
+  }
+
+  getDecryptedAIKeys(_userId?: string): Promise<{ llm_api_key: string | null; tts_api_key: string | null; stt_api_key: string | null } | null> {
+    const db = getDb();
+    const row = db.prepare<[], AISettingsRow>('SELECT * FROM ai_settings WHERE id = 1').get();
+    if (!row) return Promise.resolve(null);
+    return Promise.resolve({
+      llm_api_key: row.llm_api_key_encrypted ? decrypt(row.llm_api_key_encrypted) : null,
+      tts_api_key: row.tts_api_key_encrypted ? decrypt(row.tts_api_key_encrypted) : null,
+      stt_api_key: row.stt_api_key_encrypted ? decrypt(row.stt_api_key_encrypted) : null,
+    });
   }
 }

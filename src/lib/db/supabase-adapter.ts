@@ -11,7 +11,13 @@ import type {
   CreateTimelineEventPayload,
   CompanyOffer,
   OfferExpectations,
+  AISettings,
+  AISettingsInput,
+  LLMProvider,
+  TTSProvider,
+  STTProvider,
 } from '@/types';
+import { encrypt, decrypt } from '@/lib/crypto';
 
 function getAuthEnabled(): boolean {
   return process.env.SUPABASE_AUTH === 'true';
@@ -417,5 +423,122 @@ export class SupabaseAdapter implements DbAdapter {
     }
 
     await client.from('google_tokens').upsert(row);
+  }
+
+  // ── AI Settings ─────────────────────────────────────────────────────────────
+
+  async getAISettings(userId?: string): Promise<AISettings | null> {
+    const { client, userId: sessionUserId } = await this.getClient();
+    const resolvedUserId = userId ?? sessionUserId;
+
+    let query = client.from('ai_settings').select('*');
+
+    if (getAuthEnabled() && resolvedUserId) {
+      query = query.eq('user_id', resolvedUserId);
+    } else {
+      query = query.eq('id', 1);
+    }
+
+    const { data } = await query.maybeSingle();
+    if (!data) return null;
+
+    const row = data as Record<string, unknown>;
+    return {
+      id: String(row.id),
+      llm_provider: row.llm_provider as LLMProvider,
+      llm_model: row.llm_model as string,
+      has_llm_key: row.llm_api_key_encrypted !== null,
+      tts_provider: (row.tts_provider as TTSProvider | null) ?? null,
+      has_tts_key: row.tts_api_key_encrypted !== null,
+      tts_voice_id: (row.tts_voice_id as string | null) ?? null,
+      stt_provider: (row.stt_provider as STTProvider | null) ?? null,
+      has_stt_key: row.stt_api_key_encrypted !== null,
+      created_at: row.created_at as string,
+      updated_at: row.updated_at as string,
+    };
+  }
+
+  async upsertAISettings(userId: string | null, settings: AISettingsInput): Promise<AISettings> {
+    const { client, userId: sessionUserId } = await this.getClient();
+    const resolvedUserId = userId ?? sessionUserId;
+
+    // Fetch existing to preserve keys when not provided
+    const existing = await this.getAISettings(resolvedUserId ?? undefined);
+
+    const row: Record<string, unknown> = {
+      llm_provider: settings.llm_provider,
+      llm_model: settings.llm_model,
+      tts_provider: settings.tts_provider ?? null,
+      tts_voice_id: settings.tts_voice_id ?? null,
+      stt_provider: settings.stt_provider ?? null,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (settings.llm_api_key != null) {
+      row.llm_api_key_encrypted = encrypt(settings.llm_api_key);
+    } else if (existing) {
+      // Preserve existing key — don't overwrite with null
+    }
+
+    if (settings.tts_api_key != null) {
+      row.tts_api_key_encrypted = encrypt(settings.tts_api_key);
+    }
+
+    if (settings.stt_api_key != null) {
+      row.stt_api_key_encrypted = encrypt(settings.stt_api_key);
+    }
+
+    if (getAuthEnabled() && resolvedUserId) {
+      row.user_id = resolvedUserId;
+    } else {
+      row.id = 1;
+    }
+
+    const { data: result, error } = await client
+      .from('ai_settings')
+      .upsert(row, { onConflict: getAuthEnabled() && resolvedUserId ? 'user_id' : 'id' })
+      .select()
+      .single();
+
+    if (error) throw new Error(error.message);
+
+    const saved = result as Record<string, unknown>;
+    return {
+      id: String(saved.id),
+      llm_provider: saved.llm_provider as LLMProvider,
+      llm_model: saved.llm_model as string,
+      has_llm_key: saved.llm_api_key_encrypted !== null,
+      tts_provider: (saved.tts_provider as TTSProvider | null) ?? null,
+      has_tts_key: saved.tts_api_key_encrypted !== null,
+      tts_voice_id: (saved.tts_voice_id as string | null) ?? null,
+      stt_provider: (saved.stt_provider as STTProvider | null) ?? null,
+      has_stt_key: saved.stt_api_key_encrypted !== null,
+      created_at: saved.created_at as string,
+      updated_at: saved.updated_at as string,
+    };
+  }
+
+  /** Decrypt API keys for server-side use only. Never send to client. */
+  async getDecryptedAIKeys(userId?: string): Promise<{ llm_api_key: string | null; tts_api_key: string | null; stt_api_key: string | null } | null> {
+    const { client, userId: sessionUserId } = await this.getClient();
+    const resolvedUserId = userId ?? sessionUserId;
+
+    let query = client.from('ai_settings').select('llm_api_key_encrypted, tts_api_key_encrypted, stt_api_key_encrypted');
+
+    if (getAuthEnabled() && resolvedUserId) {
+      query = query.eq('user_id', resolvedUserId);
+    } else {
+      query = query.eq('id', 1);
+    }
+
+    const { data } = await query.maybeSingle();
+    if (!data) return null;
+
+    const row = data as Record<string, string | null>;
+    return {
+      llm_api_key: row.llm_api_key_encrypted ? decrypt(row.llm_api_key_encrypted) : null,
+      tts_api_key: row.tts_api_key_encrypted ? decrypt(row.tts_api_key_encrypted) : null,
+      stt_api_key: row.stt_api_key_encrypted ? decrypt(row.stt_api_key_encrypted) : null,
+    };
   }
 }

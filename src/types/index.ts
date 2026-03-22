@@ -147,6 +147,37 @@ export interface CreateTimelineEventPayload {
   process_status?: ProcessStatusValue;
 }
 
+// ─── Interview Simulator Types ────────────────────────────────────────────────
+
+export type LLMProvider = 'openai' | 'anthropic' | 'gemini' | 'openrouter';
+export type TTSProvider = 'browser' | 'elevenlabs' | 'openai';
+export type STTProvider = 'browser' | 'deepgram' | 'openai';
+
+export interface AISettings {
+  id: string;
+  llm_provider: LLMProvider;
+  llm_model: string;
+  has_llm_key: boolean;
+  tts_provider: TTSProvider | null;
+  has_tts_key: boolean;
+  tts_voice_id: string | null;
+  stt_provider: STTProvider | null;
+  has_stt_key: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AISettingsInput {
+  llm_provider: LLMProvider;
+  llm_model: string;
+  llm_api_key?: string | null;
+  tts_provider?: TTSProvider | null;
+  tts_api_key?: string | null;
+  tts_voice_id?: string | null;
+  stt_provider?: STTProvider | null;
+  stt_api_key?: string | null;
+}
+
 // ─── Calendar Types ───────────────────────────────────────────────────────────
 
 export interface CalendarMatch {

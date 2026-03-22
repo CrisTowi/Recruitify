@@ -8,6 +8,8 @@ import type {
   CreateTimelineEventPayload,
   CompanyOffer,
   OfferExpectations,
+  AISettings,
+  AISettingsInput,
 } from '@/types';
 
 export interface GoogleTokens {
@@ -67,4 +69,10 @@ export interface DbAdapter {
   // ── Google Calendar tokens ────────────────────────────────────────────────
   getGoogleTokens(): Promise<GoogleTokens | null>;
   upsertGoogleTokens(tokens: GoogleTokens): Promise<void>;
+
+  // ── AI Settings ───────────────────────────────────────────────────────────
+  getAISettings(userId?: string): Promise<AISettings | null>;
+  upsertAISettings(userId: string | null, settings: AISettingsInput): Promise<AISettings>;
+  /** Returns decrypted API keys for server-side use only. Never expose to client. */
+  getDecryptedAIKeys(userId?: string): Promise<{ llm_api_key: string | null; tts_api_key: string | null; stt_api_key: string | null } | null>;
 }
