@@ -1,8 +1,18 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import type { LLMProvider, AISettings } from '@/types';
-import { LLM_PROVIDERS, type ModelOption, fetchModels, fetchAISettings, saveAISettings, testAISettings } from './helpers';
+import type { LLMProvider, TTSProvider, STTProvider, AISettings } from '@/types';
+import {
+  LLM_PROVIDERS,
+  TTS_PROVIDERS,
+  STT_PROVIDERS,
+  OPENAI_TTS_VOICES,
+  type ModelOption,
+  fetchModels,
+  fetchAISettings,
+  saveAISettings,
+  testAISettings,
+} from './helpers';
 import { useToast } from '@/components/Toast/ToastProvider';
 import styles from './AISettingsModal.module.css';
 
@@ -25,6 +35,14 @@ export default function AISettingsModal({ onClose }: Props) {
   const [hasExistingKey, setHasExistingKey] = useState(false);
   const [models, setModels] = useState<ModelOption[]>([]);
 
+  const [ttsProvider, setTtsProvider] = useState<TTSProvider | null>(null);
+  const [ttsKey, setTtsKey] = useState('');
+  const [ttsVoiceId, setTtsVoiceId] = useState('');
+  const [hasExistingTtsKey, setHasExistingTtsKey] = useState(false);
+  const [sttProvider, setSttProvider] = useState<STTProvider | null>(null);
+  const [sttKey, setSttKey] = useState('');
+  const [hasExistingSttKey, setHasExistingSttKey] = useState(false);
+
   const apiKeyRef = useRef<HTMLInputElement>(null);
   const modelRef = useRef(model);
   useEffect(() => { modelRef.current = model; }, [model]);
@@ -38,6 +56,11 @@ export default function AISettingsModal({ onClose }: Props) {
           setProvider(settings.llm_provider);
           setModel(settings.llm_model);
           setHasExistingKey(settings.has_llm_key);
+          setTtsProvider(settings.tts_provider ?? null);
+          setTtsVoiceId(settings.tts_voice_id ?? '');
+          setHasExistingTtsKey(settings.has_tts_key);
+          setSttProvider(settings.stt_provider ?? null);
+          setHasExistingSttKey(settings.has_stt_key);
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to load settings';
@@ -110,9 +133,13 @@ export default function AISettingsModal({ onClose }: Props) {
 
     try {
       const payload: Record<string, unknown> = { llm_provider: provider, llm_model: model };
-      if (apiKey.trim()) {
-        payload.llm_api_key = apiKey.trim();
-      }
+      if (apiKey.trim()) payload.llm_api_key = apiKey.trim();
+
+      payload.tts_provider = ttsProvider;
+      if (ttsKey.trim()) payload.tts_api_key = ttsKey.trim();
+      payload.tts_voice_id = ttsVoiceId.trim() || null;
+      payload.stt_provider = sttProvider;
+      if (sttKey.trim()) payload.stt_api_key = sttKey.trim();
 
       await saveAISettings(payload);
       toast('AI settings saved.');
@@ -217,6 +244,117 @@ export default function AISettingsModal({ onClose }: Props) {
                 </p>
               )}
             </div>
+
+            {/* ── Voice (optional) ── */}
+            <p className={styles.sectionDivider}>Voice (optional)</p>
+
+            <div className={styles.field}>
+              <label htmlFor="tts-provider" className={styles.label}>Text-to-Speech</label>
+              <select
+                id="tts-provider"
+                className={styles.select}
+                value={ttsProvider ?? ''}
+                onChange={(event) => setTtsProvider((event.target.value || null) as TTSProvider | null)}
+                disabled={submitting}
+              >
+                {TTS_PROVIDERS.map((option) => (
+                  <option key={String(option.value)} value={option.value ?? ''}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {(ttsProvider === 'openai' || ttsProvider === 'elevenlabs') && (
+              <div className={styles.field}>
+                <label htmlFor="tts-api-key" className={styles.label}>
+                  TTS API Key
+                  {hasExistingTtsKey && (
+                    <span className={styles.keyHint}> (key saved — leave blank to keep existing)</span>
+                  )}
+                </label>
+                <input
+                  id="tts-api-key"
+                  type="password"
+                  className={styles.input}
+                  value={ttsKey}
+                  onChange={(event) => setTtsKey(event.target.value)}
+                  placeholder={hasExistingTtsKey ? '••••••••••••••••' : 'Enter TTS API key'}
+                  disabled={submitting}
+                  autoComplete="off"
+                />
+              </div>
+            )}
+
+            {ttsProvider === 'openai' && (
+              <div className={styles.field}>
+                <label htmlFor="tts-voice-openai" className={styles.label}>Voice</label>
+                <select
+                  id="tts-voice-openai"
+                  className={styles.select}
+                  value={ttsVoiceId || 'alloy'}
+                  onChange={(event) => setTtsVoiceId(event.target.value)}
+                  disabled={submitting}
+                >
+                  {OPENAI_TTS_VOICES.map((voice) => (
+                    <option key={voice} value={voice}>{voice}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {ttsProvider === 'elevenlabs' && (
+              <div className={styles.field}>
+                <label htmlFor="tts-voice-el" className={styles.label}>Voice ID</label>
+                <input
+                  id="tts-voice-el"
+                  type="text"
+                  className={styles.input}
+                  value={ttsVoiceId}
+                  onChange={(event) => setTtsVoiceId(event.target.value)}
+                  placeholder="ElevenLabs voice ID"
+                  disabled={submitting}
+                />
+              </div>
+            )}
+
+            <div className={styles.field}>
+              <label htmlFor="stt-provider" className={styles.label}>Speech-to-Text</label>
+              <select
+                id="stt-provider"
+                className={styles.select}
+                value={sttProvider ?? ''}
+                onChange={(event) => setSttProvider((event.target.value || null) as STTProvider | null)}
+                disabled={submitting}
+              >
+                {STT_PROVIDERS.map((option) => (
+                  <option key={String(option.value)} value={option.value ?? ''}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {(sttProvider === 'openai' || sttProvider === 'deepgram') && (
+              <div className={styles.field}>
+                <label htmlFor="stt-api-key" className={styles.label}>
+                  STT API Key
+                  {hasExistingSttKey && (
+                    <span className={styles.keyHint}> (key saved — leave blank to keep existing)</span>
+                  )}
+                </label>
+                <input
+                  id="stt-api-key"
+                  type="password"
+                  className={styles.input}
+                  value={sttKey}
+                  onChange={(event) => setSttKey(event.target.value)}
+                  placeholder={hasExistingSttKey ? '••••••••••••••••' : 'Enter STT API key'}
+                  disabled={submitting}
+                  autoComplete="off"
+                />
+              </div>
+            )}
 
             {error && <p className={styles.error}>{error}</p>}
 

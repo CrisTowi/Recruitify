@@ -2,15 +2,22 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import type { InterviewSessionFull } from '@/types';
+import type { AISettings, InterviewSessionFull } from '@/types';
 import FeedbackCard from '@/components/FeedbackCard/FeedbackCard';
 import type { FeedbackData } from '@/components/FeedbackCard/FeedbackCard';
+import VoiceControls from '@/components/VoiceControls/VoiceControls';
+import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
+import { useSpeechSynthesis } from '@/hooks/useSpeechSynthesis';
 import {
   startSession,
   submitAnswer,
   completeSession,
   cancelSession,
   formatElapsed,
+  fetchSessionAISettings,
+  isCloudTtsProvider,
+  isCloudSttProvider,
+  speakWithCloudTts,
 } from './helpers';
 import type { CurrentQuestion } from './helpers';
 import styles from './InterviewSession.module.css';
@@ -31,8 +38,68 @@ export default function InterviewSession({ session }: Props) {
   const [isLastQuestion, setIsLastQuestion] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [isVoiceMode, setIsVoiceMode] = useState(false);
+  const [isSpeakingCloud, setIsSpeakingCloud] = useState(false);
+  const [aiSettings, setAiSettings] = useState<AISettings | null>(null);
+
   const questionStartTimeRef = useRef<number>(Date.now());
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const cloudAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  const stt = useSpeechRecognition();
+  const tts = useSpeechSynthesis();
+
+  const useCloudTts = isCloudTtsProvider(aiSettings?.tts_provider);
+  const useCloudStt = isCloudSttProvider(aiSettings?.stt_provider);
+  const isSpeaking = useCloudTts ? isSpeakingCloud : tts.isSpeaking;
+
+  // Load AI settings on mount
+  useEffect(() => {
+    async function load() {
+      const settings = await fetchSessionAISettings();
+      setAiSettings(settings);
+    }
+    load();
+  }, []);
+
+  // Sync STT transcript to answer state in voice mode
+  useEffect(() => {
+    if (isVoiceMode && !useCloudStt) {
+      setAnswer(stt.transcript);
+    }
+  }, [isVoiceMode, stt.transcript, useCloudStt]);
+
+  // Speak question aloud when it changes in voice mode
+  useEffect(() => {
+    if (!isVoiceMode || !currentQuestion || phase !== 'answering') return;
+
+    async function speakQuestion() {
+      if (!currentQuestion) return;
+
+      if (useCloudTts) {
+        try {
+          const audio = await speakWithCloudTts(currentQuestion.question_text, aiSettings?.tts_voice_id);
+          cloudAudioRef.current = audio;
+          setIsSpeakingCloud(true);
+          audio.onended = () => {
+            setIsSpeakingCloud(false);
+            cloudAudioRef.current = null;
+          };
+          audio.onerror = () => {
+            setIsSpeakingCloud(false);
+            cloudAudioRef.current = null;
+          };
+          audio.play();
+        } catch {
+          // Cloud TTS failed — silent fallback
+        }
+      } else {
+        tts.speak(currentQuestion.question_text);
+      }
+    }
+
+    speakQuestion();
+  }, [currentQuestion, isVoiceMode, phase, useCloudTts, aiSettings?.tts_voice_id, tts]);
 
   const startTimer = useCallback(() => {
     setElapsedSeconds(0);
@@ -49,16 +116,23 @@ export default function InterviewSession({ session }: Props) {
     }
   }, []);
 
+  const cancelSpeech = useCallback(() => {
+    tts.cancel();
+    if (cloudAudioRef.current) {
+      cloudAudioRef.current.pause();
+      cloudAudioRef.current = null;
+    }
+    setIsSpeakingCloud(false);
+  }, [tts]);
+
   // Begin or resume the interview on mount
   useEffect(() => {
     async function begin() {
       try {
         if (session.status === 'configuring') {
-          // Fresh start — call /start to get the first question
           const result = await startSession(session.id);
           setCurrentQuestion(result.current_question);
         } else {
-          // Resuming an in_progress session — find the last unanswered question
           const res = await fetch(`/api/sessions/${session.id}`);
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           const full = await res.json() as InterviewSessionFull;
@@ -70,7 +144,6 @@ export default function InterviewSession({ session }: Props) {
               question_text: unanswered.question_text,
             });
           } else if (full.questions.length > 0) {
-            // All answered — go to debrief
             router.push(`/session/${session.id}/debrief`);
             return;
           }
@@ -87,10 +160,24 @@ export default function InterviewSession({ session }: Props) {
     return () => stopTimer();
   }, [session.id, session.status, router, startTimer, stopTimer]);
 
+  const handleToggleVoiceMode = useCallback(() => {
+    if (isVoiceMode) {
+      stt.stopListening();
+      cancelSpeech();
+    }
+    setIsVoiceMode((prev) => !prev);
+  }, [isVoiceMode, stt, cancelSpeech]);
+
+  const handleCloudTranscript = useCallback((text: string) => {
+    setAnswer((prev) => prev ? `${prev} ${text}` : text);
+  }, []);
+
   const handleSubmitAnswer = useCallback(async () => {
     if (!currentQuestion || !answer.trim()) return;
 
     stopTimer();
+    stt.stopListening();
+    cancelSpeech();
     setPhase('submitting');
 
     const duration = Math.floor((Date.now() - questionStartTimeRef.current) / 1000);
@@ -110,11 +197,11 @@ export default function InterviewSession({ session }: Props) {
         setIsLastQuestion(result.next_question === undefined ? true : (result.is_last_question ?? false));
         setPhase('feedback');
       } else {
-        // Full simulation mode — advance directly
         if (result.next_question) {
           setCurrentQuestion(result.next_question);
           setIsLastQuestion(result.is_last_question ?? false);
           setAnswer('');
+          stt.resetTranscript();
           setPhase('answering');
           startTimer();
         }
@@ -123,7 +210,7 @@ export default function InterviewSession({ session }: Props) {
       setError(err instanceof Error ? err.message : 'Failed to submit answer');
       setPhase('error');
     }
-  }, [answer, currentQuestion, router, session.feedback_mode, session.id, startTimer, stopTimer]);
+  }, [answer, cancelSpeech, currentQuestion, router, session.feedback_mode, session.id, startTimer, stopTimer, stt]);
 
   const handleNextQuestion = useCallback(async () => {
     if (isLastQuestion) {
@@ -138,8 +225,6 @@ export default function InterviewSession({ session }: Props) {
       return;
     }
 
-    // The next question was already created during the answer submission
-    // Fetch updated session to get it
     try {
       const res = await fetch(`/api/sessions/${session.id}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -153,6 +238,7 @@ export default function InterviewSession({ session }: Props) {
         });
         setFeedback(null);
         setAnswer('');
+        stt.resetTranscript();
         setPhase('answering');
         startTimer();
       }
@@ -160,7 +246,7 @@ export default function InterviewSession({ session }: Props) {
       setError(err instanceof Error ? err.message : 'Failed to load next question');
       setPhase('error');
     }
-  }, [isLastQuestion, router, session.id, startTimer]);
+  }, [isLastQuestion, router, session.id, startTimer, stt]);
 
   const handleEndEarly = useCallback(async () => {
     if (!showCancelConfirm) {
@@ -168,6 +254,7 @@ export default function InterviewSession({ session }: Props) {
       return;
     }
     stopTimer();
+    cancelSpeech();
     setPhase('completing');
     try {
       await completeSession(session.id);
@@ -176,17 +263,18 @@ export default function InterviewSession({ session }: Props) {
       setError(err instanceof Error ? err.message : 'Failed to end session');
       setPhase('error');
     }
-  }, [router, session.id, showCancelConfirm, stopTimer]);
+  }, [cancelSpeech, router, session.id, showCancelConfirm, stopTimer]);
 
   const handleCancel = useCallback(async () => {
     stopTimer();
+    cancelSpeech();
     try {
       await cancelSession(session.id);
       router.push('/');
     } catch {
       router.push('/');
     }
-  }, [router, session.id, stopTimer]);
+  }, [cancelSpeech, router, session.id, stopTimer]);
 
   if (phase === 'error') {
     return (
@@ -214,6 +302,8 @@ export default function InterviewSession({ session }: Props) {
       </div>
     );
   }
+
+  const voiceSupported = stt.isSupported || useCloudStt;
 
   return (
     <div className={styles.container}>
@@ -250,14 +340,37 @@ export default function InterviewSession({ session }: Props) {
         {/* Answer area */}
         {(phase === 'answering' || phase === 'submitting') && (
           <div className={styles.answerArea}>
+            <VoiceControls
+              isVoiceMode={isVoiceMode}
+              isListening={stt.isListening}
+              isSpeaking={isSpeaking}
+              isSupported={voiceSupported}
+              disabled={phase === 'submitting'}
+              useCloudStt={useCloudStt}
+              onToggleVoiceMode={handleToggleVoiceMode}
+              onStartListening={stt.startListening}
+              onStopListening={stt.stopListening}
+              onCancelSpeech={cancelSpeech}
+              onCloudTranscript={handleCloudTranscript}
+            />
+
             <textarea
               className={styles.textarea}
               value={answer}
               onChange={(event) => setAnswer(event.target.value)}
-              placeholder="Type your answer here…"
+              placeholder={isVoiceMode ? 'Your spoken answer will appear here…' : 'Type your answer here…'}
               rows={6}
               disabled={phase === 'submitting'}
             />
+
+            {/* Interim transcript (browser STT only) */}
+            {isVoiceMode && !useCloudStt && stt.interimTranscript && (
+              <p className={styles.interimText}>
+                <span className={styles.interimDot} aria-hidden="true" />
+                {stt.interimTranscript}
+              </p>
+            )}
+
             <div className={styles.answerActions}>
               <button
                 className={styles.submitButton}

@@ -1,4 +1,5 @@
 import type { FeedbackData } from '@/components/FeedbackCard/FeedbackCard';
+import type { AISettings, TTSProvider } from '@/types';
 
 export interface CurrentQuestion {
   id: string;
@@ -65,6 +66,36 @@ export async function cancelSession(sessionId: string): Promise<void> {
     const json = await res.json() as { error?: string };
     throw new Error(json.error ?? `HTTP ${res.status}`);
   }
+}
+
+export async function fetchSessionAISettings(): Promise<AISettings | null> {
+  try {
+    const res = await fetch('/api/ai-settings');
+    if (!res.ok) return null;
+    return res.json() as Promise<AISettings>;
+  } catch {
+    return null;
+  }
+}
+
+export function isCloudTtsProvider(provider: TTSProvider | null | undefined): boolean {
+  return provider === 'openai' || provider === 'elevenlabs';
+}
+
+export function isCloudSttProvider(provider: import('@/types').STTProvider | null | undefined): boolean {
+  return provider === 'openai' || provider === 'deepgram';
+}
+
+export async function speakWithCloudTts(text: string, voiceId?: string | null): Promise<HTMLAudioElement> {
+  const res = await fetch('/api/voice/tts', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text, voice_id: voiceId ?? undefined }),
+  });
+  if (!res.ok) throw new Error(`TTS request failed: HTTP ${res.status}`);
+  const audioBlob = await res.blob();
+  const audio = new Audio(URL.createObjectURL(audioBlob));
+  return audio;
 }
 
 export function formatElapsed(seconds: number): string {
