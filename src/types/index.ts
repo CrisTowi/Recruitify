@@ -169,6 +169,8 @@ export interface InterviewSession {
   debrief_strengths: string[];
   debrief_improvements: string[];
   debrief_resources: string[];
+  debrief_verdict: 'pass' | 'fail' | 'borderline' | null;
+  debrief_interviewer_note: string | null;
   started_at: string | null;
   completed_at: string | null;
   created_at: string;
@@ -213,8 +215,8 @@ export interface InterviewSessionFull extends InterviewSession {
 // ─── Interview Simulator — AI Settings ───────────────────────────────────────
 
 export type LLMProvider = 'openai' | 'anthropic' | 'gemini' | 'openrouter';
-export type TTSProvider = 'browser' | 'elevenlabs' | 'openai';
-export type STTProvider = 'browser' | 'deepgram' | 'openai';
+export type TTSProvider = 'browser' | 'deepgram';
+export type STTProvider = 'browser' | 'deepgram';
 
 export interface AISettings {
   id: string;

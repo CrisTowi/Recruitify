@@ -6,7 +6,8 @@ import {
   LLM_PROVIDERS,
   TTS_PROVIDERS,
   STT_PROVIDERS,
-  OPENAI_TTS_VOICES,
+  fetchDeepgramTtsVoices,
+  type DeepgramVoice,
   type ModelOption,
   fetchModels,
   fetchAISettings,
@@ -39,13 +40,17 @@ export default function AISettingsModal({ onClose }: Props) {
   const [ttsKey, setTtsKey] = useState('');
   const [ttsVoiceId, setTtsVoiceId] = useState('');
   const [hasExistingTtsKey, setHasExistingTtsKey] = useState(false);
+  const [deepgramVoices, setDeepgramVoices] = useState<DeepgramVoice[]>([]);
+  const [loadingVoices, setLoadingVoices] = useState(false);
   const [sttProvider, setSttProvider] = useState<STTProvider | null>(null);
   const [sttKey, setSttKey] = useState('');
   const [hasExistingSttKey, setHasExistingSttKey] = useState(false);
 
   const apiKeyRef = useRef<HTMLInputElement>(null);
   const modelRef = useRef(model);
+  const ttsVoiceIdRef = useRef(ttsVoiceId);
   useEffect(() => { modelRef.current = model; }, [model]);
+  useEffect(() => { ttsVoiceIdRef.current = ttsVoiceId; }, [ttsVoiceId]);
 
   // Load existing settings on mount
   useEffect(() => {
@@ -84,6 +89,29 @@ export default function AISettingsModal({ onClose }: Props) {
     }
     load();
   }, [provider]);
+
+  // Fetch Deepgram TTS voices when provider is deepgram and a key is available
+  useEffect(() => {
+    if (ttsProvider !== 'deepgram') {
+      setDeepgramVoices([]);
+      return;
+    }
+    const keyToUse = ttsKey.trim() || (hasExistingTtsKey ? '' : null);
+    if (keyToUse === null) return;
+
+    setLoadingVoices(true);
+    void (async () => {
+      try {
+        const voices = await fetchDeepgramTtsVoices(ttsKey.trim() || undefined);
+        setDeepgramVoices(voices);
+        if (voices.length > 0 && !voices.find((voice) => voice.id === ttsVoiceIdRef.current)) {
+          setTtsVoiceId(voices[0].id);
+        }
+      } finally {
+        setLoadingVoices(false);
+      }
+    })();
+  }, [ttsProvider, ttsKey, hasExistingTtsKey]);
 
   // Close on Escape
   useEffect(() => {
@@ -265,7 +293,7 @@ export default function AISettingsModal({ onClose }: Props) {
               </select>
             </div>
 
-            {(ttsProvider === 'openai' || ttsProvider === 'elevenlabs') && (
+            {ttsProvider === 'deepgram' && (
               <div className={styles.field}>
                 <label htmlFor="tts-api-key" className={styles.label}>
                   TTS API Key
@@ -286,35 +314,29 @@ export default function AISettingsModal({ onClose }: Props) {
               </div>
             )}
 
-            {ttsProvider === 'openai' && (
+            {ttsProvider === 'deepgram' && (
               <div className={styles.field}>
-                <label htmlFor="tts-voice-openai" className={styles.label}>Voice</label>
+                <label htmlFor="tts-voice-deepgram" className={styles.label}>
+                  Voice
+                  {loadingVoices && <span className={styles.keyHint}> (loading…)</span>}
+                  {!loadingVoices && deepgramVoices.length === 0 && (hasExistingTtsKey || ttsKey.trim()) && (
+                    <span className={styles.keyHint}> (failed to load — check key)</span>
+                  )}
+                </label>
                 <select
-                  id="tts-voice-openai"
+                  id="tts-voice-deepgram"
                   className={styles.select}
-                  value={ttsVoiceId || 'alloy'}
-                  onChange={(event) => setTtsVoiceId(event.target.value)}
-                  disabled={submitting}
-                >
-                  {OPENAI_TTS_VOICES.map((voice) => (
-                    <option key={voice} value={voice}>{voice}</option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {ttsProvider === 'elevenlabs' && (
-              <div className={styles.field}>
-                <label htmlFor="tts-voice-el" className={styles.label}>Voice ID</label>
-                <input
-                  id="tts-voice-el"
-                  type="text"
-                  className={styles.input}
                   value={ttsVoiceId}
                   onChange={(event) => setTtsVoiceId(event.target.value)}
-                  placeholder="ElevenLabs voice ID"
-                  disabled={submitting}
-                />
+                  disabled={submitting || loadingVoices || deepgramVoices.length === 0}
+                >
+                  {deepgramVoices.length === 0 && (
+                    <option value="">— enter API key to load voices —</option>
+                  )}
+                  {deepgramVoices.map((voice) => (
+                    <option key={voice.id} value={voice.id}>{voice.name}</option>
+                  ))}
+                </select>
               </div>
             )}
 
@@ -335,7 +357,7 @@ export default function AISettingsModal({ onClose }: Props) {
               </select>
             </div>
 
-            {(sttProvider === 'openai' || sttProvider === 'deepgram') && (
+            {sttProvider === 'deepgram' && (
               <div className={styles.field}>
                 <label htmlFor="stt-api-key" className={styles.label}>
                   STT API Key

@@ -3,18 +3,28 @@ import type { LLMProvider, TTSProvider, STTProvider } from '@/types';
 export const TTS_PROVIDERS: { value: TTSProvider | null; label: string }[] = [
   { value: null, label: 'Disabled' },
   { value: 'browser', label: 'Browser (built-in, no key needed)' },
-  { value: 'openai', label: 'OpenAI TTS' },
-  { value: 'elevenlabs', label: 'ElevenLabs' },
+  { value: 'deepgram', label: 'Deepgram Aura' },
 ];
+
+export interface DeepgramVoice {
+  id: string;
+  name: string;
+  language: string;
+}
+
+export async function fetchDeepgramTtsVoices(key?: string): Promise<DeepgramVoice[]> {
+  const url = key ? `/api/voice/tts/models?key=${encodeURIComponent(key)}` : '/api/voice/tts/models';
+  const res = await fetch(url);
+  if (!res.ok) return [];
+  const data = await res.json() as { voices?: DeepgramVoice[] };
+  return data.voices ?? [];
+}
 
 export const STT_PROVIDERS: { value: STTProvider | null; label: string }[] = [
   { value: null, label: 'Disabled' },
   { value: 'browser', label: 'Browser (built-in, no key needed)' },
-  { value: 'openai', label: 'OpenAI Whisper' },
   { value: 'deepgram', label: 'Deepgram' },
 ];
-
-export const OPENAI_TTS_VOICES = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'] as const;
 
 export const LLM_PROVIDERS: { value: LLMProvider; label: string }[] = [
   { value: 'openai', label: 'OpenAI' },

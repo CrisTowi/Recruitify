@@ -8,6 +8,7 @@ import type { FeedbackData } from '@/components/FeedbackCard/FeedbackCard';
 import VoiceControls from '@/components/VoiceControls/VoiceControls';
 import Skeleton from '@/components/Skeleton/Skeleton';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
+import { useDeepgramStreaming } from '@/hooks/useDeepgramStreaming';
 import { useSpeechSynthesis } from '@/hooks/useSpeechSynthesis';
 import { useDebounce } from '@/hooks/useDebounce';
 import {
@@ -53,12 +54,15 @@ export default function InterviewSession({ session }: Props) {
   const cloudAudioRef = useRef<HTMLAudioElement | null>(null);
 
   const stt = useSpeechRecognition();
+  const deepgramStt = useDeepgramStreaming();
   const tts = useSpeechSynthesis();
-
-  const debouncedTranscript = useDebounce(stt.transcript, 150);
 
   const useCloudTts = isCloudTtsProvider(aiSettings?.tts_provider);
   const useCloudStt = isCloudSttProvider(aiSettings?.stt_provider);
+  const activeStt = useCloudStt ? deepgramStt : stt;
+
+  const debouncedTranscript = useDebounce(activeStt.transcript, 150);
+
   const isSpeaking = useCloudTts ? isSpeakingCloud : tts.isSpeaking;
   const ttsSpeakFn = tts.speak;
 
@@ -73,10 +77,10 @@ export default function InterviewSession({ session }: Props) {
 
   // Sync debounced STT transcript to answer in voice mode
   useEffect(() => {
-    if (isVoiceMode && !useCloudStt) {
+    if (isVoiceMode) {
       setAnswer(debouncedTranscript);
     }
-  }, [isVoiceMode, debouncedTranscript, useCloudStt]);
+  }, [isVoiceMode, debouncedTranscript]);
 
   // Announce new questions to screen readers
   useEffect(() => {
@@ -99,7 +103,6 @@ export default function InterviewSession({ session }: Props) {
         try {
           const audio = await speakWithCloudTts(currentQuestion.question_text, aiSettings?.tts_voice_id);
           cloudAudioRef.current = audio;
-          setIsSpeakingCloud(true);
           audio.onended = () => {
             setIsSpeakingCloud(false);
             cloudAudioRef.current = null;
@@ -108,9 +111,12 @@ export default function InterviewSession({ session }: Props) {
             setIsSpeakingCloud(false);
             cloudAudioRef.current = null;
           };
-          audio.play();
+          await audio.play();
+          setIsSpeakingCloud(true);
         } catch {
-          // Cloud TTS failed — silent fallback
+          // Cloud TTS failed or autoplay was blocked — reset state
+          setIsSpeakingCloud(false);
+          cloudAudioRef.current = null;
         }
       } else {
         ttsSpeakFn(currentQuestion.question_text);
@@ -198,22 +204,18 @@ export default function InterviewSession({ session }: Props) {
 
   const handleToggleVoiceMode = useCallback(() => {
     if (isVoiceMode) {
-      stt.stopListening();
+      activeStt.stopListening();
       cancelSpeech();
     }
     setIsVoiceMode((prev) => !prev);
-  }, [isVoiceMode, stt, cancelSpeech]);
-
-  const handleCloudTranscript = useCallback((text: string) => {
-    setAnswer((prev) => prev ? `${prev} ${text}` : text);
-  }, []);
+  }, [isVoiceMode, activeStt, cancelSpeech]);
 
   const handleSubmitAnswer = useCallback(async () => {
     if (!currentQuestion || !answer.trim()) return;
 
     setErrorBanner(null);
     stopTimer();
-    stt.stopListening();
+    activeStt.stopListening();
     cancelSpeech();
     setPhase('submitting');
 
@@ -234,14 +236,14 @@ export default function InterviewSession({ session }: Props) {
 
       if (session.feedback_mode === 'immediate' && result.feedback) {
         setFeedback(result.feedback);
-        setIsLastQuestion(result.next_question === undefined ? true : (result.is_last_question ?? false));
+        setIsLastQuestion(result.next_question === undefined);
         setPhase('feedback');
       } else {
         if (result.next_question) {
           setCurrentQuestion(result.next_question);
           setIsLastQuestion(result.is_last_question ?? false);
           setAnswer('');
-          stt.resetTranscript();
+          activeStt.resetTranscript();
           setPhase('answering');
           startTimer();
         }
@@ -256,7 +258,7 @@ export default function InterviewSession({ session }: Props) {
         setPhase('error');
       }
     }
-  }, [answer, cancelSpeech, currentQuestion, router, session.feedback_mode, session.id, startTimer, stopTimer, stt]);
+  }, [answer, activeStt, cancelSpeech, currentQuestion, router, session.feedback_mode, session.id, startTimer, stopTimer]);
 
   const handleNextQuestion = useCallback(async () => {
     if (isLastQuestion) {
@@ -285,7 +287,7 @@ export default function InterviewSession({ session }: Props) {
         });
         setFeedback(null);
         setAnswer('');
-        stt.resetTranscript();
+        activeStt.resetTranscript();
         setPhase('answering');
         startTimer();
       }
@@ -294,7 +296,7 @@ export default function InterviewSession({ session }: Props) {
       setError(classified.message);
       setPhase('error');
     }
-  }, [isLastQuestion, router, session.id, startTimer, stt]);
+  }, [isLastQuestion, router, session.id, startTimer, activeStt]);
 
   const handleEndEarly = useCallback(async () => {
     if (!showCancelConfirm) {
@@ -388,7 +390,7 @@ export default function InterviewSession({ session }: Props) {
     );
   }
 
-  const voiceSupported = stt.isSupported || useCloudStt;
+  const voiceSupported = activeStt.isSupported;
 
   return (
     <div className={styles.container}>
@@ -432,16 +434,14 @@ export default function InterviewSession({ session }: Props) {
           <div className={styles.answerArea}>
             <VoiceControls
               isVoiceMode={isVoiceMode}
-              isListening={stt.isListening}
+              isListening={activeStt.isListening}
               isSpeaking={isSpeaking}
               isSupported={voiceSupported}
               disabled={phase === 'submitting'}
-              useCloudStt={useCloudStt}
               onToggleVoiceMode={handleToggleVoiceMode}
-              onStartListening={stt.startListening}
-              onStopListening={stt.stopListening}
+              onStartListening={activeStt.startListening}
+              onStopListening={activeStt.stopListening}
               onCancelSpeech={cancelSpeech}
-              onCloudTranscript={handleCloudTranscript}
             />
 
             {/* Inline error banner (retryable errors only) */}
@@ -465,11 +465,11 @@ export default function InterviewSession({ session }: Props) {
               aria-label="Your answer"
             />
 
-            {/* Interim transcript (browser STT only) */}
-            {isVoiceMode && !useCloudStt && stt.interimTranscript && (
+            {/* Interim transcript */}
+            {isVoiceMode && activeStt.interimTranscript && (
               <p className={styles.interimText}>
                 <span className={styles.interimDot} aria-hidden="true" />
-                {stt.interimTranscript}
+                {activeStt.interimTranscript}
               </p>
             )}
 

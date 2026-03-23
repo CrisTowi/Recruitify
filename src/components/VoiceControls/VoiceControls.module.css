@@ -87,6 +87,27 @@
   50% { transform: scale(1.25); }
 }
 
+/* ── Recording indicator ── */
+.recordingIndicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  color: var(--color-status-rejected);
+}
+
+.recordingDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--color-status-rejected);
+  animation: blink 1.2s ease-in-out infinite;
+}
+
+.recordingLabel {
+  font-size: 0.875rem;
+}
+
 /* ── Speaking indicator ── */
 .speakingIndicator {
   display: flex;

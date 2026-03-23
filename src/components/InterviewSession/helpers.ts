@@ -117,11 +117,11 @@ export async function fetchSessionAISettings(): Promise<AISettings | null> {
 }
 
 export function isCloudTtsProvider(provider: TTSProvider | null | undefined): boolean {
-  return provider === 'openai' || provider === 'elevenlabs';
+  return provider === 'deepgram';
 }
 
 export function isCloudSttProvider(provider: import('@/types').STTProvider | null | undefined): boolean {
-  return provider === 'openai' || provider === 'deepgram';
+  return provider === 'deepgram';
 }
 
 export async function speakWithCloudTts(text: string, voiceId?: string | null): Promise<HTMLAudioElement> {

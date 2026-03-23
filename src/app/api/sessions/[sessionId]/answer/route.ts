@@ -112,6 +112,20 @@ export async function POST(req: Request, { params }: Ctx) {
       });
     }
 
+    // If a next question already exists (e.g. from a previous failed request), return it
+    const existingUnanswered = questions.find((question) => question.answer_transcript === null);
+    if (existingUnanswered) {
+      return NextResponse.json({
+        feedback: feedback ?? undefined,
+        next_question: {
+          id: existingUnanswered.id,
+          question_number: existingUnanswered.question_number,
+          question_text: existingUnanswered.question_text,
+        },
+        is_last_question: existingUnanswered.question_number >= session.num_questions,
+      });
+    }
+
     // Generate next question
     const systemPrompt = buildInterviewSystemPrompt(session, company, stage);
     const history = buildConversationHistory(questions);
@@ -123,7 +137,7 @@ export async function POST(req: Request, { params }: Ctx) {
     const nextQuestionResponse = await llm.chat(messages, { temperature: 0.7, maxTokens: 512 });
     const nextQuestionText = nextQuestionResponse.content.trim();
 
-    const nextQuestionNumber = questions.length + 1;
+    const nextQuestionNumber = answeredCount + 1;
     const nextQuestion = await db.createQuestion({
       session_id: sessionId,
       question_number: nextQuestionNumber,
