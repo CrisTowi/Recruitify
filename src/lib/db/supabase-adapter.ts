@@ -469,6 +469,8 @@ export class SupabaseAdapter implements DbAdapter {
       interviewer_persona: (row.interviewer_persona as string | null) ?? null,
       difficulty: row.difficulty as Difficulty,
       focus_areas: this.parseJsonArray(row.focus_areas),
+      is_dry_run: (row.is_dry_run as boolean | null) ?? false,
+      dry_run_context: (row.dry_run_context as string | null) ?? null,
       overall_score: (row.overall_score as number | null) ?? null,
       debrief_summary: (row.debrief_summary as string | null) ?? null,
       debrief_strengths: this.parseJsonArray(row.debrief_strengths),
@@ -501,13 +503,15 @@ export class SupabaseAdapter implements DbAdapter {
   async createSession(input: CreateSessionInput): Promise<InterviewSession> {
     const { client, userId } = await this.getClient();
     const row: Record<string, unknown> = {
-      company_id: input.company_id,
-      stage_id: input.stage_id,
+      company_id: input.is_dry_run ? '__dry_run__' : (input.company_id ?? '__dry_run__'),
+      stage_id: input.is_dry_run ? '__dry_run_stage__' : (input.stage_id ?? '__dry_run_stage__'),
       feedback_mode: input.feedback_mode,
       num_questions: input.num_questions,
       interviewer_persona: input.interviewer_persona ?? null,
       difficulty: input.difficulty,
       focus_areas: JSON.stringify(input.focus_areas ?? []),
+      is_dry_run: input.is_dry_run ?? false,
+      dry_run_context: input.dry_run_context ?? null,
     };
     if (getAuthEnabled() && userId) row.user_id = userId;
 
