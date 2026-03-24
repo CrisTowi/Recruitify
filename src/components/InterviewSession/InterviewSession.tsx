@@ -47,11 +47,15 @@ export default function InterviewSession({ session }: Props) {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [isVoiceMode, setIsVoiceMode] = useState(false);
   const [isSpeakingCloud, setIsSpeakingCloud] = useState(false);
+  const [isLoadingTts, setIsLoadingTts] = useState(false);
+  const [hasAudioCached, setHasAudioCached] = useState(false);
   const [aiSettings, setAiSettings] = useState<AISettings | null>(null);
+  const [pendingNextQuestion, setPendingNextQuestion] = useState<CurrentQuestion | null>(null);
 
   const questionStartTimeRef = useRef<number>(Date.now());
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const cloudAudioRef = useRef<HTMLAudioElement | null>(null);
+  const lastAudioUrlRef = useRef<string | null>(null);
 
   const stt = useSpeechRecognition();
   const deepgramStt = useDeepgramStreaming();
@@ -100,8 +104,16 @@ export default function InterviewSession({ session }: Props) {
       if (!currentQuestion) return;
 
       if (useCloudTts) {
+        setIsLoadingTts(true);
+        setHasAudioCached(false);
+        if (lastAudioUrlRef.current) {
+          URL.revokeObjectURL(lastAudioUrlRef.current);
+          lastAudioUrlRef.current = null;
+        }
         try {
           const audio = await speakWithCloudTts(currentQuestion.question_text, aiSettings?.tts_voice_id);
+          lastAudioUrlRef.current = audio.src;
+          setHasAudioCached(true);
           cloudAudioRef.current = audio;
           audio.onended = () => {
             setIsSpeakingCloud(false);
@@ -111,10 +123,11 @@ export default function InterviewSession({ session }: Props) {
             setIsSpeakingCloud(false);
             cloudAudioRef.current = null;
           };
+          setIsLoadingTts(false);
           await audio.play();
           setIsSpeakingCloud(true);
         } catch {
-          // Cloud TTS failed or autoplay was blocked — reset state
+          setIsLoadingTts(false);
           setIsSpeakingCloud(false);
           cloudAudioRef.current = null;
         }
@@ -148,7 +161,29 @@ export default function InterviewSession({ session }: Props) {
       cloudAudioRef.current = null;
     }
     setIsSpeakingCloud(false);
+    setIsLoadingTts(false);
   }, [tts]);
+
+  const handleReplay = useCallback(() => {
+    if (useCloudTts) {
+      if (!lastAudioUrlRef.current) return;
+      const audio = new Audio(lastAudioUrlRef.current);
+      cloudAudioRef.current = audio;
+      audio.onended = () => { setIsSpeakingCloud(false); cloudAudioRef.current = null; };
+      audio.onerror = () => { setIsSpeakingCloud(false); cloudAudioRef.current = null; };
+      void (async () => {
+        try {
+          await audio.play();
+          setIsSpeakingCloud(true);
+        } catch {
+          setIsSpeakingCloud(false);
+          cloudAudioRef.current = null;
+        }
+      })();
+    } else if (currentQuestion) {
+      ttsSpeakFn(currentQuestion.question_text);
+    }
+  }, [useCloudTts, currentQuestion, ttsSpeakFn]);
 
   // Begin or resume the interview on mount (re-runs on beginAttempt change for retry)
   useEffect(() => {
@@ -237,6 +272,7 @@ export default function InterviewSession({ session }: Props) {
       if (session.feedback_mode === 'immediate' && result.feedback) {
         setFeedback(result.feedback);
         setIsLastQuestion(result.next_question === undefined);
+        setPendingNextQuestion(result.next_question ?? null);
         setPhase('feedback');
       } else {
         if (result.next_question) {
@@ -274,29 +310,16 @@ export default function InterviewSession({ session }: Props) {
       return;
     }
 
-    try {
-      const res = await fetch(`/api/sessions/${session.id}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const updated = await res.json() as InterviewSessionFull;
-      const nextQ = updated.questions[updated.questions.length - 1];
-      if (nextQ && !nextQ.answer_transcript) {
-        setCurrentQuestion({
-          id: nextQ.id,
-          question_number: nextQ.question_number,
-          question_text: nextQ.question_text,
-        });
-        setFeedback(null);
-        setAnswer('');
-        activeStt.resetTranscript();
-        setPhase('answering');
-        startTimer();
-      }
-    } catch (err) {
-      const classified = classifyError(err);
-      setError(classified.message);
-      setPhase('error');
+    if (pendingNextQuestion) {
+      setCurrentQuestion(pendingNextQuestion);
+      setPendingNextQuestion(null);
+      setFeedback(null);
+      setAnswer('');
+      activeStt.resetTranscript();
+      setPhase('answering');
+      startTimer();
     }
-  }, [isLastQuestion, router, session.id, startTimer, activeStt]);
+  }, [isLastQuestion, pendingNextQuestion, router, session.id, startTimer, activeStt]);
 
   const handleEndEarly = useCallback(async () => {
     if (!showCancelConfirm) {
@@ -391,6 +414,7 @@ export default function InterviewSession({ session }: Props) {
   }
 
   const voiceSupported = activeStt.isSupported;
+  const canReplay = isVoiceMode && !isSpeaking && !isLoadingTts && currentQuestion !== null && phase === 'answering' && (useCloudTts ? hasAudioCached : true);
 
   return (
     <div className={styles.container}>
@@ -436,12 +460,15 @@ export default function InterviewSession({ session }: Props) {
               isVoiceMode={isVoiceMode}
               isListening={activeStt.isListening}
               isSpeaking={isSpeaking}
+              isLoadingTts={isLoadingTts}
               isSupported={voiceSupported}
               disabled={phase === 'submitting'}
+              canReplay={canReplay}
               onToggleVoiceMode={handleToggleVoiceMode}
               onStartListening={activeStt.startListening}
               onStopListening={activeStt.stopListening}
               onCancelSpeech={cancelSpeech}
+              onReplay={handleReplay}
             />
 
             {/* Inline error banner (retryable errors only) */}

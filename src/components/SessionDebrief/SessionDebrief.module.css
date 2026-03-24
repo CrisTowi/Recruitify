@@ -88,6 +88,49 @@
   border-left: 3px solid var(--color-brand);
 }
 
+/* ── Verdict banner ── */
+.verdict {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 20px;
+  border-radius: var(--radius-md);
+  border-left: 4px solid;
+}
+
+.verdictPass {
+  background-color: color-mix(in srgb, var(--color-status-offer) 12%, transparent);
+  border-color: var(--color-status-offer);
+}
+
+.verdictFail {
+  background-color: color-mix(in srgb, var(--color-status-rejected) 10%, transparent);
+  border-color: var(--color-status-rejected);
+}
+
+.verdictBorderline {
+  background-color: color-mix(in srgb, var(--color-status-wishlist) 12%, transparent);
+  border-color: var(--color-status-wishlist);
+}
+
+.verdictLabel {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.verdictPass .verdictLabel { color: var(--color-status-offer); }
+.verdictFail .verdictLabel { color: var(--color-status-rejected); }
+.verdictBorderline .verdictLabel { color: var(--color-status-wishlist); }
+
+.verdictNote {
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
 /* ── No debrief state ── */
 .noDebrief {
   display: flex;

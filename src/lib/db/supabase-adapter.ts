@@ -474,6 +474,8 @@ export class SupabaseAdapter implements DbAdapter {
       debrief_strengths: this.parseJsonArray(row.debrief_strengths),
       debrief_improvements: this.parseJsonArray(row.debrief_improvements),
       debrief_resources: this.parseJsonArray(row.debrief_resources),
+      debrief_verdict: ((row.debrief_verdict as string | null) ?? null) as 'pass' | 'fail' | 'borderline' | null,
+      debrief_interviewer_note: (row.debrief_interviewer_note as string | null) ?? null,
       started_at: (row.started_at as string | null) ?? null,
       completed_at: (row.completed_at as string | null) ?? null,
       created_at: row.created_at as string,

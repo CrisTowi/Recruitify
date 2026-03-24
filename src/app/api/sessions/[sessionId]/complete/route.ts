@@ -16,6 +16,8 @@ interface DebriefPerQuestion {
 interface DebriefJson {
   overall_score?: number;
   summary?: string;
+  verdict?: 'pass' | 'fail' | 'borderline';
+  interviewer_note?: string;
   strengths?: string[];
   improvements?: string[];
   resources?: string[];
@@ -90,9 +92,15 @@ export async function POST(req: Request, { params }: Ctx) {
         const response = await llm.chat(messages, { temperature: 0.3, maxTokens: 2048 });
         const debrief = parseDebriefJson(response.content);
 
+        const validVerdicts = ['pass', 'fail', 'borderline'] as const;
+        const rawVerdict = debrief.verdict;
+        const verdict = rawVerdict && validVerdicts.includes(rawVerdict) ? rawVerdict : null;
+
         await db.updateSession(sessionId, {
           overall_score: debrief.overall_score ?? null,
           debrief_summary: debrief.summary ?? null,
+          debrief_verdict: verdict,
+          debrief_interviewer_note: debrief.interviewer_note ?? null,
           debrief_strengths: debrief.strengths ?? [],
           debrief_improvements: debrief.improvements ?? [],
           debrief_resources: debrief.resources ?? [],

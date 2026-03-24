@@ -1,4 +1,4 @@
-import type { FeedbackMode, Difficulty } from '@/types';
+import type { FeedbackMode, Difficulty, InterviewSession } from '@/types';
 
 export const PERSONA_PRESETS = [
   { label: 'Engineering manager', value: 'Senior engineering manager, direct but friendly' },
@@ -30,6 +30,21 @@ export const FOCUS_AREA_SUGGESTIONS = [
   'Past experience',
   'Coding',
 ];
+
+export async function fetchActiveSession(): Promise<InterviewSession | null> {
+  const res = await fetch('/api/sessions?status=in_progress&limit=1');
+  if (!res.ok) return null;
+  const data = await res.json() as { sessions: InterviewSession[]; total: number };
+  return data.sessions[0] ?? null;
+}
+
+export async function cancelSessionById(sessionId: string): Promise<void> {
+  const res = await fetch(`/api/sessions/${sessionId}/cancel`, { method: 'POST' });
+  if (!res.ok) {
+    const json = await res.json() as { error?: string };
+    throw new Error(json.error ?? `HTTP ${res.status}`);
+  }
+}
 
 export async function createSession(payload: {
   company_id: string;

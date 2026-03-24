@@ -105,7 +105,8 @@ export default function AISettingsModal({ onClose }: Props) {
         const voices = await fetchDeepgramTtsVoices(ttsKey.trim() || undefined);
         setDeepgramVoices(voices);
         if (voices.length > 0 && !voices.find((voice) => voice.id === ttsVoiceIdRef.current)) {
-          setTtsVoiceId(voices[0].id);
+          const preferred = voices.find((voice) => voice.id === 'aura-asteria-en') ?? voices[0];
+          setTtsVoiceId(preferred.id);
         }
       } finally {
         setLoadingVoices(false);

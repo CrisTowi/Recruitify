@@ -2,12 +2,14 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import type { CompanyWithNextStep, InterviewStage, FeedbackMode, Difficulty } from '@/types';
+import type { CompanyWithNextStep, InterviewStage, FeedbackMode, Difficulty, InterviewSession } from '@/types';
 import {
   PERSONA_PRESETS,
   DIFFICULTY_OPTIONS,
   FEEDBACK_MODE_OPTIONS,
   FOCUS_AREA_SUGGESTIONS,
+  fetchActiveSession,
+  cancelSessionById,
   createSession,
 } from './helpers';
 import { useToast } from '@/components/Toast/ToastProvider';
@@ -33,23 +35,32 @@ export default function SimulationConfigModal({ company, stage, onClose }: Props
   const [feedbackMode, setFeedbackMode] = useState<FeedbackMode>('immediate');
   const [submitting, setSubmitting] = useState(false);
   const [hasAIKey, setHasAIKey] = useState<boolean | null>(null);
+  const [activeSession, setActiveSession] = useState<InterviewSession | null | undefined>(undefined);
+  const [discarding, setDiscarding] = useState(false);
 
   const focusInputRef = useRef<HTMLInputElement>(null);
 
-  // Check AI settings on mount
+  // Check AI settings and active session on mount
   useEffect(() => {
-    async function checkAI() {
+    async function checkOnMount() {
       try {
-        const res = await fetch('/api/ai-settings');
-        if (res.status === 404) { setHasAIKey(false); return; }
-        if (!res.ok) { setHasAIKey(false); return; }
-        const data = await res.json() as { has_llm_key: boolean };
-        setHasAIKey(data.has_llm_key);
+        const [aiRes, session] = await Promise.all([
+          fetch('/api/ai-settings'),
+          fetchActiveSession(),
+        ]);
+        if (aiRes.status === 404 || !aiRes.ok) {
+          setHasAIKey(false);
+        } else {
+          const data = await aiRes.json() as { has_llm_key: boolean };
+          setHasAIKey(data.has_llm_key);
+        }
+        setActiveSession(session);
       } catch {
         setHasAIKey(false);
+        setActiveSession(null);
       }
     }
-    checkAI();
+    checkOnMount();
   }, []);
 
   useEffect(() => {
@@ -84,6 +95,20 @@ export default function SimulationConfigModal({ company, stage, onClose }: Props
 
   function removeFocusArea(area: string) {
     setFocusAreas((prev) => prev.filter((focusArea) => focusArea !== area));
+  }
+
+  async function handleDiscardAndStartNew() {
+    if (!activeSession) return;
+    setDiscarding(true);
+    try {
+      await cancelSessionById(activeSession.id);
+      setActiveSession(null);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to discard session';
+      toast(message);
+    } finally {
+      setDiscarding(false);
+    }
   }
 
   async function handleSubmit(event: React.FormEvent) {
@@ -143,14 +168,53 @@ export default function SimulationConfigModal({ company, stage, onClose }: Props
           )}
         </div>
 
-        {/* AI key guard */}
-        {hasAIKey === false && (
-          <div className={styles.aiWarning}>
-            No AI key configured. Set up your provider in <strong>AI Settings</strong> before starting.
+        {/* Loading state */}
+        {activeSession === undefined && (
+          <p className={styles.loadingText}>Checking for active sessions…</p>
+        )}
+
+        {/* Active session conflict */}
+        {activeSession !== undefined && activeSession !== null && (
+          <div className={styles.conflictBanner}>
+            <p className={styles.conflictMessage}>
+              You have an active simulation in progress. Continue where you left off, or discard it to start a new one.
+            </p>
+            {activeSession.started_at && (
+              <p className={styles.conflictMeta}>
+                Started {new Date(activeSession.started_at).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
+              </p>
+            )}
+            <div className={styles.conflictActions}>
+              <button
+                type="button"
+                className={styles.discardButton}
+                onClick={handleDiscardAndStartNew}
+                disabled={discarding}
+              >
+                {discarding ? 'Discarding…' : 'Discard & start new'}
+              </button>
+              <button
+                type="button"
+                className={styles.submitButton}
+                onClick={() => router.push(`/session/${activeSession.id}`)}
+              >
+                Continue
+              </button>
+            </div>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} noValidate>
+        {/* Config form — only shown when no active session */}
+        {activeSession === null && (
+          <>
+            {/* AI key guard */}
+            {hasAIKey === false && (
+              <div className={styles.aiWarning}>
+                No AI key configured. Set up your provider in <strong>AI Settings</strong> before starting.
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} noValidate>
           {/* Number of questions */}
           <div className={styles.field}>
             <label className={styles.label}>
@@ -159,14 +223,14 @@ export default function SimulationConfigModal({ company, stage, onClose }: Props
             <input
               type="range"
               className={styles.slider}
-              min={3}
+              min={1}
               max={15}
               value={numQuestions}
               onChange={(event) => setNumQuestions(Number(event.target.value))}
               disabled={submitting}
             />
             <div className={styles.sliderRange}>
-              <span>3</span><span>15</span>
+              <span>1</span><span>15</span>
             </div>
           </div>
 
@@ -298,6 +362,8 @@ export default function SimulationConfigModal({ company, stage, onClose }: Props
             </button>
           </div>
         </form>
+        </>
+        )}
       </div>
     </div>
   );

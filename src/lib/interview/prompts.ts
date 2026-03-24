@@ -37,6 +37,7 @@ export function buildInterviewSystemPrompt(
     `- ${feedbackModeInstructions}`,
     `- Do not reveal the total number of questions to the candidate`,
     `- Be professional and realistic — this is a mock of a real interview`,
+    `- When starting the interview, open immediately with your first question — do not greet the candidate or say anything before the question`,
   ].filter((line) => line !== null && line !== undefined).join('\n');
 }
 
@@ -52,6 +53,8 @@ export function buildDebriefSystemPrompt(
     `{`,
     `  "overall_score": <number 1-10>,`,
     `  "summary": "<2-3 sentence narrative summarizing performance>",`,
+    `  "verdict": "<'pass' | 'fail' | 'borderline'>",`,
+    `  "interviewer_note": "<1-2 sentences from the interviewer's perspective — would they move this candidate forward, and why?>",`,
     `  "strengths": ["<strength 1>", "<strength 2>", "<strength 3>"],`,
     `  "improvements": ["<improvement area 1>", "<improvement area 2>", "<improvement area 3>"],`,
     `  "resources": ["<resource or topic to study 1>", "<resource 2>"],`,
@@ -70,6 +73,7 @@ export function buildDebriefSystemPrompt(
     `- Reference exact quotes from the candidate's answers where helpful`,
     `- Difficulty level of the session was: ${session.difficulty}`,
     `- Calibrate scores accordingly (a score of 7 on "hard" is excellent)`,
+    `- verdict must be exactly one of: "pass", "fail", or "borderline". Use "pass" for scores 7+, "fail" for scores below 5, and "borderline" for 5-6`,
     `- Respond with ONLY the JSON object, no additional text`,
   ].join('\n');
 }

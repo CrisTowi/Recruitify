@@ -9,6 +9,21 @@ export interface UseSpeechSynthesisReturn {
   isSupported: boolean;
 }
 
+// Chrome loads voices asynchronously. Returns a promise that resolves once
+// voices are available (or immediately if they already are).
+function getVoicesReady(): Promise<SpeechSynthesisVoice[]> {
+  return new Promise((resolve) => {
+    const voices = window.speechSynthesis.getVoices();
+    if (voices.length > 0) {
+      resolve(voices);
+      return;
+    }
+    window.speechSynthesis.addEventListener('voiceschanged', () => {
+      resolve(window.speechSynthesis.getVoices());
+    }, { once: true });
+  });
+}
+
 export function useSpeechSynthesis(): UseSpeechSynthesisReturn {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
@@ -27,28 +42,36 @@ export function useSpeechSynthesis(): UseSpeechSynthesisReturn {
   const speak = useCallback((text: string) => {
     if (!isSupported || !text.trim()) return;
 
-    window.speechSynthesis.cancel();
+    void (async () => {
+      window.speechSynthesis.cancel();
 
-    // Chrome bug: speechSynthesis can get stuck in a paused state after navigation.
-    // Calling resume() ensures queued utterances actually play.
-    if (window.speechSynthesis.paused) {
-      window.speechSynthesis.resume();
-    }
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+      }
 
-    const utterance = new SpeechSynthesisUtterance(text);
-    utteranceRef.current = utterance;
+      const voices = await getVoicesReady();
+      const utterance = new SpeechSynthesisUtterance(text);
 
-    setIsSpeaking(true);
-    utterance.onend = () => {
-      setIsSpeaking(false);
-      utteranceRef.current = null;
-    };
-    utterance.onerror = () => {
-      setIsSpeaking(false);
-      utteranceRef.current = null;
-    };
+      const englishVoice = voices.find((voice) => voice.lang.startsWith('en'));
+      if (englishVoice) {
+        utterance.voice = englishVoice;
+      }
 
-    window.speechSynthesis.speak(utterance);
+      utteranceRef.current = utterance;
+
+      utterance.onend = () => {
+        setIsSpeaking(false);
+        utteranceRef.current = null;
+      };
+      utterance.onerror = (event) => {
+        console.error('[TTS] utterance error:', event.error);
+        setIsSpeaking(false);
+        utteranceRef.current = null;
+      };
+
+      window.speechSynthesis.speak(utterance);
+      setIsSpeaking(true);
+    })();
   }, [isSupported]);
 
   const cancel = useCallback(() => {

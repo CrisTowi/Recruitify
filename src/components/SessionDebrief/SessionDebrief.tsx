@@ -114,6 +114,24 @@ export default function SessionDebrief({ session, onRegenerated }: Props) {
 
         {hasDebrief && (
           <>
+            {/* Interviewer verdict */}
+            {session.debrief_verdict && (
+              <div className={`${styles.verdict} ${
+                session.debrief_verdict === 'pass' ? styles.verdictPass :
+                session.debrief_verdict === 'fail' ? styles.verdictFail :
+                styles.verdictBorderline
+              }`}>
+                <span className={styles.verdictLabel}>
+                  {session.debrief_verdict === 'pass' ? 'Move Forward' :
+                   session.debrief_verdict === 'fail' ? 'Not Moving Forward' :
+                   'Borderline'}
+                </span>
+                {session.debrief_interviewer_note && (
+                  <p className={styles.verdictNote}>{session.debrief_interviewer_note}</p>
+                )}
+              </div>
+            )}
+
             {/* Strengths */}
             {session.debrief_strengths.length > 0 && (
               <div className={styles.section}>

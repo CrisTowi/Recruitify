@@ -151,6 +151,8 @@ function initSchema(db: Database.Database): void {
       debrief_strengths TEXT NOT NULL DEFAULT '[]',
       debrief_improvements TEXT NOT NULL DEFAULT '[]',
       debrief_resources TEXT NOT NULL DEFAULT '[]',
+      debrief_verdict TEXT,
+      debrief_interviewer_note TEXT,
       started_at TEXT,
       completed_at TEXT,
       created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
@@ -189,6 +191,8 @@ function initSchema(db: Database.Database): void {
   // ALTER TABLE ... ADD COLUMN is idempotent via try/catch (SQLite has no IF NOT EXISTS for columns)
   try { db.exec(`ALTER TABLE companies ADD COLUMN prep_notes TEXT`); } catch { /* already exists */ }
   try { db.exec(`ALTER TABLE interviews_roadmap ADD COLUMN notes TEXT`); } catch { /* already exists */ }
+  try { db.exec(`ALTER TABLE interview_sessions ADD COLUMN debrief_verdict TEXT`); } catch { /* already exists */ }
+  try { db.exec(`ALTER TABLE interview_sessions ADD COLUMN debrief_interviewer_note TEXT`); } catch { /* already exists */ }
 }
 
 // ── Raw row types returned by better-sqlite3 ──────────────────────────────────
@@ -284,6 +288,8 @@ interface InterviewSessionRow {
   debrief_strengths: string;
   debrief_improvements: string;
   debrief_resources: string;
+  debrief_verdict: string | null;
+  debrief_interviewer_note: string | null;
   started_at: string | null;
   completed_at: string | null;
   created_at: string;
@@ -387,6 +393,8 @@ function mapSession(row: InterviewSessionRow): InterviewSession {
     debrief_strengths: parseJsonArray(row.debrief_strengths),
     debrief_improvements: parseJsonArray(row.debrief_improvements),
     debrief_resources: parseJsonArray(row.debrief_resources),
+    debrief_verdict: (row.debrief_verdict as 'pass' | 'fail' | 'borderline' | null) ?? null,
+    debrief_interviewer_note: row.debrief_interviewer_note ?? null,
     started_at: row.started_at,
     completed_at: row.completed_at,
     created_at: row.created_at,
@@ -918,7 +926,7 @@ export class SqliteAdapter implements DbAdapter {
     const db = getDb();
     const allowed = [
       'status', 'feedback_mode', 'num_questions', 'interviewer_persona', 'difficulty',
-      'overall_score', 'debrief_summary', 'started_at', 'completed_at',
+      'overall_score', 'debrief_summary', 'debrief_verdict', 'debrief_interviewer_note', 'started_at', 'completed_at',
     ] as const;
     const jsonFields = ['focus_areas', 'debrief_strengths', 'debrief_improvements', 'debrief_resources'] as const;
 

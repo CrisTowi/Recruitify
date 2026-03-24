@@ -50,7 +50,7 @@ export async function POST(req: Request, { params }: Ctx) {
 
     const messages: ChatMessage[] = [
       { role: 'system', content: systemPrompt },
-      { role: 'user', content: 'Hello, I am ready to begin the interview.' },
+      { role: 'user', content: 'Please begin.' },
     ];
 
     const response = await llm.chat(messages, { temperature: 0.7, maxTokens: 512 });

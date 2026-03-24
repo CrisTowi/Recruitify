@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import { speakWithOpenAI, speakWithElevenLabs } from '@/lib/voice/tts';
+import { speakWithDeepgram } from '@/lib/voice/tts';
 
 interface TTSBody {
   text: string;
@@ -37,15 +37,7 @@ export async function POST(req: Request) {
     }
 
     const resolvedVoiceId = voice_id ?? aiSettings.tts_voice_id ?? '';
-    let audioResponse: Response;
-
-    if (aiSettings.tts_provider === 'openai') {
-      audioResponse = await speakWithOpenAI(text, aiKeys.tts_api_key, resolvedVoiceId);
-    } else if (aiSettings.tts_provider === 'elevenlabs') {
-      audioResponse = await speakWithElevenLabs(text, aiKeys.tts_api_key, resolvedVoiceId);
-    } else {
-      return NextResponse.json({ error: 'Unsupported TTS provider' }, { status: 400 });
-    }
+    const audioResponse = await speakWithDeepgram(text, aiKeys.tts_api_key, resolvedVoiceId);
 
     return new Response(audioResponse.body, {
       headers: {

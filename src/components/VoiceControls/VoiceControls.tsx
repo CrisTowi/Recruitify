@@ -6,24 +6,30 @@ interface Props {
   isVoiceMode: boolean;
   isListening: boolean;
   isSpeaking: boolean;
+  isLoadingTts: boolean;
   isSupported: boolean;
   disabled: boolean;
+  canReplay: boolean;
   onToggleVoiceMode: () => void;
   onStartListening: () => void;
   onStopListening: () => void;
   onCancelSpeech: () => void;
+  onReplay: () => void;
 }
 
 export default function VoiceControls({
   isVoiceMode,
   isListening,
   isSpeaking,
+  isLoadingTts,
   isSupported,
   disabled,
+  canReplay,
   onToggleVoiceMode,
   onStartListening,
   onStopListening,
   onCancelSpeech,
+  onReplay,
 }: Props) {
   if (!isSupported) return null;
 
@@ -47,7 +53,7 @@ export default function VoiceControls({
             type="button"
             className={`${styles.micButton} ${isListening ? styles.micButtonActive : ''}`}
             onClick={isListening ? onStopListening : onStartListening}
-            disabled={disabled}
+            disabled={disabled || isLoadingTts || isSpeaking}
             aria-pressed={isListening}
             title={isListening ? 'Stop listening' : 'Start listening'}
           >
@@ -56,6 +62,15 @@ export default function VoiceControls({
             </span>
             <span>{isListening ? 'Stop' : 'Listen'}</span>
           </button>
+
+          {isLoadingTts && (
+            <div className={styles.loadingIndicator} role="status" aria-label="Preparing audio">
+              <span className={styles.loadingDots} aria-hidden="true">
+                <span /><span /><span />
+              </span>
+              <span className={styles.loadingLabel}>Preparing audio…</span>
+            </div>
+          )}
 
           {isListening && (
             <div className={styles.recordingIndicator} role="status" aria-label="Recording">
@@ -77,6 +92,17 @@ export default function VoiceControls({
                 ✕
               </button>
             </div>
+          )}
+
+          {canReplay && (
+            <button
+              type="button"
+              className={styles.replayButton}
+              onClick={onReplay}
+              title="Replay question"
+            >
+              ↺ Replay
+            </button>
           )}
         </div>
       )}

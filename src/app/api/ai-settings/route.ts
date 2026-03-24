@@ -3,8 +3,8 @@ import { getDb } from '@/lib/db';
 import type { AISettingsInput, LLMProvider, TTSProvider, STTProvider } from '@/types';
 
 const VALID_LLM_PROVIDERS: LLMProvider[] = ['openai', 'anthropic', 'gemini', 'openrouter'];
-const VALID_TTS_PROVIDERS: TTSProvider[] = ['browser', 'elevenlabs', 'openai'];
-const VALID_STT_PROVIDERS: STTProvider[] = ['browser', 'deepgram', 'openai'];
+const VALID_TTS_PROVIDERS: TTSProvider[] = ['browser', 'deepgram'];
+const VALID_STT_PROVIDERS: STTProvider[] = ['browser', 'deepgram'];
 
 export async function GET(req: Request) {
   try {
