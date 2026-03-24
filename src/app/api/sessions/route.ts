@@ -14,12 +14,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const { company_id, stage_id, feedback_mode, num_questions, interviewer_persona, difficulty, focus_areas } = body;
+  const { company_id, stage_id, feedback_mode, num_questions, interviewer_persona, difficulty, focus_areas, is_dry_run, dry_run_context } = body;
 
-  if (!company_id?.trim()) {
+  if (!is_dry_run && !company_id?.trim()) {
     return NextResponse.json({ error: 'company_id is required' }, { status: 400 });
   }
-  if (!stage_id?.trim()) {
+  if (!is_dry_run && !stage_id?.trim()) {
     return NextResponse.json({ error: 'stage_id is required' }, { status: 400 });
   }
   if (!feedback_mode || !VALID_FEEDBACK_MODES.includes(feedback_mode)) {
@@ -47,13 +47,15 @@ export async function POST(req: Request) {
     }
 
     const session = await db.createSession({
-      company_id: company_id.trim(),
-      stage_id: stage_id.trim(),
+      company_id: company_id?.trim(),
+      stage_id: stage_id?.trim(),
       feedback_mode,
       num_questions: questionCount,
       interviewer_persona: interviewer_persona ?? null,
       difficulty,
       focus_areas: focus_areas ?? [],
+      is_dry_run: is_dry_run ?? false,
+      dry_run_context: (dry_run_context as string | null | undefined) ?? null,
     });
 
     return NextResponse.json(session, { status: 201 });

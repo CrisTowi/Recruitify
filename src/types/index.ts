@@ -164,6 +164,8 @@ export interface InterviewSession {
   interviewer_persona: string | null;
   difficulty: Difficulty;
   focus_areas: string[];
+  is_dry_run: boolean;
+  dry_run_context: string | null;
   overall_score: number | null;
   debrief_summary: string | null;
   debrief_strengths: string[];
@@ -191,13 +193,15 @@ export interface SessionQuestion {
 }
 
 export interface CreateSessionInput {
-  company_id: string;
-  stage_id: string;
+  company_id?: string;
+  stage_id?: string;
   feedback_mode: FeedbackMode;
   num_questions: number;
   interviewer_persona?: string | null;
   difficulty: Difficulty;
   focus_areas?: string[];
+  is_dry_run?: boolean;
+  dry_run_context?: string | null;
 }
 
 export interface SessionFilters {

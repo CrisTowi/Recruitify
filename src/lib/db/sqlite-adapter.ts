@@ -193,6 +193,16 @@ function initSchema(db: Database.Database): void {
   try { db.exec(`ALTER TABLE interviews_roadmap ADD COLUMN notes TEXT`); } catch { /* already exists */ }
   try { db.exec(`ALTER TABLE interview_sessions ADD COLUMN debrief_verdict TEXT`); } catch { /* already exists */ }
   try { db.exec(`ALTER TABLE interview_sessions ADD COLUMN debrief_interviewer_note TEXT`); } catch { /* already exists */ }
+  try { db.exec(`ALTER TABLE interview_sessions ADD COLUMN is_dry_run INTEGER NOT NULL DEFAULT 0`); } catch { /* already exists */ }
+  try { db.exec(`ALTER TABLE interview_sessions ADD COLUMN dry_run_context TEXT`); } catch { /* already exists */ }
+
+  // Sentinel rows for dry-run sessions (satisfy FK constraints without a real company/stage)
+  db.exec(`
+    INSERT OR IGNORE INTO companies (id, name, status)
+      VALUES ('__dry_run__', 'Practice Session', 'Wishlist');
+    INSERT OR IGNORE INTO interviews_roadmap (id, company_id, stage_name, order_index)
+      VALUES ('__dry_run_stage__', '__dry_run__', 'Practice', 0);
+  `);
 }
 
 // ── Raw row types returned by better-sqlite3 ──────────────────────────────────
@@ -283,6 +293,8 @@ interface InterviewSessionRow {
   interviewer_persona: string | null;
   difficulty: string;
   focus_areas: string;
+  is_dry_run: number;
+  dry_run_context: string | null;
   overall_score: number | null;
   debrief_summary: string | null;
   debrief_strengths: string;
@@ -388,6 +400,8 @@ function mapSession(row: InterviewSessionRow): InterviewSession {
     interviewer_persona: row.interviewer_persona,
     difficulty: row.difficulty as Difficulty,
     focus_areas: parseJsonArray(row.focus_areas),
+    is_dry_run: row.is_dry_run === 1,
+    dry_run_context: row.dry_run_context ?? null,
     overall_score: row.overall_score,
     debrief_summary: row.debrief_summary,
     debrief_strengths: parseJsonArray(row.debrief_strengths),
@@ -866,20 +880,24 @@ export class SqliteAdapter implements DbAdapter {
   createSession(input: CreateSessionInput): Promise<InterviewSession> {
     const db = getDb();
     const id = crypto.randomUUID();
+    const companyId = input.is_dry_run ? '__dry_run__' : (input.company_id ?? '__dry_run__');
+    const stageId = input.is_dry_run ? '__dry_run_stage__' : (input.stage_id ?? '__dry_run_stage__');
     db.prepare(
       `INSERT INTO interview_sessions (
          id, company_id, stage_id, feedback_mode, num_questions,
-         interviewer_persona, difficulty, focus_areas
-       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+         interviewer_persona, difficulty, focus_areas, is_dry_run, dry_run_context
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(
       id,
-      input.company_id,
-      input.stage_id,
+      companyId,
+      stageId,
       input.feedback_mode,
       input.num_questions,
       input.interviewer_persona ?? null,
       input.difficulty,
       JSON.stringify(input.focus_areas ?? []),
+      input.is_dry_run ? 1 : 0,
+      input.dry_run_context ?? null,
     );
     const row = db.prepare<[string], InterviewSessionRow>('SELECT * FROM interview_sessions WHERE id = ?').get(id)!;
     return Promise.resolve(mapSession(row));
