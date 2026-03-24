@@ -273,7 +273,6 @@ const seed = db.transaction(() => {
     ['cccccccc-0015-0003-0000-000000000000', 'aaaaaaaa-0015-0000-0000-000000000000', 'process_status', null, null, null, null, null, null, 'Waiting for update', '2026-02-12T11:00:00Z'],
   ];
   for (const e of events) insertEvent.run(...e);
-});
 
   // Offer details (Netflix, Stripe, Shopify)
   const insertOffer = db.prepare(`

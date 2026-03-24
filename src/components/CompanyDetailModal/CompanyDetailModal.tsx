@@ -22,6 +22,8 @@ import AddEntryForm from './AddEntryForm';
 import StageAddForm from './StageAddForm';
 import StageItem from './StageItem';
 import OfferSection from './OfferSection';
+import SimulationConfigModal from '@/components/SimulationConfigModal/SimulationConfigModal';
+import SessionHistory from '@/components/SessionHistory/SessionHistory';
 
 interface Props {
   company: CompanyWithNextStep;
@@ -32,7 +34,7 @@ interface Props {
 
 export default function CompanyDetailModal({ company, onClose, onDeleted, onUpdated }: Props) {
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<'timeline' | 'stages' | 'offer'>('timeline');
+  const [activeTab, setActiveTab] = useState<'timeline' | 'stages' | 'offer' | 'simulations'>('timeline');
   const [stages, setStages] = useState<InterviewStage[]>([]);
   const [offer, setOffer] = useState<CompanyOffer | null>(null);
   const [prepNotes, setPrepNotes] = useState(company.prep_notes ?? '');
@@ -45,6 +47,7 @@ export default function CompanyDetailModal({ company, onClose, onDeleted, onUpda
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [simulatingStage, setSimulatingStage] = useState<InterviewStage | null>(null);
   const [interestLevel, setInterestLevel] = useState<InterestLevel | null>(company.interest_level);
   const [savingInterest, setSavingInterest] = useState(false);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -249,6 +252,12 @@ export default function CompanyDetailModal({ company, onClose, onDeleted, onUpda
           >
             Offer{offer && <span className={styles.tabCount}>✓</span>}
           </button>
+          <button
+            className={`${styles.tab} ${activeTab === 'simulations' ? styles.tabActive : ''}`}
+            onClick={() => setActiveTab('simulations')}
+          >
+            Simulations
+          </button>
         </div>
 
         {/* Scrollable body */}
@@ -321,6 +330,12 @@ export default function CompanyDetailModal({ company, onClose, onDeleted, onUpda
             </>
           )}
 
+          {activeTab === 'simulations' && (
+            <div className={styles.roadmapSection}>
+              <SessionHistory companyId={company.id} />
+            </div>
+          )}
+
           {activeTab === 'offer' && (
             <OfferSection
               companyId={company.id}
@@ -347,6 +362,7 @@ export default function CompanyDetailModal({ company, onClose, onDeleted, onUpda
                       onUpdated={(updated) => setStages((prev) => prev.map((stage) => stage.id === updated.id ? updated : stage))}
                       onDeleted={(id) => setStages((prev) => prev.filter((stage) => stage.id !== id))}
                       onTimelineCreated={handleCreated}
+                      onSimulate={setSimulatingStage}
                     />
                   ))}
                 </ol>
@@ -404,6 +420,14 @@ export default function CompanyDetailModal({ company, onClose, onDeleted, onUpda
           )}
         </div>
       </div>
+
+      {simulatingStage && (
+        <SimulationConfigModal
+          company={company}
+          stage={simulatingStage}
+          onClose={() => setSimulatingStage(null)}
+        />
+      )}
     </div>
   );
 }

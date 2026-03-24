@@ -8,6 +8,13 @@ import type {
   CreateTimelineEventPayload,
   CompanyOffer,
   OfferExpectations,
+  AISettings,
+  AISettingsInput,
+  InterviewSession,
+  InterviewSessionFull,
+  SessionQuestion,
+  CreateSessionInput,
+  SessionFilters,
 } from '@/types';
 
 export interface GoogleTokens {
@@ -67,4 +74,27 @@ export interface DbAdapter {
   // ── Google Calendar tokens ────────────────────────────────────────────────
   getGoogleTokens(): Promise<GoogleTokens | null>;
   upsertGoogleTokens(tokens: GoogleTokens): Promise<void>;
+
+  // ── Single-record lookups ─────────────────────────────────────────────────
+  getCompany(id: string): Promise<Company | null>;
+  getStage(stageId: string): Promise<InterviewStage | null>;
+
+  // ── Interview Sessions ────────────────────────────────────────────────────
+  createSession(session: CreateSessionInput): Promise<InterviewSession>;
+  getSession(sessionId: string): Promise<InterviewSession | null>;
+  getSessionWithQuestions(sessionId: string): Promise<InterviewSessionFull | null>;
+  listSessions(filters: SessionFilters): Promise<{ sessions: InterviewSession[]; total: number }>;
+  updateSession(sessionId: string, updates: Partial<InterviewSession>): Promise<InterviewSession>;
+  deleteSession(sessionId: string): Promise<void>;
+
+  // ── Session Questions ─────────────────────────────────────────────────────
+  createQuestion(question: { session_id: string; question_number: number; question_text: string }): Promise<SessionQuestion>;
+  updateQuestion(questionId: string, updates: Partial<SessionQuestion>): Promise<SessionQuestion>;
+  getSessionQuestions(sessionId: string): Promise<SessionQuestion[]>;
+
+  // ── AI Settings ───────────────────────────────────────────────────────────
+  getAISettings(userId?: string): Promise<AISettings | null>;
+  upsertAISettings(userId: string | null, settings: AISettingsInput): Promise<AISettings>;
+  /** Returns decrypted API keys for server-side use only. Never expose to client. */
+  getDecryptedAIKeys(userId?: string): Promise<{ llm_api_key: string | null; tts_api_key: string | null; stt_api_key: string | null } | null>;
 }

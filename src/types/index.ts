@@ -147,6 +147,102 @@ export interface CreateTimelineEventPayload {
   process_status?: ProcessStatusValue;
 }
 
+// ─── Interview Simulator — Sessions ──────────────────────────────────────────
+
+export type SessionStatus = 'configuring' | 'in_progress' | 'completed' | 'cancelled';
+export type FeedbackMode = 'immediate' | 'full_simulation';
+export type Difficulty = 'easy' | 'medium' | 'hard';
+
+export interface InterviewSession {
+  id: string;
+  user_id: string | null;
+  company_id: string;
+  stage_id: string;
+  status: SessionStatus;
+  feedback_mode: FeedbackMode;
+  num_questions: number;
+  interviewer_persona: string | null;
+  difficulty: Difficulty;
+  focus_areas: string[];
+  overall_score: number | null;
+  debrief_summary: string | null;
+  debrief_strengths: string[];
+  debrief_improvements: string[];
+  debrief_resources: string[];
+  debrief_verdict: 'pass' | 'fail' | 'borderline' | null;
+  debrief_interviewer_note: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  created_at: string;
+}
+
+export interface SessionQuestion {
+  id: string;
+  session_id: string;
+  question_number: number;
+  question_text: string;
+  answer_transcript: string | null;
+  score: number | null;
+  feedback_strengths: string | null;
+  feedback_improvements: string | null;
+  feedback_suggested_answer: string | null;
+  duration_seconds: number | null;
+  created_at: string;
+}
+
+export interface CreateSessionInput {
+  company_id: string;
+  stage_id: string;
+  feedback_mode: FeedbackMode;
+  num_questions: number;
+  interviewer_persona?: string | null;
+  difficulty: Difficulty;
+  focus_areas?: string[];
+}
+
+export interface SessionFilters {
+  company_id?: string;
+  stage_id?: string;
+  status?: SessionStatus;
+  limit?: number;
+  offset?: number;
+}
+
+export interface InterviewSessionFull extends InterviewSession {
+  questions: SessionQuestion[];
+}
+
+// ─── Interview Simulator — AI Settings ───────────────────────────────────────
+
+export type LLMProvider = 'openai' | 'anthropic' | 'gemini' | 'openrouter';
+export type TTSProvider = 'browser' | 'deepgram';
+export type STTProvider = 'browser' | 'deepgram';
+
+export interface AISettings {
+  id: string;
+  llm_provider: LLMProvider;
+  llm_model: string;
+  has_llm_key: boolean;
+  tts_provider: TTSProvider | null;
+  has_tts_key: boolean;
+  tts_voice_id: string | null;
+  stt_provider: STTProvider | null;
+  has_stt_key: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AISettingsInput {
+  llm_provider: LLMProvider;
+  llm_model: string;
+  llm_api_key?: string | null;
+  tts_provider?: TTSProvider | null;
+  tts_api_key?: string | null;
+  tts_voice_id?: string | null;
+  stt_provider?: STTProvider | null;
+  stt_api_key?: string | null;
+}
+
 // ─── Calendar Types ───────────────────────────────────────────────────────────
 
 export interface CalendarMatch {

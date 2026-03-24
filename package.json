@@ -11,6 +11,7 @@
     "lint": "eslint src",
     "invite": "node scripts/invite.js",
     "seed-demo": "node scripts/seed-demo-sqlite.js",
+    "seed-demo-simulator": "node scripts/seed-demo-simulator.js",
     "prepare": "husky"
   },
   "lint-staged": {

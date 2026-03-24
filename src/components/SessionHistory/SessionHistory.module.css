@@ -1,0 +1,162 @@
+.loading {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  margin: 16px 0;
+}
+
+.empty {
+  padding: 24px 0;
+  color: var(--color-text-secondary);
+  font-size: 0.9375rem;
+}
+
+.emptyHint {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  margin-top: 4px;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ── Sparkline ── */
+.trendRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.trendLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.sparkline {
+  overflow: visible;
+}
+
+.sparklinePath {
+  stroke: var(--color-brand);
+}
+
+/* ── Session list ── */
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.item {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.itemButton {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.15s;
+}
+
+.itemButton:hover {
+  background-color: var(--color-surface-alt);
+}
+
+.itemLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.itemDate {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.itemMeta {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
+.itemRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Status badge ── */
+.statusBadge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 100px;
+  text-transform: capitalize;
+  background-color: var(--color-surface-alt);
+  color: var(--color-text-secondary);
+}
+
+.status_configuring {
+  background-color: color-mix(in srgb, var(--color-status-wishlist) 12%, transparent);
+  color: var(--color-status-wishlist);
+}
+
+.status_in_progress {
+  background-color: color-mix(in srgb, var(--color-status-interviewing) 12%, transparent);
+  color: var(--color-status-interviewing);
+}
+
+.status_completed {
+  background-color: color-mix(in srgb, var(--color-status-offer) 12%, transparent);
+  color: var(--color-status-offer);
+}
+
+.status_cancelled {
+  background-color: color-mix(in srgb, var(--color-status-rejected) 10%, transparent);
+  color: var(--color-status-rejected);
+}
+
+/* ── Score badge ── */
+.scoreBadge {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 100px;
+}
+
+.scoreNeutral {
+  background-color: var(--color-surface-alt);
+  color: var(--color-text-secondary);
+}
+
+.scoreHigh {
+  background-color: color-mix(in srgb, var(--color-status-offer) 15%, transparent);
+  color: var(--color-status-offer);
+}
+
+.scoreMid {
+  background-color: color-mix(in srgb, var(--color-status-wishlist) 15%, transparent);
+  color: var(--color-status-wishlist);
+}
+
+.scoreLow {
+  background-color: color-mix(in srgb, var(--color-status-rejected) 12%, transparent);
+  color: var(--color-status-rejected);
+}

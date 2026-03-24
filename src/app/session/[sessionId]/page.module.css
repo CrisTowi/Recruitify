@@ -1,0 +1,152 @@
+/* ── Page layout ── */
+.container {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 48px 24px;
+  min-height: calc(100dvh - 56px);
+}
+
+/* ── Loading / error states ── */
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 80px 24px;
+  color: var(--color-text-secondary);
+  font-size: 0.9375rem;
+}
+
+.errorText {
+  color: var(--color-status-rejected);
+  margin: 0;
+}
+
+/* ── Session card ── */
+.card {
+  background-color: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card-hover);
+  padding: 36px 40px;
+  width: 100%;
+  max-width: 520px;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+
+.heading {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+/* ── Status badge ── */
+.statusBadge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 100px;
+  text-transform: capitalize;
+  background-color: var(--color-surface-alt);
+  color: var(--color-text-secondary);
+}
+
+.status_configuring {
+  background-color: color-mix(in srgb, var(--color-status-wishlist) 15%, transparent);
+  color: var(--color-status-wishlist);
+}
+
+.status_in_progress {
+  background-color: color-mix(in srgb, var(--color-status-interviewing) 15%, transparent);
+  color: var(--color-status-interviewing);
+}
+
+.status_completed {
+  background-color: color-mix(in srgb, var(--color-status-offer) 15%, transparent);
+  color: var(--color-status-offer);
+}
+
+.status_cancelled {
+  background-color: color-mix(in srgb, var(--color-status-rejected) 12%, transparent);
+  color: var(--color-status-rejected);
+}
+
+/* ── Config summary ── */
+.config {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0 0 32px;
+}
+
+.configRow {
+  display: flex;
+  gap: 16px;
+  align-items: baseline;
+}
+
+.configLabel {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+  width: 90px;
+}
+
+.configValue {
+  font-size: 0.9375rem;
+  color: var(--color-text-primary);
+}
+
+/* ── Actions ── */
+.actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.backButton {
+  background: transparent;
+  border: none;
+  padding: 8px 0;
+  color: var(--color-text-secondary);
+  font-size: 0.9375rem;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.backButton:hover {
+  color: var(--color-text-primary);
+}
+
+.startButton {
+  background-color: var(--color-brand);
+  color: #fff;
+  border: none;
+  padding: 10px 28px;
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.startButton:hover:not(:disabled) {
+  background-color: var(--color-brand-hover);
+}
+
+.startButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

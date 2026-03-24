@@ -14,9 +14,23 @@ import type {
   OfferExpectations,
   RemotePolicy,
   HealthTier,
+  AISettings,
+  AISettingsInput,
+  LLMProvider,
+  TTSProvider,
+  STTProvider,
+  InterviewSession,
+  InterviewSessionFull,
+  SessionQuestion,
+  CreateSessionInput,
+  SessionFilters,
+  SessionStatus,
+  FeedbackMode,
+  Difficulty,
 } from '@/types';
 import type { DbAdapter, GoogleTokens } from './types';
 import { DuplicateCalendarEventError } from './types';
+import { encrypt, decrypt } from '@/lib/crypto';
 
 // ── Singleton DB instance ──────────────────────────────────────────────────────
 
@@ -120,12 +134,65 @@ function initSchema(db: Database.Database): void {
       refresh_token TEXT NOT NULL,
       expires_at TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS interview_sessions (
+      id TEXT PRIMARY KEY,
+      user_id TEXT,
+      company_id TEXT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      stage_id TEXT NOT NULL REFERENCES interviews_roadmap(id) ON DELETE CASCADE,
+      status TEXT NOT NULL DEFAULT 'configuring',
+      feedback_mode TEXT NOT NULL DEFAULT 'immediate',
+      num_questions INTEGER NOT NULL DEFAULT 5,
+      interviewer_persona TEXT,
+      difficulty TEXT NOT NULL DEFAULT 'medium',
+      focus_areas TEXT NOT NULL DEFAULT '[]',
+      overall_score REAL,
+      debrief_summary TEXT,
+      debrief_strengths TEXT NOT NULL DEFAULT '[]',
+      debrief_improvements TEXT NOT NULL DEFAULT '[]',
+      debrief_resources TEXT NOT NULL DEFAULT '[]',
+      debrief_verdict TEXT,
+      debrief_interviewer_note TEXT,
+      started_at TEXT,
+      completed_at TEXT,
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS session_questions (
+      id TEXT PRIMARY KEY,
+      session_id TEXT NOT NULL REFERENCES interview_sessions(id) ON DELETE CASCADE,
+      question_number INTEGER NOT NULL,
+      question_text TEXT NOT NULL,
+      answer_transcript TEXT,
+      score REAL,
+      feedback_strengths TEXT,
+      feedback_improvements TEXT,
+      feedback_suggested_answer TEXT,
+      duration_seconds INTEGER,
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS ai_settings (
+      id INTEGER PRIMARY KEY DEFAULT 1,
+      llm_provider TEXT NOT NULL DEFAULT 'openai',
+      llm_model TEXT NOT NULL DEFAULT 'gpt-4o',
+      llm_api_key_encrypted TEXT,
+      tts_provider TEXT,
+      tts_api_key_encrypted TEXT,
+      tts_voice_id TEXT,
+      stt_provider TEXT,
+      stt_api_key_encrypted TEXT,
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+      updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+    );
   `);
 
   // Column migrations for existing databases
   // ALTER TABLE ... ADD COLUMN is idempotent via try/catch (SQLite has no IF NOT EXISTS for columns)
   try { db.exec(`ALTER TABLE companies ADD COLUMN prep_notes TEXT`); } catch { /* already exists */ }
   try { db.exec(`ALTER TABLE interviews_roadmap ADD COLUMN notes TEXT`); } catch { /* already exists */ }
+  try { db.exec(`ALTER TABLE interview_sessions ADD COLUMN debrief_verdict TEXT`); } catch { /* already exists */ }
+  try { db.exec(`ALTER TABLE interview_sessions ADD COLUMN debrief_interviewer_note TEXT`); } catch { /* already exists */ }
 }
 
 // ── Raw row types returned by better-sqlite3 ──────────────────────────────────
@@ -191,6 +258,57 @@ interface GoogleTokensRow {
   expires_at: string;
 }
 
+interface AISettingsRow {
+  id: number;
+  llm_provider: string;
+  llm_model: string;
+  llm_api_key_encrypted: string | null;
+  tts_provider: string | null;
+  tts_api_key_encrypted: string | null;
+  tts_voice_id: string | null;
+  stt_provider: string | null;
+  stt_api_key_encrypted: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface InterviewSessionRow {
+  id: string;
+  user_id: string | null;
+  company_id: string;
+  stage_id: string;
+  status: string;
+  feedback_mode: string;
+  num_questions: number;
+  interviewer_persona: string | null;
+  difficulty: string;
+  focus_areas: string;
+  overall_score: number | null;
+  debrief_summary: string | null;
+  debrief_strengths: string;
+  debrief_improvements: string;
+  debrief_resources: string;
+  debrief_verdict: string | null;
+  debrief_interviewer_note: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  created_at: string;
+}
+
+interface SessionQuestionRow {
+  id: string;
+  session_id: string;
+  question_number: number;
+  question_text: string;
+  answer_transcript: string | null;
+  score: number | null;
+  feedback_strengths: string | null;
+  feedback_improvements: string | null;
+  feedback_suggested_answer: string | null;
+  duration_seconds: number | null;
+  created_at: string;
+}
+
 // ── Row-to-domain mappers ─────────────────────────────────────────────────────
 
 function mapOffer(row: OfferRow): CompanyOffer {
@@ -254,9 +372,84 @@ function mapTimelineEvent(row: TimelineEventRow): TimelineEvent {
   };
 }
 
+function parseJsonArray(value: string): string[] {
+  try { return JSON.parse(value) as string[]; } catch { return []; }
+}
+
+function mapSession(row: InterviewSessionRow): InterviewSession {
+  return {
+    id: row.id,
+    user_id: row.user_id,
+    company_id: row.company_id,
+    stage_id: row.stage_id,
+    status: row.status as SessionStatus,
+    feedback_mode: row.feedback_mode as FeedbackMode,
+    num_questions: row.num_questions,
+    interviewer_persona: row.interviewer_persona,
+    difficulty: row.difficulty as Difficulty,
+    focus_areas: parseJsonArray(row.focus_areas),
+    overall_score: row.overall_score,
+    debrief_summary: row.debrief_summary,
+    debrief_strengths: parseJsonArray(row.debrief_strengths),
+    debrief_improvements: parseJsonArray(row.debrief_improvements),
+    debrief_resources: parseJsonArray(row.debrief_resources),
+    debrief_verdict: (row.debrief_verdict as 'pass' | 'fail' | 'borderline' | null) ?? null,
+    debrief_interviewer_note: row.debrief_interviewer_note ?? null,
+    started_at: row.started_at,
+    completed_at: row.completed_at,
+    created_at: row.created_at,
+  };
+}
+
+function mapQuestion(row: SessionQuestionRow): SessionQuestion {
+  return {
+    id: row.id,
+    session_id: row.session_id,
+    question_number: row.question_number,
+    question_text: row.question_text,
+    answer_transcript: row.answer_transcript,
+    score: row.score,
+    feedback_strengths: row.feedback_strengths,
+    feedback_improvements: row.feedback_improvements,
+    feedback_suggested_answer: row.feedback_suggested_answer,
+    duration_seconds: row.duration_seconds,
+    created_at: row.created_at,
+  };
+}
+
+function mapAISettings(row: AISettingsRow): AISettings {
+  return {
+    id: String(row.id),
+    llm_provider: row.llm_provider as LLMProvider,
+    llm_model: row.llm_model,
+    has_llm_key: row.llm_api_key_encrypted !== null,
+    tts_provider: row.tts_provider as TTSProvider | null,
+    has_tts_key: row.tts_api_key_encrypted !== null,
+    tts_voice_id: row.tts_voice_id,
+    stt_provider: row.stt_provider as STTProvider | null,
+    has_stt_key: row.stt_api_key_encrypted !== null,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
+}
+
 // ── SqliteAdapter ─────────────────────────────────────────────────────────────
 
 export class SqliteAdapter implements DbAdapter {
+  // ── Single-record lookups ─────────────────────────────────────────────────────
+
+  getCompany(id: string): Promise<Company | null> {
+    const db = getDb();
+    const row = db.prepare<[string], CompanyRow>('SELECT * FROM companies WHERE id = ?').get(id);
+    return Promise.resolve(row ? mapCompany(row) : null);
+  }
+
+  getStage(stageId: string): Promise<InterviewStage | null> {
+    const db = getDb();
+    const row = db.prepare<[string], InterviewsRoadmapRow>('SELECT * FROM interviews_roadmap WHERE id = ?').get(stageId);
+    return Promise.resolve(row ? mapStage(row) : null);
+  }
+
   // ── Companies ───────────────────────────────────────────────────────────────
 
   getAllCompanies(): Promise<CompanyWithNextStep[]> {
@@ -666,5 +859,230 @@ export class SqliteAdapter implements DbAdapter {
     ).run(tokens.access_token, tokens.refresh_token, tokens.expires_at);
 
     return Promise.resolve();
+  }
+
+  // ── Interview Sessions ────────────────────────────────────────────────────────
+
+  createSession(input: CreateSessionInput): Promise<InterviewSession> {
+    const db = getDb();
+    const id = crypto.randomUUID();
+    db.prepare(
+      `INSERT INTO interview_sessions (
+         id, company_id, stage_id, feedback_mode, num_questions,
+         interviewer_persona, difficulty, focus_areas
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(
+      id,
+      input.company_id,
+      input.stage_id,
+      input.feedback_mode,
+      input.num_questions,
+      input.interviewer_persona ?? null,
+      input.difficulty,
+      JSON.stringify(input.focus_areas ?? []),
+    );
+    const row = db.prepare<[string], InterviewSessionRow>('SELECT * FROM interview_sessions WHERE id = ?').get(id)!;
+    return Promise.resolve(mapSession(row));
+  }
+
+  getSession(sessionId: string): Promise<InterviewSession | null> {
+    const db = getDb();
+    const row = db.prepare<[string], InterviewSessionRow>('SELECT * FROM interview_sessions WHERE id = ?').get(sessionId);
+    return Promise.resolve(row ? mapSession(row) : null);
+  }
+
+  getSessionWithQuestions(sessionId: string): Promise<InterviewSessionFull | null> {
+    const db = getDb();
+    const sessionRow = db.prepare<[string], InterviewSessionRow>('SELECT * FROM interview_sessions WHERE id = ?').get(sessionId);
+    if (!sessionRow) return Promise.resolve(null);
+    const questionRows = db.prepare<[string], SessionQuestionRow>(
+      'SELECT * FROM session_questions WHERE session_id = ? ORDER BY question_number ASC',
+    ).all(sessionId);
+    return Promise.resolve({ ...mapSession(sessionRow), questions: questionRows.map(mapQuestion) });
+  }
+
+  listSessions(filters: SessionFilters): Promise<{ sessions: InterviewSession[]; total: number }> {
+    const db = getDb();
+    const conditions: string[] = [];
+    const values: unknown[] = [];
+
+    if (filters.company_id) { conditions.push('company_id = ?'); values.push(filters.company_id); }
+    if (filters.stage_id) { conditions.push('stage_id = ?'); values.push(filters.stage_id); }
+    if (filters.status) { conditions.push('status = ?'); values.push(filters.status); }
+
+    const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+    const total = (db.prepare(`SELECT COUNT(*) as count FROM interview_sessions ${where}`).get(...values) as { count: number }).count;
+
+    const limit = filters.limit ?? 20;
+    const offset = filters.offset ?? 0;
+    const rows = db.prepare<unknown[], InterviewSessionRow>(
+      `SELECT * FROM interview_sessions ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+    ).all(...values, limit, offset);
+
+    return Promise.resolve({ sessions: rows.map(mapSession), total });
+  }
+
+  updateSession(sessionId: string, updates: Partial<InterviewSession>): Promise<InterviewSession> {
+    const db = getDb();
+    const allowed = [
+      'status', 'feedback_mode', 'num_questions', 'interviewer_persona', 'difficulty',
+      'overall_score', 'debrief_summary', 'debrief_verdict', 'debrief_interviewer_note', 'started_at', 'completed_at',
+    ] as const;
+    const jsonFields = ['focus_areas', 'debrief_strengths', 'debrief_improvements', 'debrief_resources'] as const;
+
+    const setClauses: string[] = [];
+    const values: unknown[] = [];
+
+    for (const field of allowed) {
+      if (field in updates) {
+        setClauses.push(`${field} = ?`);
+        values.push((updates as Record<string, unknown>)[field] ?? null);
+      }
+    }
+    for (const field of jsonFields) {
+      if (field in updates) {
+        setClauses.push(`${field} = ?`);
+        values.push(JSON.stringify((updates as Record<string, unknown>)[field] ?? []));
+      }
+    }
+
+    if (setClauses.length > 0) {
+      db.prepare(`UPDATE interview_sessions SET ${setClauses.join(', ')} WHERE id = ?`).run(...values, sessionId);
+    }
+
+    const row = db.prepare<[string], InterviewSessionRow>('SELECT * FROM interview_sessions WHERE id = ?').get(sessionId);
+    if (!row) throw new Error('Session not found');
+    return Promise.resolve(mapSession(row));
+  }
+
+  deleteSession(sessionId: string): Promise<void> {
+    const db = getDb();
+    db.prepare('DELETE FROM interview_sessions WHERE id = ?').run(sessionId);
+    return Promise.resolve();
+  }
+
+  // ── Session Questions ─────────────────────────────────────────────────────────
+
+  createQuestion(input: { session_id: string; question_number: number; question_text: string }): Promise<SessionQuestion> {
+    const db = getDb();
+    const id = crypto.randomUUID();
+    db.prepare(
+      `INSERT INTO session_questions (id, session_id, question_number, question_text) VALUES (?, ?, ?, ?)`,
+    ).run(id, input.session_id, input.question_number, input.question_text);
+    const row = db.prepare<[string], SessionQuestionRow>('SELECT * FROM session_questions WHERE id = ?').get(id)!;
+    return Promise.resolve(mapQuestion(row));
+  }
+
+  updateQuestion(questionId: string, updates: Partial<SessionQuestion>): Promise<SessionQuestion> {
+    const db = getDb();
+    const allowed = [
+      'answer_transcript', 'score', 'feedback_strengths', 'feedback_improvements',
+      'feedback_suggested_answer', 'duration_seconds',
+    ] as const;
+
+    const setClauses: string[] = [];
+    const values: unknown[] = [];
+
+    for (const field of allowed) {
+      if (field in updates) {
+        setClauses.push(`${field} = ?`);
+        values.push((updates as Record<string, unknown>)[field] ?? null);
+      }
+    }
+
+    if (setClauses.length > 0) {
+      db.prepare(`UPDATE session_questions SET ${setClauses.join(', ')} WHERE id = ?`).run(...values, questionId);
+    }
+
+    const row = db.prepare<[string], SessionQuestionRow>('SELECT * FROM session_questions WHERE id = ?').get(questionId);
+    if (!row) throw new Error('Question not found');
+    return Promise.resolve(mapQuestion(row));
+  }
+
+  getSessionQuestions(sessionId: string): Promise<SessionQuestion[]> {
+    const db = getDb();
+    const rows = db.prepare<[string], SessionQuestionRow>(
+      'SELECT * FROM session_questions WHERE session_id = ? ORDER BY question_number ASC',
+    ).all(sessionId);
+    return Promise.resolve(rows.map(mapQuestion));
+  }
+
+  // ── AI Settings ──────────────────────────────────────────────────────────────
+
+  getAISettings(_userId?: string): Promise<AISettings | null> {
+    const db = getDb();
+    const row = db.prepare<[], AISettingsRow>('SELECT * FROM ai_settings WHERE id = 1').get();
+    if (!row) return Promise.resolve(null);
+    return Promise.resolve(mapAISettings(row));
+  }
+
+  upsertAISettings(_userId: string | null, settings: AISettingsInput): Promise<AISettings> {
+    const db = getDb();
+    const existing = db.prepare<[], AISettingsRow>('SELECT * FROM ai_settings WHERE id = 1').get();
+
+    const now = new Date().toISOString();
+
+    if (existing) {
+      const setClauses: string[] = [
+        'llm_provider = ?',
+        'llm_model = ?',
+        'tts_provider = ?',
+        'tts_voice_id = ?',
+        'stt_provider = ?',
+        'updated_at = ?',
+      ];
+      const values: unknown[] = [
+        settings.llm_provider,
+        settings.llm_model,
+        settings.tts_provider ?? null,
+        settings.tts_voice_id ?? null,
+        settings.stt_provider ?? null,
+        now,
+      ];
+
+      if (settings.llm_api_key != null) {
+        setClauses.push('llm_api_key_encrypted = ?');
+        values.push(encrypt(settings.llm_api_key));
+      }
+      if (settings.tts_api_key != null) {
+        setClauses.push('tts_api_key_encrypted = ?');
+        values.push(encrypt(settings.tts_api_key));
+      }
+      if (settings.stt_api_key != null) {
+        setClauses.push('stt_api_key_encrypted = ?');
+        values.push(encrypt(settings.stt_api_key));
+      }
+
+      db.prepare(`UPDATE ai_settings SET ${setClauses.join(', ')} WHERE id = 1`).run(...values);
+    } else {
+      db.prepare(
+        `INSERT INTO ai_settings (id, llm_provider, llm_model, llm_api_key_encrypted,
+           tts_provider, tts_api_key_encrypted, tts_voice_id, stt_provider, stt_api_key_encrypted)
+         VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ).run(
+        settings.llm_provider,
+        settings.llm_model,
+        settings.llm_api_key ? encrypt(settings.llm_api_key) : null,
+        settings.tts_provider ?? null,
+        settings.tts_api_key ? encrypt(settings.tts_api_key) : null,
+        settings.tts_voice_id ?? null,
+        settings.stt_provider ?? null,
+        settings.stt_api_key ? encrypt(settings.stt_api_key) : null,
+      );
+    }
+
+    const row = db.prepare<[], AISettingsRow>('SELECT * FROM ai_settings WHERE id = 1').get()!;
+    return Promise.resolve(mapAISettings(row));
+  }
+
+  getDecryptedAIKeys(_userId?: string): Promise<{ llm_api_key: string | null; tts_api_key: string | null; stt_api_key: string | null } | null> {
+    const db = getDb();
+    const row = db.prepare<[], AISettingsRow>('SELECT * FROM ai_settings WHERE id = 1').get();
+    if (!row) return Promise.resolve(null);
+    return Promise.resolve({
+      llm_api_key: row.llm_api_key_encrypted ? decrypt(row.llm_api_key_encrypted) : null,
+      tts_api_key: row.tts_api_key_encrypted ? decrypt(row.tts_api_key_encrypted) : null,
+      stt_api_key: row.stt_api_key_encrypted ? decrypt(row.stt_api_key_encrypted) : null,
+    });
   }
 }

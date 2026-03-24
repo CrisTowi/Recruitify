@@ -1,0 +1,230 @@
+/* ── Backdrop ── */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+/* ── Modal card ── */
+.modal {
+  background-color: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card-hover);
+  padding: 28px 32px;
+  width: 100%;
+  max-width: 480px;
+  margin: 16px;
+}
+
+/* ── Header ── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.closeButton {
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius-md);
+  transition: color 0.15s, background-color 0.15s;
+  line-height: 1;
+}
+
+.closeButton:hover {
+  color: var(--color-text-primary);
+  background-color: var(--color-bg);
+}
+
+/* ── Description ── */
+.description {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  margin: 0 0 24px;
+  line-height: 1.5;
+}
+
+/* ── Loading ── */
+.loadingText {
+  color: var(--color-text-muted);
+  font-size: 0.9375rem;
+  text-align: center;
+  padding: 24px 0;
+}
+
+/* ── Form fields ── */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+
+.label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.keyHint {
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+
+.input,
+.select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
+  font-size: 0.9375rem;
+  box-sizing: border-box;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  appearance: none;
+}
+
+.input:focus,
+.select:focus {
+  outline: none;
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand) 20%, transparent);
+}
+
+.input:disabled,
+.select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ── API key row (input + test button) ── */
+.keyRow {
+  display: flex;
+  gap: 8px;
+}
+
+.keyRow .input {
+  flex: 1;
+}
+
+.testButton {
+  flex-shrink: 0;
+  padding: 8px 16px;
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.testButton:hover:not(:disabled) {
+  border-color: var(--color-brand);
+  color: var(--color-brand);
+}
+
+.testButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Test result feedback ── */
+.testSuccess {
+  font-size: 0.8125rem;
+  color: var(--color-status-offer, #22c55e);
+  margin: 4px 0 0;
+}
+
+.testError {
+  font-size: 0.8125rem;
+  color: var(--color-status-rejected);
+  margin: 4px 0 0;
+}
+
+/* ── Section divider ── */
+.sectionDivider {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  margin: 8px 0 4px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border);
+}
+
+/* ── Inline error ── */
+.error {
+  font-size: 0.8125rem;
+  color: var(--color-status-rejected);
+  margin: 0 0 16px;
+}
+
+/* ── Action buttons ── */
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.cancelButton {
+  background: transparent;
+  border: none;
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  font-size: 0.9375rem;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.cancelButton:hover:not(:disabled) {
+  color: var(--color-text-primary);
+}
+
+.cancelButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.submitButton {
+  background-color: var(--color-brand);
+  color: #fff;
+  border: none;
+  padding: 8px 20px;
+  border-radius: var(--radius-md);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.submitButton:hover:not(:disabled) {
+  background-color: var(--color-brand-hover);
+}
+
+.submitButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

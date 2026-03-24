@@ -11,7 +11,21 @@ import type {
   CreateTimelineEventPayload,
   CompanyOffer,
   OfferExpectations,
+  AISettings,
+  AISettingsInput,
+  LLMProvider,
+  TTSProvider,
+  STTProvider,
+  InterviewSession,
+  InterviewSessionFull,
+  SessionQuestion,
+  CreateSessionInput,
+  SessionFilters,
+  SessionStatus,
+  FeedbackMode,
+  Difficulty,
 } from '@/types';
+import { encrypt, decrypt } from '@/lib/crypto';
 
 function getAuthEnabled(): boolean {
   return process.env.SUPABASE_AUTH === 'true';
@@ -241,6 +255,22 @@ export class SupabaseAdapter implements DbAdapter {
     if (error) throw new Error(error.message);
   }
 
+  // ── Single-record lookups ────────────────────────────────────────────────────
+
+  async getCompany(id: string): Promise<Company | null> {
+    const { client } = await this.getClient();
+    const { data } = await client.from('companies').select('*').eq('id', id).maybeSingle();
+    if (!data) return null;
+    return data as Company;
+  }
+
+  async getStage(stageId: string): Promise<InterviewStage | null> {
+    const { client } = await this.getClient();
+    const { data } = await client.from('interviews_roadmap').select('*').eq('id', stageId).maybeSingle();
+    if (!data) return null;
+    return data as InterviewStage;
+  }
+
   // ── Timeline ────────────────────────────────────────────────────────────────
 
   async getTimeline(companyId: string): Promise<TimelineEvent[]> {
@@ -417,5 +447,281 @@ export class SupabaseAdapter implements DbAdapter {
     }
 
     await client.from('google_tokens').upsert(row);
+  }
+
+  // ── Interview Sessions ───────────────────────────────────────────────────────
+
+  private parseJsonArray(value: unknown): string[] {
+    if (Array.isArray(value)) return value as string[];
+    if (typeof value === 'string') { try { return JSON.parse(value) as string[]; } catch { return []; } }
+    return [];
+  }
+
+  private mapSessionRow(row: Record<string, unknown>): InterviewSession {
+    return {
+      id: row.id as string,
+      user_id: (row.user_id as string | null) ?? null,
+      company_id: row.company_id as string,
+      stage_id: row.stage_id as string,
+      status: row.status as SessionStatus,
+      feedback_mode: row.feedback_mode as FeedbackMode,
+      num_questions: row.num_questions as number,
+      interviewer_persona: (row.interviewer_persona as string | null) ?? null,
+      difficulty: row.difficulty as Difficulty,
+      focus_areas: this.parseJsonArray(row.focus_areas),
+      overall_score: (row.overall_score as number | null) ?? null,
+      debrief_summary: (row.debrief_summary as string | null) ?? null,
+      debrief_strengths: this.parseJsonArray(row.debrief_strengths),
+      debrief_improvements: this.parseJsonArray(row.debrief_improvements),
+      debrief_resources: this.parseJsonArray(row.debrief_resources),
+      debrief_verdict: ((row.debrief_verdict as string | null) ?? null) as 'pass' | 'fail' | 'borderline' | null,
+      debrief_interviewer_note: (row.debrief_interviewer_note as string | null) ?? null,
+      started_at: (row.started_at as string | null) ?? null,
+      completed_at: (row.completed_at as string | null) ?? null,
+      created_at: row.created_at as string,
+    };
+  }
+
+  private mapQuestionRow(row: Record<string, unknown>): SessionQuestion {
+    return {
+      id: row.id as string,
+      session_id: row.session_id as string,
+      question_number: row.question_number as number,
+      question_text: row.question_text as string,
+      answer_transcript: (row.answer_transcript as string | null) ?? null,
+      score: (row.score as number | null) ?? null,
+      feedback_strengths: (row.feedback_strengths as string | null) ?? null,
+      feedback_improvements: (row.feedback_improvements as string | null) ?? null,
+      feedback_suggested_answer: (row.feedback_suggested_answer as string | null) ?? null,
+      duration_seconds: (row.duration_seconds as number | null) ?? null,
+      created_at: row.created_at as string,
+    };
+  }
+
+  async createSession(input: CreateSessionInput): Promise<InterviewSession> {
+    const { client, userId } = await this.getClient();
+    const row: Record<string, unknown> = {
+      company_id: input.company_id,
+      stage_id: input.stage_id,
+      feedback_mode: input.feedback_mode,
+      num_questions: input.num_questions,
+      interviewer_persona: input.interviewer_persona ?? null,
+      difficulty: input.difficulty,
+      focus_areas: JSON.stringify(input.focus_areas ?? []),
+    };
+    if (getAuthEnabled() && userId) row.user_id = userId;
+
+    const { data, error } = await client.from('interview_sessions').insert(row).select().single();
+    if (error) throw new Error(error.message);
+    return this.mapSessionRow(data as Record<string, unknown>);
+  }
+
+  async getSession(sessionId: string): Promise<InterviewSession | null> {
+    const { client } = await this.getClient();
+    const { data } = await client.from('interview_sessions').select('*').eq('id', sessionId).maybeSingle();
+    if (!data) return null;
+    return this.mapSessionRow(data as Record<string, unknown>);
+  }
+
+  async getSessionWithQuestions(sessionId: string): Promise<InterviewSessionFull | null> {
+    const { client } = await this.getClient();
+    const { data: sessionData } = await client.from('interview_sessions').select('*').eq('id', sessionId).maybeSingle();
+    if (!sessionData) return null;
+    const { data: questionData } = await client
+      .from('session_questions')
+      .select('*')
+      .eq('session_id', sessionId)
+      .order('question_number', { ascending: true });
+    const session = this.mapSessionRow(sessionData as Record<string, unknown>);
+    const questions = (questionData ?? []).map((question) => this.mapQuestionRow(question as Record<string, unknown>));
+    return { ...session, questions };
+  }
+
+  async listSessions(filters: SessionFilters): Promise<{ sessions: InterviewSession[]; total: number }> {
+    const { client } = await this.getClient();
+    let query = client.from('interview_sessions').select('*', { count: 'exact' });
+
+    if (filters.company_id) query = query.eq('company_id', filters.company_id);
+    if (filters.stage_id) query = query.eq('stage_id', filters.stage_id);
+    if (filters.status) query = query.eq('status', filters.status);
+
+    const limit = filters.limit ?? 20;
+    const offset = filters.offset ?? 0;
+    query = query.order('created_at', { ascending: false }).range(offset, offset + limit - 1);
+
+    const { data, count, error } = await query;
+    if (error) throw new Error(error.message);
+    return {
+      sessions: (data ?? []).map((session) => this.mapSessionRow(session as Record<string, unknown>)),
+      total: count ?? 0,
+    };
+  }
+
+  async updateSession(sessionId: string, updates: Partial<InterviewSession>): Promise<InterviewSession> {
+    const { client } = await this.getClient();
+    const jsonFields = ['focus_areas', 'debrief_strengths', 'debrief_improvements', 'debrief_resources'] as const;
+    const row: Record<string, unknown> = { ...updates };
+
+    for (const field of jsonFields) {
+      if (field in updates) {
+        row[field] = JSON.stringify(updates[field] ?? []);
+      }
+    }
+
+    const { data, error } = await client.from('interview_sessions').update(row).eq('id', sessionId).select().single();
+    if (error) throw new Error(error.message);
+    if (!data) throw new Error('Session not found');
+    return this.mapSessionRow(data as Record<string, unknown>);
+  }
+
+  async deleteSession(sessionId: string): Promise<void> {
+    const { client } = await this.getClient();
+    const { error } = await client.from('interview_sessions').delete().eq('id', sessionId);
+    if (error) throw new Error(error.message);
+  }
+
+  // ── Session Questions ────────────────────────────────────────────────────────
+
+  async createQuestion(input: { session_id: string; question_number: number; question_text: string }): Promise<SessionQuestion> {
+    const { client } = await this.getClient();
+    const { data, error } = await client.from('session_questions').insert(input).select().single();
+    if (error) throw new Error(error.message);
+    return this.mapQuestionRow(data as Record<string, unknown>);
+  }
+
+  async updateQuestion(questionId: string, updates: Partial<SessionQuestion>): Promise<SessionQuestion> {
+    const { client } = await this.getClient();
+    const { data, error } = await client.from('session_questions').update(updates as Record<string, unknown>).eq('id', questionId).select().single();
+    if (error) throw new Error(error.message);
+    if (!data) throw new Error('Question not found');
+    return this.mapQuestionRow(data as Record<string, unknown>);
+  }
+
+  async getSessionQuestions(sessionId: string): Promise<SessionQuestion[]> {
+    const { client } = await this.getClient();
+    const { data, error } = await client
+      .from('session_questions')
+      .select('*')
+      .eq('session_id', sessionId)
+      .order('question_number', { ascending: true });
+    if (error) throw new Error(error.message);
+    return (data ?? []).map((question) => this.mapQuestionRow(question as Record<string, unknown>));
+  }
+
+  // ── AI Settings ─────────────────────────────────────────────────────────────
+
+  async getAISettings(userId?: string): Promise<AISettings | null> {
+    const { client, userId: sessionUserId } = await this.getClient();
+    const resolvedUserId = userId ?? sessionUserId;
+
+    let query = client.from('ai_settings').select('*');
+
+    if (getAuthEnabled() && resolvedUserId) {
+      query = query.eq('user_id', resolvedUserId);
+    } else {
+      query = query.eq('id', 1);
+    }
+
+    const { data } = await query.maybeSingle();
+    if (!data) return null;
+
+    const row = data as Record<string, unknown>;
+    return {
+      id: String(row.id),
+      llm_provider: row.llm_provider as LLMProvider,
+      llm_model: row.llm_model as string,
+      has_llm_key: row.llm_api_key_encrypted !== null,
+      tts_provider: (row.tts_provider as TTSProvider | null) ?? null,
+      has_tts_key: row.tts_api_key_encrypted !== null,
+      tts_voice_id: (row.tts_voice_id as string | null) ?? null,
+      stt_provider: (row.stt_provider as STTProvider | null) ?? null,
+      has_stt_key: row.stt_api_key_encrypted !== null,
+      created_at: row.created_at as string,
+      updated_at: row.updated_at as string,
+    };
+  }
+
+  async upsertAISettings(userId: string | null, settings: AISettingsInput): Promise<AISettings> {
+    const { client, userId: sessionUserId } = await this.getClient();
+    const resolvedUserId = userId ?? sessionUserId;
+
+    // Fetch existing to preserve keys when not provided
+    const existing = await this.getAISettings(resolvedUserId ?? undefined);
+
+    const row: Record<string, unknown> = {
+      llm_provider: settings.llm_provider,
+      llm_model: settings.llm_model,
+      tts_provider: settings.tts_provider ?? null,
+      tts_voice_id: settings.tts_voice_id ?? null,
+      stt_provider: settings.stt_provider ?? null,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (settings.llm_api_key != null) {
+      row.llm_api_key_encrypted = encrypt(settings.llm_api_key);
+    } else if (existing) {
+      // Preserve existing key — don't overwrite with null
+    }
+
+    if (settings.tts_api_key != null) {
+      row.tts_api_key_encrypted = encrypt(settings.tts_api_key);
+    }
+
+    if (settings.stt_api_key != null) {
+      row.stt_api_key_encrypted = encrypt(settings.stt_api_key);
+    }
+
+    if (getAuthEnabled() && resolvedUserId) {
+      row.user_id = resolvedUserId;
+    } else {
+      row.id = 1;
+    }
+
+    const { data: result, error } = await client
+      .from('ai_settings')
+      .upsert(row, { onConflict: getAuthEnabled() && resolvedUserId ? 'user_id' : 'id' })
+      .select()
+      .single();
+
+    if (error) throw new Error(error.message);
+
+    const saved = result as Record<string, unknown>;
+    return {
+      id: String(saved.id),
+      llm_provider: saved.llm_provider as LLMProvider,
+      llm_model: saved.llm_model as string,
+      has_llm_key: saved.llm_api_key_encrypted !== null,
+      tts_provider: (saved.tts_provider as TTSProvider | null) ?? null,
+      has_tts_key: saved.tts_api_key_encrypted !== null,
+      tts_voice_id: (saved.tts_voice_id as string | null) ?? null,
+      stt_provider: (saved.stt_provider as STTProvider | null) ?? null,
+      has_stt_key: saved.stt_api_key_encrypted !== null,
+      created_at: saved.created_at as string,
+      updated_at: saved.updated_at as string,
+    };
+  }
+
+  /** Decrypt API keys for server-side use only. Never send to client. */
+  async getDecryptedAIKeys(userId?: string): Promise<{ llm_api_key: string | null; tts_api_key: string | null; stt_api_key: string | null } | null> {
+    const { client, userId: sessionUserId } = await this.getClient();
+    const resolvedUserId = userId ?? sessionUserId;
+
+    let query = client.from('ai_settings').select('llm_api_key_encrypted, tts_api_key_encrypted, stt_api_key_encrypted');
+
+    if (getAuthEnabled() && resolvedUserId) {
+      query = query.eq('user_id', resolvedUserId);
+    } else {
+      query = query.eq('id', 1);
+    }
+
+    const { data } = await query.maybeSingle();
+    if (!data) return null;
+
+    const row = data as Record<string, string | null>;
+    return {
+      llm_api_key: row.llm_api_key_encrypted ? decrypt(row.llm_api_key_encrypted) : null,
+      tts_api_key: row.tts_api_key_encrypted ? decrypt(row.tts_api_key_encrypted) : null,
+      stt_api_key: row.stt_api_key_encrypted ? decrypt(row.stt_api_key_encrypted) : null,
+    };
   }
 }

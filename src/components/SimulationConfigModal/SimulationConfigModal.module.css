@@ -1,0 +1,413 @@
+/* ── Backdrop ── */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 300;
+}
+
+/* ── Modal ── */
+.modal {
+  background-color: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card-hover);
+  padding: 28px 32px;
+  width: 100%;
+  max-width: 540px;
+  margin: 16px;
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+}
+
+/* ── Header ── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.closeButton {
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius-md);
+  transition: color 0.15s, background-color 0.15s;
+  line-height: 1;
+}
+
+.closeButton:hover {
+  color: var(--color-text-primary);
+  background-color: var(--color-bg);
+}
+
+/* ── Context summary ── */
+.context {
+  background-color: var(--color-surface-alt);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.contextRow {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+}
+
+.contextLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+  width: 72px;
+}
+
+.contextValue {
+  font-size: 0.9375rem;
+  color: var(--color-text-primary);
+}
+
+.contextNotes {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+
+/* ── Loading ── */
+.loadingText {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  text-align: center;
+  padding: 24px 0;
+}
+
+/* ── Active session conflict ── */
+.conflictBanner {
+  background-color: color-mix(in srgb, var(--color-brand) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-brand) 25%, transparent);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-bottom: 8px;
+}
+
+.conflictMessage {
+  font-size: 0.9375rem;
+  color: var(--color-text-primary);
+  margin: 0 0 6px;
+  line-height: 1.5;
+}
+
+.conflictMeta {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  margin: 0 0 16px;
+}
+
+.conflictActions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.discardButton {
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--color-status-rejected) 40%, transparent);
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  color: var(--color-status-rejected);
+  font-size: 0.9375rem;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.discardButton:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--color-status-rejected) 10%, transparent);
+  border-color: var(--color-status-rejected);
+}
+
+.discardButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── AI warning ── */
+.aiWarning {
+  background-color: color-mix(in srgb, var(--color-status-rejected) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-status-rejected) 30%, transparent);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  font-size: 0.8125rem;
+  color: var(--color-status-rejected);
+  margin-bottom: 20px;
+}
+
+/* ── Form fields ── */
+.field {
+  margin-bottom: 20px;
+}
+
+.label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin-bottom: 8px;
+}
+
+.labelCount {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--color-brand);
+  margin-left: 6px;
+}
+
+.optional {
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+
+.select,
+.input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
+  font-size: 0.9375rem;
+  box-sizing: border-box;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  appearance: none;
+}
+
+.select:focus,
+.input:focus {
+  outline: none;
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand) 20%, transparent);
+}
+
+.select:disabled,
+.input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.personaInput {
+  margin-top: 8px;
+}
+
+/* ── Slider ── */
+.slider {
+  width: 100%;
+  accent-color: var(--color-brand);
+  cursor: pointer;
+}
+
+.sliderRange {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+
+/* ── Segmented control ── */
+.segmented {
+  display: flex;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.segmentedOption {
+  flex: 1;
+  padding: 7px 12px;
+  background: transparent;
+  border: none;
+  border-right: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.segmentedOption:last-child {
+  border-right: none;
+}
+
+.segmentedOption:hover:not(:disabled) {
+  background-color: var(--color-surface-alt);
+  color: var(--color-text-primary);
+}
+
+.segmentedOption:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.segmentedOptionActive {
+  background-color: var(--color-brand);
+  color: #fff;
+}
+
+.segmentedOptionActive:hover:not(:disabled) {
+  background-color: var(--color-brand-hover);
+  color: #fff;
+}
+
+/* ── Tag input ── */
+.tagInput {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg);
+  cursor: text;
+  min-height: 40px;
+  align-items: center;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.tagInput:focus-within {
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand) 20%, transparent);
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background-color: color-mix(in srgb, var(--color-brand) 15%, transparent);
+  color: var(--color-brand);
+  border-radius: 100px;
+  padding: 2px 10px 2px 10px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.tagRemove {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 0.6875rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  opacity: 0.7;
+}
+
+.tagRemove:hover {
+  opacity: 1;
+}
+
+.tagInputField {
+  border: none;
+  background: transparent;
+  color: var(--color-text-primary);
+  font-size: 0.9375rem;
+  outline: none;
+  flex: 1;
+  min-width: 120px;
+}
+
+/* ── Focus area suggestions ── */
+.suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.suggestion {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: 100px;
+  padding: 3px 10px;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.suggestion:hover:not(:disabled) {
+  border-color: var(--color-brand);
+  color: var(--color-brand);
+}
+
+.suggestion:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Actions ── */
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.cancelButton {
+  background: transparent;
+  border: none;
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  font-size: 0.9375rem;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.cancelButton:hover:not(:disabled) {
+  color: var(--color-text-primary);
+}
+
+.cancelButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.submitButton {
+  background-color: var(--color-brand);
+  color: #fff;
+  border: none;
+  padding: 8px 22px;
+  border-radius: var(--radius-md);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.submitButton:hover:not(:disabled) {
+  background-color: var(--color-brand-hover);
+}
+
+.submitButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
