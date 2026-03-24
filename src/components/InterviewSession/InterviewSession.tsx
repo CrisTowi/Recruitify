@@ -298,6 +298,8 @@ export default function InterviewSession({ session }: Props) {
 
   const handleNextQuestion = useCallback(async () => {
     if (isLastQuestion) {
+      activeStt.stopListening();
+      cancelSpeech();
       setPhase('completing');
       try {
         await completeSession(session.id);
@@ -319,7 +321,7 @@ export default function InterviewSession({ session }: Props) {
       setPhase('answering');
       startTimer();
     }
-  }, [isLastQuestion, pendingNextQuestion, router, session.id, startTimer, activeStt]);
+  }, [isLastQuestion, pendingNextQuestion, router, session.id, startTimer, activeStt, cancelSpeech]);
 
   const handleEndEarly = useCallback(async () => {
     if (!showCancelConfirm) {
@@ -327,6 +329,7 @@ export default function InterviewSession({ session }: Props) {
       return;
     }
     stopTimer();
+    activeStt.stopListening();
     cancelSpeech();
     setPhase('completing');
     try {
@@ -337,10 +340,11 @@ export default function InterviewSession({ session }: Props) {
       setError(classified.message);
       setPhase('error');
     }
-  }, [cancelSpeech, router, session.id, showCancelConfirm, stopTimer]);
+  }, [activeStt, cancelSpeech, router, session.id, showCancelConfirm, stopTimer]);
 
   const handleCancel = useCallback(async () => {
     stopTimer();
+    activeStt.stopListening();
     cancelSpeech();
     try {
       await cancelSession(session.id);
@@ -348,7 +352,7 @@ export default function InterviewSession({ session }: Props) {
     } catch {
       router.push('/');
     }
-  }, [cancelSpeech, router, session.id, stopTimer]);
+  }, [activeStt, cancelSpeech, router, session.id, stopTimer]);
 
   const handleTextareaChange = useCallback((event: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = event.target.value;
