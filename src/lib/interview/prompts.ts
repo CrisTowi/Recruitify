@@ -15,6 +15,32 @@ export function buildInterviewSystemPrompt(
     ? 'After the candidate answers each question, provide brief constructive feedback (2-3 sentences) before moving to the next question.'
     : 'Do NOT provide feedback during the interview. Ask all questions sequentially without commentary. The candidate will receive a full debrief at the end.';
 
+  if (session.is_dry_run) {
+    const contextLine = session.dry_run_context
+      ? `Role / context provided by the candidate: ${session.dry_run_context}`
+      : 'No specific role or context was provided — conduct a general professional interview.';
+
+    return [
+      `You are ${persona} conducting a practice interview.`,
+      ``,
+      `${contextLine}`,
+      ``,
+      `Interview configuration:`,
+      `- Total questions to ask: ${session.num_questions}`,
+      `- Difficulty: ${session.difficulty}`,
+      `- Focus areas: ${focusAreas}`,
+      ``,
+      `Rules:`,
+      `- Ask exactly ${session.num_questions} questions, one at a time`,
+      `- Stay in character as the interviewer throughout`,
+      `- Wait for the candidate's response before asking the next question`,
+      `- ${feedbackModeInstructions}`,
+      `- Do not reveal the total number of questions to the candidate`,
+      `- Be professional and realistic — this is a mock of a real interview`,
+      `- When starting the interview, open immediately with your first question — do not greet the candidate or say anything before the question`,
+    ].join('\n');
+  }
+
   const prepContext = company.prep_notes
     ? `\nCompany context and prep notes: ${company.prep_notes}`
     : '';
@@ -46,8 +72,12 @@ export function buildDebriefSystemPrompt(
   company: Company,
   stage: InterviewStage,
 ): string {
+  const sessionDescription = session.is_dry_run
+    ? `a practice interview${session.dry_run_context ? ` (context: ${session.dry_run_context})` : ''}`
+    : `a ${stage.stage_name} interview simulation at ${company.name}`;
+
   return [
-    `You are an expert interview coach reviewing a completed ${stage.stage_name} interview simulation at ${company.name}.`,
+    `You are an expert interview coach reviewing a completed ${sessionDescription}.`,
     ``,
     `Provide a structured debrief in valid JSON format with the following shape:`,
     `{`,

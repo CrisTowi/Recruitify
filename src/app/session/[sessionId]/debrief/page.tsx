@@ -33,6 +33,17 @@ export default function DebriefPage() {
     loadSession();
   }, [loadSession]);
 
+  // Auto-cancel dry-run sessions after the debrief is viewed so they don't
+  // clutter the session history
+  useEffect(() => {
+    if (!session?.is_dry_run) return;
+    void (async () => {
+      try {
+        await fetch(`/api/sessions/${sessionId}/cancel`, { method: 'POST' });
+      } catch { /* non-fatal */ }
+    })();
+  }, [session?.is_dry_run, sessionId]);
+
   if (loading) {
     return (
       <div className={styles.state}>
