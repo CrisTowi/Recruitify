@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { useAIKeyStatus } from '@/hooks/useAIKeyStatus';
 import type {
   CompanyWithNextStep,
   InterviewStage,
@@ -34,6 +35,7 @@ interface Props {
 
 export default function CompanyDetailModal({ company, onClose, onDeleted, onUpdated }: Props) {
   const { toast } = useToast();
+  const hasAIKey = useAIKeyStatus();
   const [activeTab, setActiveTab] = useState<'timeline' | 'stages' | 'offer' | 'simulations'>('timeline');
   const [stages, setStages] = useState<InterviewStage[]>([]);
   const [offer, setOffer] = useState<CompanyOffer | null>(null);
@@ -363,6 +365,7 @@ export default function CompanyDetailModal({ company, onClose, onDeleted, onUpda
                       onDeleted={(id) => setStages((prev) => prev.filter((stage) => stage.id !== id))}
                       onTimelineCreated={handleCreated}
                       onSimulate={setSimulatingStage}
+                      hasAIKey={hasAIKey}
                     />
                   ))}
                 </ol>

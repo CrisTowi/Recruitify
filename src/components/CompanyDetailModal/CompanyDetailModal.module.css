@@ -877,9 +877,40 @@
   color: var(--color-status-interviewing, #6366f1);
 }
 
-.simulateBtn:hover {
+.simulateBtn:hover:not(:disabled) {
   background: color-mix(in srgb, var(--color-status-interviewing, #6366f1) 18%, transparent);
   border-color: var(--color-status-interviewing, #6366f1);
+}
+
+.simulateBtn:disabled {
+  opacity: 0.45;
+}
+
+/* ── Disabled tooltip wrapper ── */
+.disabledTooltip {
+  position: relative;
+  display: inline-block;
+  cursor: not-allowed;
+}
+
+.disabledTooltip button {
+  pointer-events: none;
+}
+
+.disabledTooltip[data-tooltip]:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--color-text-primary);
+  color: var(--color-surface);
+  font-size: 0.75rem;
+  padding: 5px 10px;
+  border-radius: var(--radius-md);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 400;
 }
 
 /* ── Item body ── */

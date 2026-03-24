@@ -5,7 +5,7 @@ import type { InterviewStage, TimelineEvent } from '@/types';
 import styles from './CompanyDetailModal.module.css';
 
 export default function StageItem({
-  stage, companyId, onUpdated, onDeleted, onTimelineCreated, onSimulate,
+  stage, companyId, onUpdated, onDeleted, onTimelineCreated, onSimulate, hasAIKey,
 }: {
   stage: InterviewStage;
   companyId: string;
@@ -13,6 +13,7 @@ export default function StageItem({
   onDeleted: (id: string) => void;
   onTimelineCreated: (e: TimelineEvent) => void;
   onSimulate?: (stage: InterviewStage) => void;
+  hasAIKey?: boolean | null;
 }) {
   const [notesOpen, setNotesOpen] = useState(false);
   const [notesDraft, setNotesDraft] = useState(stage.notes ?? '');
@@ -173,13 +174,28 @@ export default function StageItem({
         {!completing && (
           <>
             {onSimulate && (
-              <button
-                className={`${styles.editButton} ${styles.roadmapNotesBtn} ${styles.simulateBtn}`}
-                onClick={() => onSimulate(stage)}
-                title="Simulate this interview"
-              >
-                Simulate
-              </button>
+              hasAIKey === false ? (
+                <span
+                  className={styles.disabledTooltip}
+                  data-tooltip="Add an API key in AI Settings to enable simulations"
+                >
+                  <button
+                    className={`${styles.editButton} ${styles.roadmapNotesBtn} ${styles.simulateBtn}`}
+                    disabled
+                  >
+                    Simulate
+                  </button>
+                </span>
+              ) : (
+                <button
+                  className={`${styles.editButton} ${styles.roadmapNotesBtn} ${styles.simulateBtn}`}
+                  onClick={() => onSimulate(stage)}
+                  title="Simulate this interview"
+                  disabled={hasAIKey === null}
+                >
+                  Simulate
+                </button>
+              )
             )}
             <button
               className={`${styles.editButton} ${styles.roadmapNotesBtn}`}

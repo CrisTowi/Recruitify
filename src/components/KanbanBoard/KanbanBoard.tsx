@@ -16,10 +16,12 @@ import DryRunConfigModal from '@/components/DryRunConfigModal/DryRunConfigModal'
 import type { ApplicationStatus, CompanyWithNextStep, KanbanBoard as KanbanBoardType } from '@/types';
 import { COLUMNS, fetchBoard, patchStatus } from './helpers';
 import { useToast } from '@/components/Toast/ToastProvider';
+import { useAIKeyStatus } from '@/hooks/useAIKeyStatus';
 import styles from './KanbanBoard.module.css';
 
 export default function KanbanBoard() {
   const { toast } = useToast();
+  const hasAIKey = useAIKeyStatus();
   const [board, setBoard] = useState<KanbanBoardType | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
@@ -116,9 +118,18 @@ export default function KanbanBoard() {
         <button className={styles.settingsButton} onClick={() => setShowAISettings(true)} aria-label="AI Settings">
           ⚙ AI
         </button>
-        <button className={styles.practiceButton} onClick={() => setShowDryRun(true)}>
-          Practice Interview
-        </button>
+        <span
+          className={hasAIKey === false ? styles.disabledTooltip : undefined}
+          data-tooltip={hasAIKey === false ? 'Add an API key in AI Settings to enable simulations' : undefined}
+        >
+          <button
+            className={styles.practiceButton}
+            onClick={() => setShowDryRun(true)}
+            disabled={hasAIKey !== true}
+          >
+            Practice Interview
+          </button>
+        </span>
         <button className={styles.addButton} onClick={() => setShowModal(true)}>
           + Add Company
         </button>
