@@ -115,3 +115,38 @@
   color: var(--color-brand);
   flex-shrink: 0;
 }
+
+/* ── Mobile move bar ── */
+.moveBar {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-border);
+}
+
+.moveButton {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 6px 14px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+  min-height: unset;
+}
+
+.moveButton:hover:not(:disabled) {
+  background: var(--color-surface-alt);
+  border-color: var(--color-brand);
+  color: var(--color-brand);
+}
+
+.moveButton:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}

@@ -85,15 +85,15 @@ describe('KanbanBoard', () => {
   it('renders the Add Company button', async () => {
     vi.mocked(helpers.fetchBoard).mockResolvedValue(emptyBoard);
     render(<KanbanBoard />);
-    await waitFor(() => expect(screen.getByRole('button', { name: '+ Add Company' })).toBeTruthy());
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Add Company' })).toBeTruthy());
   });
 
   it('opens the AddCompanyModal when the Add Company button is clicked', async () => {
     const user = userEvent.setup();
     vi.mocked(helpers.fetchBoard).mockResolvedValue(emptyBoard);
     render(<KanbanBoard />);
-    await waitFor(() => screen.getByRole('button', { name: '+ Add Company' }));
-    await user.click(screen.getByRole('button', { name: '+ Add Company' }));
+    await waitFor(() => screen.getByRole('button', { name: 'Add Company' }));
+    await user.click(screen.getByRole('button', { name: 'Add Company' }));
     expect(screen.getByTestId('add-company-modal')).toBeTruthy();
   });
 
@@ -101,8 +101,8 @@ describe('KanbanBoard', () => {
     const user = userEvent.setup();
     vi.mocked(helpers.fetchBoard).mockResolvedValue(emptyBoard);
     render(<KanbanBoard />);
-    await waitFor(() => screen.getByRole('button', { name: '+ Add Company' }));
-    await user.click(screen.getByRole('button', { name: '+ Add Company' }));
+    await waitFor(() => screen.getByRole('button', { name: 'Add Company' }));
+    await user.click(screen.getByRole('button', { name: 'Add Company' }));
     await user.click(screen.getByRole('button', { name: 'Close modal' }));
     expect(screen.queryByTestId('add-company-modal')).toBeNull();
   });

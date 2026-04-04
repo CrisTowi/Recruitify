@@ -36,6 +36,9 @@
   /* Typography */
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --font-size-base: clamp(0.875rem, 0.82rem + 0.35vw, 1rem);
+  --font-size-sm: clamp(0.75rem, 0.72rem + 0.2vw, 0.875rem);
+  --font-size-lg: clamp(1rem, 0.9rem + 0.6vw, 1.25rem);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -86,9 +89,17 @@ html {
 
 body {
   font-family: var(--font-sans);
+  font-size: var(--font-size-base);
   background-color: var(--color-bg);
   color: var(--color-text-primary);
   min-height: 100dvh;
+}
+
+/* ── Touch targets ──────────────────────────────────────────────────────────── */
+button,
+[role="button"] {
+  min-height: 44px;
+  min-width: 44px;
 }
 
 a {
@@ -128,6 +139,8 @@ a:hover {
 }
 
 .site-nav-link {
+  display: inline-flex;
+  align-items: center;
   padding: 5px 12px;
   border-radius: var(--radius-sm);
   font-size: 0.875rem;
@@ -135,6 +148,7 @@ a:hover {
   color: var(--color-text-secondary);
   text-decoration: none;
   transition: background 0.15s, color 0.15s;
+  min-height: 44px;
 }
 
 .site-nav-link:hover {
@@ -162,4 +176,31 @@ a:hover {
 .signout-button:hover {
   border-color: var(--color-text-secondary);
   color: var(--color-text-primary);
+}
+
+@media (max-width: 480px) {
+  .site-header {
+    padding: 0 16px;
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+  }
+
+  .site-logo {
+    margin-right: 12px;
+    font-size: 1rem;
+  }
+
+  .site-nav {
+    gap: 2px;
+  }
+
+  .site-nav-link {
+    padding: 5px 8px;
+    font-size: 0.8125rem;
+  }
+
+  .signout-button {
+    font-size: 0.75rem;
+    padding: 5px 10px;
+  }
 }

@@ -20,6 +20,24 @@
   flex-direction: column;
 }
 
+@media (max-width: 600px) {
+  .backdrop {
+    align-items: flex-end;
+    padding: 0;
+    overflow-y: auto;
+  }
+
+  .modal {
+    max-width: 100%;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    padding-bottom: max(0px, env(safe-area-inset-bottom));
+  }
+
+  .row {
+    grid-template-columns: 1fr;
+  }
+}
+
 .header {
   padding: 20px 24px 16px;
   border-bottom: 1px solid var(--color-border);

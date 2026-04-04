@@ -95,6 +95,8 @@
   overflow-x: auto;
   align-items: flex-start;
   min-height: calc(100dvh - 56px); /* subtract header height */
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* ── Column ── */
@@ -105,6 +107,42 @@
   display: flex;
   flex-direction: column;
   max-height: calc(100dvh - 104px);
+  scroll-snap-align: start;
+}
+
+/* ── Button labels (hidden on small screens) ── */
+.buttonLabel {
+  display: inline;
+}
+
+@media (max-width: 480px) {
+  .toolbar {
+    padding: 12px 16px 0;
+    gap: 8px;
+  }
+
+  .buttonLabel {
+    display: none;
+  }
+
+  .settingsButton,
+  .practiceButton,
+  .addButton {
+    padding: 8px 12px;
+    font-size: 1rem;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .board {
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .column {
+    flex: 0 0 calc(100vw - 32px);
+    max-height: calc(100dvh - 130px);
+  }
 }
 
 .columnHeader {

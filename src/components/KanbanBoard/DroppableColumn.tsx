@@ -9,9 +9,12 @@ interface Props {
   status: ApplicationStatus;
   cards: CompanyWithNextStep[];
   onCardClick: (company: CompanyWithNextStep) => void;
+  isMobile?: boolean;
+  onMoveCard?: (company: CompanyWithNextStep, newStatus: ApplicationStatus) => void;
+  onLongPress?: (company: CompanyWithNextStep) => void;
 }
 
-export default function DroppableColumn({ status, cards, onCardClick }: Props) {
+export default function DroppableColumn({ status, cards, onCardClick, isMobile, onMoveCard, onLongPress }: Props) {
   const data: DroppableColumnData = { type: 'column', status };
   const { setNodeRef, isOver } = useDroppable({ id: status, data });
 
@@ -30,7 +33,14 @@ export default function DroppableColumn({ status, cards, onCardClick }: Props) {
           <p className={styles.empty}>No companies here yet.</p>
         ) : (
           cards.map((company) => (
-            <DraggableCard key={company.id} company={company} onCardClick={onCardClick} />
+            <DraggableCard
+              key={company.id}
+              company={company}
+              onCardClick={onCardClick}
+              isMobile={isMobile}
+              onMoveCard={onMoveCard}
+              onLongPress={onLongPress}
+            />
           ))
         )}
       </div>

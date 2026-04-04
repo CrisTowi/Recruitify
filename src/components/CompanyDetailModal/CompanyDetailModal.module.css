@@ -457,7 +457,7 @@
 .roadmap::before {
   content: '';
   position: absolute;
-  left: 7px;
+  left: 9px;
   top: 8px;
   bottom: 8px;
   width: 2px;
@@ -524,6 +524,8 @@
 .roadmapCheckbox {
   width: 20px;
   height: 20px;
+  min-width: 20px;
+  min-height: 20px;
   border-radius: 50%;
   border: 2px solid var(--color-border);
   background: var(--color-surface);
@@ -582,6 +584,8 @@
   line-height: 1;
   flex-shrink: 0;
   transition: color 0.12s;
+  min-height: unset;
+  min-width: unset;
 }
 
 .roadmapDeleteBtn:hover {
@@ -864,6 +868,8 @@
   color: var(--color-brand);
   cursor: pointer;
   transition: background-color 0.12s, border-color 0.12s;
+  min-height: unset;
+  min-width: unset;
 }
 
 .editButton:hover {
@@ -1042,6 +1048,19 @@
 
   .modal {
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+
+  .stageAddForm {
+    flex-wrap: wrap;
+  }
+
+  .stageAddInput {
+    flex: 1 1 100%;
+  }
+
+  .stageAddDate {
+    flex: 1;
+    width: auto;
   }
 }
 

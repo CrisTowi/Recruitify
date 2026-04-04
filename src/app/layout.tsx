@@ -10,6 +10,12 @@ export const metadata: Metadata = {
   description: 'Personal tech interview tracker — manage multiple processes in parallel.',
 };
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+};
+
 async function getAuthUser() {
   if (process.env.SUPABASE_AUTH !== 'true' || process.env.STORAGE_MODE === 'sqlite') {
     return null;

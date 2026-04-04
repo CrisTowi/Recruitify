@@ -13,15 +13,19 @@ import CompanyDetailModal from '@/components/CompanyDetailModal/CompanyDetailMod
 import OfferModal from '@/components/OfferModal/OfferModal';
 import AISettingsModal from '@/components/AISettingsModal/AISettingsModal';
 import DryRunConfigModal from '@/components/DryRunConfigModal/DryRunConfigModal';
+import StatusPickerSheet from '@/components/StatusPickerSheet/StatusPickerSheet';
 import type { ApplicationStatus, CompanyWithNextStep, KanbanBoard as KanbanBoardType } from '@/types';
 import { COLUMNS, fetchBoard, patchStatus } from './helpers';
 import { useToast } from '@/components/Toast/ToastProvider';
 import { useAIKeyStatus } from '@/hooks/useAIKeyStatus';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import styles from './KanbanBoard.module.css';
 
 export default function KanbanBoard() {
   const { toast } = useToast();
   const hasAIKey = useAIKeyStatus();
+  const isMobile = useMediaQuery('(max-width: 767px)');
+
   const [board, setBoard] = useState<KanbanBoardType | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
@@ -30,9 +34,12 @@ export default function KanbanBoard() {
   const [activeCard, setActiveCard] = useState<CompanyWithNextStep | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<CompanyWithNextStep | null>(null);
   const [offerModalCompany, setOfferModalCompany] = useState<CompanyWithNextStep | null>(null);
+  const [statusPickerCompany, setStatusPickerCompany] = useState<CompanyWithNextStep | null>(null);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: isMobile ? Number.MAX_SAFE_INTEGER : 5 },
+    })
   );
 
   useEffect(() => {
@@ -48,32 +55,20 @@ export default function KanbanBoard() {
     load();
   }, [toast]);
 
-  const handleDragStart = useCallback((event: DragStartEvent) => {
-    const data = event.active.data.current as { company: CompanyWithNextStep } | undefined;
-    if (data?.company) setActiveCard(data.company);
-  }, []);
-
-  const handleDragEnd = useCallback(async (event: DragEndEvent) => {
-    setActiveCard(null);
-    const { active, over } = event;
-    if (!over || !board) return;
-
-    const newStatus = over.id as ApplicationStatus;
-    const cardId = active.id as string;
-    const data = active.data.current as { company: CompanyWithNextStep } | undefined;
-    if (!data?.company) return;
-
-    const oldStatus = data.company.status;
+  const handleMoveCard = useCallback(async (company: CompanyWithNextStep, newStatus: ApplicationStatus) => {
+    if (!board) return;
+    const oldStatus = company.status;
     if (oldStatus === newStatus) return;
 
+    const cardId = company.id;
     const snapshot = board;
 
     setBoard((prev) => {
       if (!prev) return prev;
-      const updatedCard: CompanyWithNextStep = { ...data.company, status: newStatus };
+      const updatedCard: CompanyWithNextStep = { ...company, status: newStatus };
       return {
         ...prev,
-        [oldStatus]: prev[oldStatus].filter((company) => company.id !== cardId),
+        [oldStatus]: prev[oldStatus].filter((c) => c.id !== cardId),
         [newStatus]: [updatedCard, ...prev[newStatus]],
       };
     });
@@ -86,24 +81,36 @@ export default function KanbanBoard() {
           await fetch(`/api/companies/${cardId}/timeline`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              event_type: 'status_change',
-              title: oldStatus,
-              body: newStatus,
-            }),
+            body: JSON.stringify({ event_type: 'status_change', title: oldStatus, body: newStatus }),
           });
         } catch { /* fire-and-forget */ }
       })();
 
-      // Show offer modal when moving to Offer column
       if (newStatus === 'Offer') {
-        setOfferModalCompany({ ...data.company, status: 'Offer' });
+        setOfferModalCompany({ ...company, status: 'Offer' });
       }
     } catch {
       setBoard(snapshot);
       toast('Failed to move card. Please try again.');
     }
   }, [board, toast]);
+
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    const data = event.active.data.current as { company: CompanyWithNextStep } | undefined;
+    if (data?.company) setActiveCard(data.company);
+  }, []);
+
+  const handleDragEnd = useCallback(async (event: DragEndEvent) => {
+    setActiveCard(null);
+    const { active, over } = event;
+    if (!over || !board) return;
+
+    const newStatus = over.id as ApplicationStatus;
+    const data = active.data.current as { company: CompanyWithNextStep } | undefined;
+    if (!data?.company) return;
+
+    await handleMoveCard(data.company, newStatus);
+  }, [board, handleMoveCard]);
 
   const handleCardClick = useCallback((company: CompanyWithNextStep) => {
     setSelectedCompany(company);
@@ -116,7 +123,7 @@ export default function KanbanBoard() {
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       <div className={styles.toolbar}>
         <button className={styles.settingsButton} onClick={() => setShowAISettings(true)} aria-label="AI Settings">
-          ⚙ AI
+          ⚙<span className={styles.buttonLabel}> AI</span>
         </button>
         <span
           className={hasAIKey === false ? styles.disabledTooltip : undefined}
@@ -126,17 +133,26 @@ export default function KanbanBoard() {
             className={styles.practiceButton}
             onClick={() => setShowDryRun(true)}
             disabled={hasAIKey !== true}
+            aria-label="Practice Interview"
           >
-            Practice Interview
+            🎤<span className={styles.buttonLabel}> Practice Interview</span>
           </button>
         </span>
-        <button className={styles.addButton} onClick={() => setShowModal(true)}>
-          + Add Company
+        <button className={styles.addButton} onClick={() => setShowModal(true)} aria-label="Add Company">
+          +<span className={styles.buttonLabel}> Add Company</span>
         </button>
       </div>
       <section className={styles.board}>
         {COLUMNS.map((status) => (
-          <DroppableColumn key={status} status={status} cards={board[status]} onCardClick={handleCardClick} />
+          <DroppableColumn
+            key={status}
+            status={status}
+            cards={board[status]}
+            onCardClick={handleCardClick}
+            isMobile={isMobile}
+            onMoveCard={handleMoveCard}
+            onLongPress={setStatusPickerCompany}
+          />
         ))}
       </section>
       <DragOverlay dropAnimation={null}>
@@ -191,6 +207,16 @@ export default function KanbanBoard() {
       )}
       {showDryRun && (
         <DryRunConfigModal onClose={() => setShowDryRun(false)} />
+      )}
+      {statusPickerCompany && (
+        <StatusPickerSheet
+          company={statusPickerCompany}
+          onSelect={(newStatus) => {
+            void handleMoveCard(statusPickerCompany, newStatus);
+            setStatusPickerCompany(null);
+          }}
+          onClose={() => setStatusPickerCompany(null)}
+        />
       )}
     </DndContext>
   );

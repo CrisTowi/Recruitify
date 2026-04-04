@@ -20,6 +20,20 @@
   margin: 16px;
 }
 
+@media (max-width: 540px) {
+  .backdrop {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .modal {
+    margin: 0;
+    max-width: 100%;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    padding: 24px 20px max(24px, env(safe-area-inset-bottom));
+  }
+}
+
 .title {
   font-size: 1.125rem;
   font-weight: 700;

@@ -4,10 +4,15 @@ import styles from './CompanyCard.module.css';
 
 interface Props {
   company: CompanyWithNextStep;
+  onMoveLeft?: () => void;
+  onMoveRight?: () => void;
+  prevLabel?: string;
+  nextLabel?: string;
 }
 
-export default function CompanyCard({ company }: Props) {
+export default function CompanyCard({ company, onMoveLeft, onMoveRight, prevLabel, nextLabel }: Props) {
   const { name, logo_url, status, next_step, interest_level } = company;
+  const hasMoveBar = onMoveLeft !== undefined || onMoveRight !== undefined;
 
   return (
     <article className={styles.card}>
@@ -47,6 +52,27 @@ export default function CompanyCard({ company }: Props) {
               })}
             </span>
           )}
+        </div>
+      )}
+
+      {hasMoveBar && (
+        <div className={styles.moveBar}>
+          <button
+            className={styles.moveButton}
+            onClick={(event) => { event.stopPropagation(); onMoveLeft?.(); }}
+            disabled={!onMoveLeft}
+            aria-label={prevLabel ? `Move to ${prevLabel}` : 'Move to previous column'}
+          >
+            ←
+          </button>
+          <button
+            className={styles.moveButton}
+            onClick={(event) => { event.stopPropagation(); onMoveRight?.(); }}
+            disabled={!onMoveRight}
+            aria-label={nextLabel ? `Move to ${nextLabel}` : 'Move to next column'}
+          >
+            →
+          </button>
         </div>
       )}
     </article>
