@@ -30,7 +30,7 @@ export default function ProfileSettings({ initialLanguage }: Props) {
         const json = await res.json() as { error?: string };
         throw new Error(json.error ?? `HTTP ${res.status}`);
       }
-      toast(t('saved'));
+      toast(t('saved'), 'success');
       router.refresh();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to save preferences';
