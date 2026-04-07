@@ -109,6 +109,10 @@ function initSchema(db: Database.Database): void {
       remote_policy TEXT,
       health_tier TEXT,
       retirement_match_pct REAL,
+      food_vouchers INTEGER,
+      christmas_bonus_days INTEGER,
+      savings_fund_pct REAL,
+      vacation_premium_pct REAL,
       other_benefits TEXT,
       notes TEXT,
       created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
@@ -126,6 +130,10 @@ function initSchema(db: Database.Database): void {
       remote_policy TEXT,
       health_tier TEXT,
       retirement_match_pct REAL,
+      food_vouchers INTEGER,
+      christmas_bonus_days INTEGER,
+      savings_fund_pct REAL,
+      vacation_premium_pct REAL,
       updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
     );
 
@@ -202,6 +210,14 @@ function initSchema(db: Database.Database): void {
   try { db.exec(`ALTER TABLE interview_sessions ADD COLUMN debrief_interviewer_note TEXT`); } catch { /* already exists */ }
   try { db.exec(`ALTER TABLE interview_sessions ADD COLUMN is_dry_run INTEGER NOT NULL DEFAULT 0`); } catch { /* already exists */ }
   try { db.exec(`ALTER TABLE interview_sessions ADD COLUMN dry_run_context TEXT`); } catch { /* already exists */ }
+  try { db.exec(`ALTER TABLE company_offers ADD COLUMN food_vouchers INTEGER`); } catch { /* already exists */ }
+  try { db.exec(`ALTER TABLE company_offers ADD COLUMN christmas_bonus_days INTEGER`); } catch { /* already exists */ }
+  try { db.exec(`ALTER TABLE company_offers ADD COLUMN savings_fund_pct REAL`); } catch { /* already exists */ }
+  try { db.exec(`ALTER TABLE company_offers ADD COLUMN vacation_premium_pct REAL`); } catch { /* already exists */ }
+  try { db.exec(`ALTER TABLE offer_expectations ADD COLUMN food_vouchers INTEGER`); } catch { /* already exists */ }
+  try { db.exec(`ALTER TABLE offer_expectations ADD COLUMN christmas_bonus_days INTEGER`); } catch { /* already exists */ }
+  try { db.exec(`ALTER TABLE offer_expectations ADD COLUMN savings_fund_pct REAL`); } catch { /* already exists */ }
+  try { db.exec(`ALTER TABLE offer_expectations ADD COLUMN vacation_premium_pct REAL`); } catch { /* already exists */ }
 
   // Sentinel rows for dry-run sessions (satisfy FK constraints without a real company/stage)
   db.exec(`
@@ -262,6 +278,10 @@ interface OfferRow {
   remote_policy: string | null;
   health_tier: string | null;
   retirement_match_pct: number | null;
+  food_vouchers: number | null;
+  christmas_bonus_days: number | null;
+  savings_fund_pct: number | null;
+  vacation_premium_pct: number | null;
   other_benefits: string | null;
   notes: string | null;
   created_at: string;
@@ -344,6 +364,10 @@ function mapOffer(row: OfferRow): CompanyOffer {
     remote_policy: row.remote_policy as RemotePolicy | null,
     health_tier: row.health_tier as HealthTier | null,
     retirement_match_pct: row.retirement_match_pct,
+    food_vouchers: row.food_vouchers,
+    christmas_bonus_days: row.christmas_bonus_days,
+    savings_fund_pct: row.savings_fund_pct,
+    vacation_premium_pct: row.vacation_premium_pct,
     other_benefits: row.other_benefits,
     notes: row.notes,
     created_at: row.created_at,
@@ -779,8 +803,10 @@ export class SqliteAdapter implements DbAdapter {
       db.prepare(
         `INSERT INTO company_offers (
           id, company_id, base_salary, currency, signing_bonus, equity_value, equity_vesting,
-          bonus_pct, pto_days, remote_policy, health_tier, retirement_match_pct, other_benefits, notes
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          bonus_pct, pto_days, remote_policy, health_tier, retirement_match_pct,
+          food_vouchers, christmas_bonus_days, savings_fund_pct, vacation_premium_pct,
+          other_benefits, notes
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       ).run(
         id, companyId,
         data.base_salary ?? null,
@@ -793,6 +819,10 @@ export class SqliteAdapter implements DbAdapter {
         data.remote_policy ?? null,
         data.health_tier ?? null,
         data.retirement_match_pct ?? null,
+        data.food_vouchers ?? null,
+        data.christmas_bonus_days ?? null,
+        data.savings_fund_pct ?? null,
+        data.vacation_premium_pct ?? null,
         data.other_benefits ?? null,
         data.notes ?? null,
       );
@@ -821,6 +851,10 @@ export class SqliteAdapter implements DbAdapter {
       remote_policy: (row.remote_policy as RemotePolicy | null) ?? null,
       health_tier: (row.health_tier as HealthTier | null) ?? null,
       retirement_match_pct: row.retirement_match_pct as number | null,
+      food_vouchers: row.food_vouchers as number | null,
+      christmas_bonus_days: row.christmas_bonus_days as number | null,
+      savings_fund_pct: row.savings_fund_pct as number | null,
+      vacation_premium_pct: row.vacation_premium_pct as number | null,
     });
   }
 
@@ -829,7 +863,8 @@ export class SqliteAdapter implements DbAdapter {
     const existing = db.prepare('SELECT id FROM offer_expectations WHERE id = 1').get();
 
     const fields = ['base_salary', 'currency', 'signing_bonus', 'equity_value',
-      'bonus_pct', 'pto_days', 'remote_policy', 'health_tier', 'retirement_match_pct'] as const;
+      'bonus_pct', 'pto_days', 'remote_policy', 'health_tier', 'retirement_match_pct',
+      'food_vouchers', 'christmas_bonus_days', 'savings_fund_pct', 'vacation_premium_pct'] as const;
 
     if (existing) {
       const setClauses = fields.filter((field) => field in data).map((field) => `${field} = ?`);
@@ -841,12 +876,15 @@ export class SqliteAdapter implements DbAdapter {
     } else {
       db.prepare(
         `INSERT INTO offer_expectations (id, base_salary, currency, signing_bonus, equity_value,
-           bonus_pct, pto_days, remote_policy, health_tier, retirement_match_pct)
-         VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           bonus_pct, pto_days, remote_policy, health_tier, retirement_match_pct,
+           food_vouchers, christmas_bonus_days, savings_fund_pct, vacation_premium_pct)
+         VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       ).run(
         data.base_salary ?? null, data.currency ?? 'USD', data.signing_bonus ?? null,
         data.equity_value ?? null, data.bonus_pct ?? null, data.pto_days ?? null,
         data.remote_policy ?? null, data.health_tier ?? null, data.retirement_match_pct ?? null,
+        data.food_vouchers ?? null, data.christmas_bonus_days ?? null,
+        data.savings_fund_pct ?? null, data.vacation_premium_pct ?? null,
       );
     }
 

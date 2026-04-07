@@ -56,6 +56,10 @@ export interface OfferExpectations {
   remote_policy: RemotePolicy | null;
   health_tier: HealthTier | null;
   retirement_match_pct: number | null;
+  food_vouchers: number | null;
+  christmas_bonus_days: number | null;
+  savings_fund_pct: number | null;
+  vacation_premium_pct: number | null;
 }
 
 export interface CompanyOffer {
@@ -71,6 +75,10 @@ export interface CompanyOffer {
   remote_policy: RemotePolicy | null;
   health_tier: HealthTier | null;
   retirement_match_pct: number | null;
+  food_vouchers: number | null;
+  christmas_bonus_days: number | null;
+  savings_fund_pct: number | null;
+  vacation_premium_pct: number | null;
   other_benefits: string | null;
   notes: string | null;
   created_at: string;

@@ -16,6 +16,10 @@ function makeExpectations(overrides: Partial<OfferExpectations> = {}): OfferExpe
     remote_policy: 'Remote',
     health_tier: null,
     retirement_match_pct: null,
+    food_vouchers: null,
+    christmas_bonus_days: null,
+    savings_fund_pct: null,
+    vacation_premium_pct: null,
     ...overrides,
   };
 }

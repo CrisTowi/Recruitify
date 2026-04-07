@@ -31,6 +31,10 @@ export default function ExpectationsPanel({
   const [remotePolicy, setRemotePolicy] = useState<RemotePolicy | ''>(expectations?.remote_policy ?? '');
   const [healthTier, setHealthTier] = useState<HealthTier | ''>(expectations?.health_tier ?? '');
   const [retirementMatch, setRetirementMatch] = useState(expectations?.retirement_match_pct?.toString() ?? '');
+  const [foodVouchers, setFoodVouchers] = useState(expectations?.food_vouchers?.toString() ?? '');
+  const [christmasBonusDays, setChristmasBonusDays] = useState(expectations?.christmas_bonus_days?.toString() ?? '');
+  const [savingsFundPct, setSavingsFundPct] = useState(expectations?.savings_fund_pct?.toString() ?? '');
+  const [vacationPremiumPct, setVacationPremiumPct] = useState(expectations?.vacation_premium_pct?.toString() ?? '');
 
   async function handleSave() {
     setSaving(true);
@@ -44,6 +48,10 @@ export default function ExpectationsPanel({
       remote_policy: (remotePolicy as RemotePolicy) || null,
       health_tier: (healthTier as HealthTier) || null,
       retirement_match_pct: retirementMatch ? Number(retirementMatch) : null,
+      food_vouchers: foodVouchers ? Number(foodVouchers) : null,
+      christmas_bonus_days: christmasBonusDays ? Number(christmasBonusDays) : null,
+      savings_fund_pct: savingsFundPct ? Number(savingsFundPct) : null,
+      vacation_premium_pct: vacationPremiumPct ? Number(vacationPremiumPct) : null,
     };
     try {
       const res = await fetch('/api/expectations', {
@@ -102,7 +110,7 @@ export default function ExpectationsPanel({
               <label className={styles.expLabel}>{t('baseSalary')}</label>
               <div className={styles.expInputGroup}>
                 <select className={styles.expCurrencySelect} value={currency} onChange={(event) => setCurrency(event.target.value)} disabled={saving}>
-                  {['USD', 'EUR', 'GBP', 'CAD', 'AUD'].map((cur) => <option key={cur} value={cur}>{cur}</option>)}
+                  {['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'MXN'].map((cur) => <option key={cur} value={cur}>{cur}</option>)}
                 </select>
                 <input className={styles.expInput} type="text" inputMode="numeric" placeholder="180,000" value={fmtCommas(baseSalary)} onChange={(event) => setBaseSalary(event.target.value.replace(/[^0-9]/g, ''))} disabled={saving} />
               </div>
@@ -126,6 +134,22 @@ export default function ExpectationsPanel({
             <div className={styles.expField}>
               <label className={styles.expLabel}>{t('retirement401k')}</label>
               <input className={styles.expInput} type="number" min={0} placeholder="4" value={retirementMatch} onChange={(event) => setRetirementMatch(event.target.value)} disabled={saving} />
+            </div>
+            <div className={styles.expField}>
+              <label className={styles.expLabel}>{t('foodVouchers')}</label>
+              <input className={styles.expInput} type="text" inputMode="numeric" placeholder="2,000" value={fmtCommas(foodVouchers)} onChange={(event) => setFoodVouchers(event.target.value.replace(/[^0-9]/g, ''))} disabled={saving} />
+            </div>
+            <div className={styles.expField}>
+              <label className={styles.expLabel}>{t('christmasBonusDays')}</label>
+              <input className={styles.expInput} type="number" min={0} placeholder="30" value={christmasBonusDays} onChange={(event) => setChristmasBonusDays(event.target.value)} disabled={saving} />
+            </div>
+            <div className={styles.expField}>
+              <label className={styles.expLabel}>{t('savingsFundPct')}</label>
+              <input className={styles.expInput} type="number" min={0} placeholder="13" value={savingsFundPct} onChange={(event) => setSavingsFundPct(event.target.value)} disabled={saving} />
+            </div>
+            <div className={styles.expField}>
+              <label className={styles.expLabel}>{t('vacationPremiumPct')}</label>
+              <input className={styles.expInput} type="number" min={0} placeholder="25" value={vacationPremiumPct} onChange={(event) => setVacationPremiumPct(event.target.value)} disabled={saving} />
             </div>
             <div className={styles.expField}>
               <label className={styles.expLabel}>{t('remotePolicy')}</label>

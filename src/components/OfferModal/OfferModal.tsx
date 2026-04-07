@@ -31,6 +31,10 @@ export default function OfferModal({ company, onSaved, onSkip }: Props) {
   const [remotePolicy, setRemotePolicy] = useState<RemotePolicy | ''>('');
   const [healthTier, setHealthTier] = useState<HealthTier | ''>('');
   const [retirementMatch, setRetirementMatch] = useState('');
+  const [foodVouchers, setFoodVouchers] = useState('');
+  const [christmasBonusDays, setChristmasBonusDays] = useState('');
+  const [savingsFundPct, setSavingsFundPct] = useState('');
+  const [vacationPremiumPct, setVacationPremiumPct] = useState('');
   const [otherBenefits, setOtherBenefits] = useState('');
   const [notes, setNotes] = useState('');
 
@@ -50,6 +54,10 @@ export default function OfferModal({ company, onSaved, onSkip }: Props) {
       remote_policy: remotePolicy || null,
       health_tier: healthTier || null,
       retirement_match_pct: retirementMatch ? Number(retirementMatch) : null,
+      food_vouchers: foodVouchers ? Number(foodVouchers) : null,
+      christmas_bonus_days: christmasBonusDays ? Number(christmasBonusDays) : null,
+      savings_fund_pct: savingsFundPct ? Number(savingsFundPct) : null,
+      vacation_premium_pct: vacationPremiumPct ? Number(vacationPremiumPct) : null,
       other_benefits: otherBenefits.trim() || null,
       notes: notes.trim() || null,
     };
@@ -100,7 +108,7 @@ export default function OfferModal({ company, onSaved, onSkip }: Props) {
                   onChange={(event) => setCurrency(event.target.value)}
                   disabled={submitting}
                 >
-                  {['USD', 'EUR', 'GBP', 'CAD', 'AUD'].map((currency) => (
+                  {['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'MXN'].map((currency) => (
                     <option key={currency} value={currency}>{currency}</option>
                   ))}
                 </select>
@@ -223,6 +231,60 @@ export default function OfferModal({ company, onSaved, onSkip }: Props) {
                 <option value="">{t('selectPlaceholder')}</option>
                 {HEALTH_TIERS.map((tier) => <option key={tier} value={tier}>{tier}</option>)}
               </select>
+            </div>
+          </div>
+
+          <div className={styles.row}>
+            <div className={styles.field}>
+              <label className={styles.label}>{t('foodVouchers')}</label>
+              <input
+                className={styles.input}
+                type="text"
+                inputMode="numeric"
+                placeholder="2,000"
+                value={fmtCommas(foodVouchers)}
+                onChange={(event) => setFoodVouchers(event.target.value.replace(/[^0-9]/g, ''))}
+                disabled={submitting}
+              />
+            </div>
+            <div className={styles.field}>
+              <label className={styles.label}>{t('christmasBonusDays')}</label>
+              <input
+                className={styles.input}
+                type="number"
+                min={0}
+                placeholder="30"
+                value={christmasBonusDays}
+                onChange={(event) => setChristmasBonusDays(event.target.value)}
+                disabled={submitting}
+              />
+            </div>
+          </div>
+
+          <div className={styles.row}>
+            <div className={styles.field}>
+              <label className={styles.label}>{t('savingsFundPct')}</label>
+              <input
+                className={styles.input}
+                type="number"
+                min={0}
+                placeholder="13"
+                value={savingsFundPct}
+                onChange={(event) => setSavingsFundPct(event.target.value)}
+                disabled={submitting}
+              />
+            </div>
+            <div className={styles.field}>
+              <label className={styles.label}>{t('vacationPremiumPct')}</label>
+              <input
+                className={styles.input}
+                type="number"
+                min={0}
+                placeholder="25"
+                value={vacationPremiumPct}
+                onChange={(event) => setVacationPremiumPct(event.target.value)}
+                disabled={submitting}
+              />
             </div>
           </div>
 

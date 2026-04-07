@@ -33,13 +33,13 @@ export function fmt(n: number | null | undefined, currency: string, type: 'curre
 export function fmtExpectation(exp: OfferExpectations, field: keyof OfferExpectations, tLabels: { orBetter: string; remotePolicy: (v: string) => string; healthTier: (v: string) => string; ptoDays: (n: number) => string }): string {
   const value = exp[field];
   if (value === null || value === undefined) return '';
-  if (field === 'base_salary' || field === 'signing_bonus' || field === 'equity_value') {
+  if (field === 'base_salary' || field === 'signing_bonus' || field === 'equity_value' || field === 'food_vouchers') {
     return `≥ ${fmt(value as number, exp.currency, 'currency')}`;
   }
-  if (field === 'bonus_pct' || field === 'retirement_match_pct') {
+  if (field === 'bonus_pct' || field === 'retirement_match_pct' || field === 'savings_fund_pct' || field === 'vacation_premium_pct') {
     return `≥ ${value}%`;
   }
-  if (field === 'pto_days') return tLabels.ptoDays(value as number);
+  if (field === 'pto_days' || field === 'christmas_bonus_days') return tLabels.ptoDays(value as number);
   if (field === 'remote_policy') return `${tLabels.remotePolicy(value as string)} ${tLabels.orBetter}`;
   if (field === 'health_tier') return `${tLabels.healthTier(value as string)} ${tLabels.orBetter}`;
   return String(value);

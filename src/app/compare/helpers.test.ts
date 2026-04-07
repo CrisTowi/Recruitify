@@ -19,6 +19,10 @@ function makeOffer(overrides: Partial<CompanyOffer> = {}): CompanyOffer {
     remote_policy: 'Remote',
     health_tier: 'Premium',
     retirement_match_pct: 4,
+    food_vouchers: null,
+    christmas_bonus_days: null,
+    savings_fund_pct: null,
+    vacation_premium_pct: null,
     other_benefits: null,
     notes: null,
     created_at: '2024-01-01T00:00:00Z',
@@ -38,6 +42,10 @@ function makeExpectations(overrides: Partial<OfferExpectations> = {}): OfferExpe
     remote_policy: 'Hybrid',
     health_tier: 'Basic',
     retirement_match_pct: null,
+    food_vouchers: null,
+    christmas_bonus_days: null,
+    savings_fund_pct: null,
+    vacation_premium_pct: null,
     ...overrides,
   };
 }
@@ -85,7 +93,7 @@ describe('compare helpers', () => {
       orBetter: 'or better',
       remotePolicy: (value: string) => value,
       healthTier: (value: string) => value,
-      ptoDays: (n: number) => `≥ ${n} days`,
+      ptoDays: (n: number) => `≥ ${n} days`, // simulates t('days', { n }) returning '{n} days'
     };
 
     it('returns empty string when field value is null', () => {

@@ -33,6 +33,10 @@ export default function OfferSection({ companyId, offer, onUpdated }: OfferSecti
   const [remotePolicy, setRemotePolicy] = useState<RemotePolicy | ''>(offer?.remote_policy ?? '');
   const [healthTier, setHealthTier] = useState<HealthTier | ''>(offer?.health_tier ?? '');
   const [retirementMatch, setRetirementMatch] = useState(offer?.retirement_match_pct?.toString() ?? '');
+  const [foodVouchers, setFoodVouchers] = useState(offer?.food_vouchers?.toString() ?? '');
+  const [christmasBonusDays, setChristmasBonusDays] = useState(offer?.christmas_bonus_days?.toString() ?? '');
+  const [savingsFundPct, setSavingsFundPct] = useState(offer?.savings_fund_pct?.toString() ?? '');
+  const [vacationPremiumPct, setVacationPremiumPct] = useState(offer?.vacation_premium_pct?.toString() ?? '');
   const [otherBenefits, setOtherBenefits] = useState(offer?.other_benefits ?? '');
   const [offerNotes, setOfferNotes] = useState(offer?.notes ?? '');
 
@@ -47,6 +51,10 @@ export default function OfferSection({ companyId, offer, onUpdated }: OfferSecti
     setRemotePolicy(offer?.remote_policy ?? '');
     setHealthTier(offer?.health_tier ?? '');
     setRetirementMatch(offer?.retirement_match_pct?.toString() ?? '');
+    setFoodVouchers(offer?.food_vouchers?.toString() ?? '');
+    setChristmasBonusDays(offer?.christmas_bonus_days?.toString() ?? '');
+    setSavingsFundPct(offer?.savings_fund_pct?.toString() ?? '');
+    setVacationPremiumPct(offer?.vacation_premium_pct?.toString() ?? '');
     setOtherBenefits(offer?.other_benefits ?? '');
     setOfferNotes(offer?.notes ?? '');
     setErr(null);
@@ -67,6 +75,10 @@ export default function OfferSection({ companyId, offer, onUpdated }: OfferSecti
       remote_policy: remotePolicy || null,
       health_tier: healthTier || null,
       retirement_match_pct: retirementMatch ? Number(retirementMatch) : null,
+      food_vouchers: foodVouchers ? Number(foodVouchers) : null,
+      christmas_bonus_days: christmasBonusDays ? Number(christmasBonusDays) : null,
+      savings_fund_pct: savingsFundPct ? Number(savingsFundPct) : null,
+      vacation_premium_pct: vacationPremiumPct ? Number(vacationPremiumPct) : null,
       other_benefits: otherBenefits.trim() || null,
       notes: offerNotes.trim() || null,
     };
@@ -135,6 +147,30 @@ export default function OfferSection({ companyId, offer, onUpdated }: OfferSecti
               <dt>{t('retirement401k')}</dt>
               <dd>{fmt(offer.retirement_match_pct, offer.currency, 'pct')}</dd>
             </div>
+            {offer.food_vouchers != null && (
+              <div className={styles.offerRow}>
+                <dt>{t('foodVouchers')}</dt>
+                <dd>{fmt(offer.food_vouchers, offer.currency, 'currency')}</dd>
+              </div>
+            )}
+            {offer.christmas_bonus_days != null && (
+              <div className={styles.offerRow}>
+                <dt>{t('christmasBonusDays')}</dt>
+                <dd>{fmt(offer.christmas_bonus_days, offer.currency, 'days')}</dd>
+              </div>
+            )}
+            {offer.savings_fund_pct != null && (
+              <div className={styles.offerRow}>
+                <dt>{t('savingsFundPct')}</dt>
+                <dd>{fmt(offer.savings_fund_pct, offer.currency, 'pct')}</dd>
+              </div>
+            )}
+            {offer.vacation_premium_pct != null && (
+              <div className={styles.offerRow}>
+                <dt>{t('vacationPremiumPct')}</dt>
+                <dd>{fmt(offer.vacation_premium_pct, offer.currency, 'pct')}</dd>
+              </div>
+            )}
             {offer.other_benefits && (
               <div className={`${styles.offerRow} ${styles.offerRowFull}`}>
                 <dt>{t('otherBenefits')}</dt>
@@ -166,7 +202,7 @@ export default function OfferSection({ companyId, offer, onUpdated }: OfferSecti
             <label className={styles.label}>{t('baseSalary')}</label>
             <div className={styles.offerInputGroup}>
               <select className={styles.offerCurrencySelect} value={currency} onChange={(event) => setCurrency(event.target.value)} disabled={saving}>
-                {['USD', 'EUR', 'GBP', 'CAD', 'AUD'].map((cur) => <option key={cur} value={cur}>{cur}</option>)}
+                {['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'MXN'].map((cur) => <option key={cur} value={cur}>{cur}</option>)}
               </select>
               <input className={styles.input} type="text" inputMode="numeric" placeholder="150,000" value={fmtCommas(baseSalary)} onChange={(event) => setBaseSalary(event.target.value.replace(/[^0-9]/g, ''))} disabled={saving} />
             </div>
@@ -216,6 +252,26 @@ export default function OfferSection({ companyId, offer, onUpdated }: OfferSecti
               <option value="">{t('selectPlaceholder')}</option>
               {HEALTH_TIERS.map((tier) => <option key={tier} value={tier}>{tier}</option>)}
             </select>
+          </div>
+        </div>
+        <div className={styles.offerEditRow}>
+          <div className={styles.field}>
+            <label className={styles.label}>{t('foodVouchers')}</label>
+            <input className={styles.input} type="text" inputMode="numeric" placeholder="2,000" value={fmtCommas(foodVouchers)} onChange={(event) => setFoodVouchers(event.target.value.replace(/[^0-9]/g, ''))} disabled={saving} />
+          </div>
+          <div className={styles.field}>
+            <label className={styles.label}>{t('christmasBonusDays')}</label>
+            <input className={styles.input} type="number" min={0} placeholder="30" value={christmasBonusDays} onChange={(event) => setChristmasBonusDays(event.target.value)} disabled={saving} />
+          </div>
+        </div>
+        <div className={styles.offerEditRow}>
+          <div className={styles.field}>
+            <label className={styles.label}>{t('savingsFundPct')}</label>
+            <input className={styles.input} type="number" min={0} placeholder="13" value={savingsFundPct} onChange={(event) => setSavingsFundPct(event.target.value)} disabled={saving} />
+          </div>
+          <div className={styles.field}>
+            <label className={styles.label}>{t('vacationPremiumPct')}</label>
+            <input className={styles.input} type="number" min={0} placeholder="25" value={vacationPremiumPct} onChange={(event) => setVacationPremiumPct(event.target.value)} disabled={saving} />
           </div>
         </div>
         <div className={styles.field}>

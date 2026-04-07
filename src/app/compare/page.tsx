@@ -20,6 +20,7 @@ import styles from './compare.module.css';
 export default function ComparePage() {
   const { toast } = useToast();
   const t = useTranslations('compare');
+  const tCommon = useTranslations('common');
   const [entries, setEntries] = useState<CompareEntry[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [expectations, setExpectations] = useState<OfferExpectations | null>(null);
@@ -40,7 +41,7 @@ export default function ComparePage() {
     orBetter: t('orBetter'),
     remotePolicy: tRemotePolicy,
     healthTier: tHealthTier,
-    ptoDays: (n: number) => `≥ ${n} days`,
+    ptoDays: (n: number) => `≥ ${t('days', { n })}`,
   };
 
   const ROWS: RowDef[] = [
@@ -71,7 +72,7 @@ export default function ComparePage() {
     },
     {
       label: t('ptoDays'),
-      render: (offer) => offer ? fmt(offer.pto_days, offer.currency, 'days') : '—',
+      render: (offer) => offer?.pto_days != null ? t('days', { n: offer.pto_days }) : '—',
       bestGetter: (offer) => offer.pto_days,
       expField: 'pto_days',
     },
@@ -90,6 +91,30 @@ export default function ComparePage() {
       label: t('healthInsurance'),
       render: (offer) => offer?.health_tier ? tHealthTier(offer.health_tier) : '—',
       expField: 'health_tier',
+    },
+    {
+      label: t('foodVouchers'),
+      render: (offer) => offer?.food_vouchers != null ? fmt(offer.food_vouchers, offer.currency, 'currency') : '—',
+      bestGetter: (offer) => offer.food_vouchers,
+      expField: 'food_vouchers',
+    },
+    {
+      label: t('christmasBonusDays'),
+      render: (offer) => offer?.christmas_bonus_days != null ? t('days', { n: offer.christmas_bonus_days }) : '—',
+      bestGetter: (offer) => offer.christmas_bonus_days,
+      expField: 'christmas_bonus_days',
+    },
+    {
+      label: t('savingsFundPct'),
+      render: (offer) => offer ? fmt(offer.savings_fund_pct, offer.currency, 'pct') : '—',
+      bestGetter: (offer) => offer.savings_fund_pct,
+      expField: 'savings_fund_pct',
+    },
+    {
+      label: t('vacationPremiumPct'),
+      render: (offer) => offer ? fmt(offer.vacation_premium_pct, offer.currency, 'pct') : '—',
+      bestGetter: (offer) => offer.vacation_premium_pct,
+      expField: 'vacation_premium_pct',
     },
     {
       label: t('otherBenefits'),
@@ -147,14 +172,9 @@ export default function ComparePage() {
     <div className={styles.page}>
       <div className={styles.pageHeader}>
         <h1 className={styles.pageTitle}>{t('title')}</h1>
-        {!loading && !error && entries.length > 0 && (
-          <p className={styles.pageSubtitle}>
-            {t('offersCount', { count: entries.length })}
-          </p>
-        )}
       </div>
 
-      {loading && <p className={styles.state}>{t('fieldColumn')}…</p>}
+      {loading && <p className={styles.state}>{tCommon('loading')}</p>}
       {error && <p className={styles.stateError}>{t('failedToLoad', { error })}</p>}
       {!loading && !error && (
         <ExpectationsPanel
@@ -172,6 +192,9 @@ export default function ComparePage() {
 
       {!loading && !error && entries.length > 0 && (
         <>
+          <p className={styles.pageSubtitle}>
+            {t('offersCount', { count: entries.length })}
+          </p>
           <div className={styles.selector}>
             {entries.map(({ company }) => (
               <button
