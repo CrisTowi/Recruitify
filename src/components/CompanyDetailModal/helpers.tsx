@@ -25,14 +25,14 @@ export function renderWithLinks(text: string): React.ReactNode[] {
   return parts;
 }
 
-export function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, {
+export function formatDate(iso: string, locale?: string): string {
+  return new Date(iso).toLocaleDateString(locale, {
     year: 'numeric', month: 'short', day: 'numeric',
   });
 }
 
-export function formatDateTime(iso: string): string {
-  return new Date(iso).toLocaleString(undefined, {
+export function formatDateTime(iso: string, locale?: string): string {
+  return new Date(iso).toLocaleString(locale, {
     year: 'numeric', month: 'short', day: 'numeric',
     hour: '2-digit', minute: '2-digit',
   });
@@ -51,6 +51,14 @@ export const EVENT_TYPE_LABELS: Record<TimelineEventType, string> = {
   appointment: 'Appointment',
   process_status: 'Process Status',
   status_change: 'Moved',
+};
+
+export const EVENT_TYPE_TRANSLATION_KEYS: Record<TimelineEventType, string> = {
+  note: 'eventTypeNote',
+  contact: 'eventTypeContact',
+  appointment: 'eventTypeAppointment',
+  process_status: 'eventTypeProcessStatus',
+  status_change: 'eventTypeStatusChange',
 };
 
 export const USER_EVENT_TYPES: TimelineEventType[] = ['note', 'contact', 'appointment', 'process_status'];

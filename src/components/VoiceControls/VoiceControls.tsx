@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import styles from './VoiceControls.module.css';
 
 interface Props {
@@ -31,6 +32,8 @@ export default function VoiceControls({
   onCancelSpeech,
   onReplay,
 }: Props) {
+  const t = useTranslations('voiceControls');
+
   if (!isSupported) return null;
 
   return (
@@ -41,9 +44,9 @@ export default function VoiceControls({
         className={`${styles.modeToggle} ${isVoiceMode ? styles.modeToggleActive : ''}`}
         onClick={onToggleVoiceMode}
         disabled={disabled}
-        title={isVoiceMode ? 'Switch to text input' : 'Switch to voice input'}
+        title={isVoiceMode ? t('switchToText') : t('switchToVoice')}
       >
-        {isVoiceMode ? '⌨ Text mode' : '🎙 Voice mode'}
+        {isVoiceMode ? t('textMode') : t('voiceMode')}
       </button>
 
       {/* Mic controls (voice mode only) */}
@@ -55,39 +58,39 @@ export default function VoiceControls({
             onClick={isListening ? onStopListening : onStartListening}
             disabled={disabled || isLoadingTts || isSpeaking}
             aria-pressed={isListening}
-            title={isListening ? 'Stop listening' : 'Start listening'}
+            title={isListening ? t('stopListening') : t('startListening')}
           >
             <span className={`${styles.micIcon} ${isListening ? styles.micPulse : ''}`} aria-hidden="true">
               🎙
             </span>
-            <span>{isListening ? 'Stop' : 'Listen'}</span>
+            <span>{isListening ? t('stop') : t('listen')}</span>
           </button>
 
           {isLoadingTts && (
-            <div className={styles.loadingIndicator} role="status" aria-label="Preparing audio">
+            <div className={styles.loadingIndicator} role="status" aria-label={t('preparingAudio')}>
               <span className={styles.loadingDots} aria-hidden="true">
                 <span /><span /><span />
               </span>
-              <span className={styles.loadingLabel}>Preparing audio…</span>
+              <span className={styles.loadingLabel}>{t('preparingAudio')}</span>
             </div>
           )}
 
           {isListening && (
-            <div className={styles.recordingIndicator} role="status" aria-label="Recording">
+            <div className={styles.recordingIndicator} role="status" aria-label={t('recordingLabel')}>
               <span className={styles.recordingDot} aria-hidden="true" />
-              <span className={styles.recordingLabel}>Recording…</span>
+              <span className={styles.recordingLabel}>{t('recordingLabel')}</span>
             </div>
           )}
 
           {isSpeaking && (
-            <div className={styles.speakingIndicator} role="status" aria-label="Speaking">
+            <div className={styles.speakingIndicator} role="status" aria-label={t('speakingLabel')}>
               <span className={styles.speakingDot} aria-hidden="true" />
-              <span className={styles.speakingLabel}>Speaking…</span>
+              <span className={styles.speakingLabel}>{t('speakingLabel')}</span>
               <button
                 type="button"
                 className={styles.cancelSpeechButton}
                 onClick={onCancelSpeech}
-                title="Stop speaking"
+                title={t('stopSpeaking')}
               >
                 ✕
               </button>
@@ -99,9 +102,9 @@ export default function VoiceControls({
               type="button"
               className={styles.replayButton}
               onClick={onReplay}
-              title="Replay question"
+              title={t('replayQuestion')}
             >
-              ↺ Replay
+              {t('replay')}
             </button>
           )}
         </div>

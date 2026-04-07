@@ -19,10 +19,13 @@ import { COLUMNS, fetchBoard, patchStatus } from './helpers';
 import { useToast } from '@/components/Toast/ToastProvider';
 import { useAIKeyStatus } from '@/hooks/useAIKeyStatus';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useTranslations } from 'next-intl';
 import styles from './KanbanBoard.module.css';
 
 export default function KanbanBoard() {
   const { toast } = useToast();
+  const t = useTranslations('board');
+  const tCommon = useTranslations('common');
   const hasAIKey = useAIKeyStatus();
   const isMobile = useMediaQuery('(max-width: 767px)');
 
@@ -91,9 +94,9 @@ export default function KanbanBoard() {
       }
     } catch {
       setBoard(snapshot);
-      toast('Failed to move card. Please try again.');
+      toast(t('failedToMove'));
     }
-  }, [board, toast]);
+  }, [board, toast, t]);
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
     const data = event.active.data.current as { company: CompanyWithNextStep } | undefined;
@@ -116,30 +119,30 @@ export default function KanbanBoard() {
     setSelectedCompany(company);
   }, []);
 
-  if (loadError) return <p className={styles.error}>Failed to load board: {loadError}</p>;
-  if (!board) return <p className={styles.loading}>Loading…</p>;
+  if (loadError) return <p className={styles.error}>{t('failedToLoad', { error: loadError })}</p>;
+  if (!board) return <p className={styles.loading}>{tCommon('loading')}</p>;
 
   return (
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       <div className={styles.toolbar}>
-        <button className={styles.settingsButton} onClick={() => setShowAISettings(true)} aria-label="AI Settings">
+        <button className={styles.settingsButton} onClick={() => setShowAISettings(true)} aria-label={t('aiSettings')}>
           ⚙<span className={styles.buttonLabel}> AI</span>
         </button>
         <span
           className={hasAIKey === false ? styles.disabledTooltip : undefined}
-          data-tooltip={hasAIKey === false ? 'Add an API key in AI Settings to enable simulations' : undefined}
+          data-tooltip={hasAIKey === false ? t('aiKeyRequired') : undefined}
         >
           <button
             className={styles.practiceButton}
             onClick={() => setShowDryRun(true)}
             disabled={hasAIKey !== true}
-            aria-label="Practice Interview"
+            aria-label={t('practiceInterview')}
           >
-            🎤<span className={styles.buttonLabel}> Practice Interview</span>
+            🎤<span className={styles.buttonLabel}> {t('practiceInterview')}</span>
           </button>
         </span>
-        <button className={styles.addButton} onClick={() => setShowModal(true)} aria-label="Add Company">
-          +<span className={styles.buttonLabel}> Add Company</span>
+        <button className={styles.addButton} onClick={() => setShowModal(true)} aria-label={t('addCompany')}>
+          +<span className={styles.buttonLabel}> {t('addCompany')}</span>
         </button>
       </div>
       <section className={styles.board}>

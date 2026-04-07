@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import styles from './FeedbackCard.module.css';
 
 export interface FeedbackData {
@@ -17,6 +18,7 @@ interface Props {
 }
 
 export default function FeedbackCard({ feedback, questionNumber, onNext, isLast }: Props) {
+  const t = useTranslations('session');
   const scoreClass =
     feedback.score === null ? '' :
     feedback.score >= 8 ? styles.scoreHigh :
@@ -26,7 +28,7 @@ export default function FeedbackCard({ feedback, questionNumber, onNext, isLast 
   return (
     <div className={styles.card}>
       <div className={styles.header}>
-        <span className={styles.label}>Feedback — Question {questionNumber}</span>
+        <span className={styles.label}>{t('feedbackLabel', { number: questionNumber })}</span>
         {feedback.score !== null && (
           <span className={`${styles.score} ${scoreClass}`}>{feedback.score}/10</span>
         )}
@@ -34,27 +36,27 @@ export default function FeedbackCard({ feedback, questionNumber, onNext, isLast 
 
       {feedback.strengths && (
         <div className={styles.section}>
-          <p className={styles.sectionTitle}>What worked well</p>
+          <p className={styles.sectionTitle}>{t('whatWorked')}</p>
           <p className={styles.sectionBody}>{feedback.strengths}</p>
         </div>
       )}
 
       {feedback.improvements && (
         <div className={styles.section}>
-          <p className={styles.sectionTitle}>How to improve</p>
+          <p className={styles.sectionTitle}>{t('howToImprove')}</p>
           <p className={styles.sectionBody}>{feedback.improvements}</p>
         </div>
       )}
 
       {feedback.suggested_answer && (
         <div className={styles.section}>
-          <p className={styles.sectionTitle}>Suggested direction</p>
+          <p className={styles.sectionTitle}>{t('suggestedDirection')}</p>
           <p className={styles.sectionBody}>{feedback.suggested_answer}</p>
         </div>
       )}
 
       <button className={styles.nextButton} onClick={onNext}>
-        {isLast ? 'View Debrief →' : 'Next Question →'}
+        {isLast ? t('viewDebrief') : t('nextQuestion')}
       </button>
     </div>
   );

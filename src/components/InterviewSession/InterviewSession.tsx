@@ -11,6 +11,7 @@ import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 import { useDeepgramStreaming } from '@/hooks/useDeepgramStreaming';
 import { useSpeechSynthesis } from '@/hooks/useSpeechSynthesis';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useTranslations } from 'next-intl';
 import {
   startSession,
   submitAnswer,
@@ -34,6 +35,7 @@ type Phase = 'starting' | 'answering' | 'feedback' | 'submitting' | 'completing'
 
 export default function InterviewSession({ session }: Props) {
   const router = useRouter();
+  const t = useTranslations('session');
   const [phase, setPhase] = useState<Phase>('starting');
   const [error, setError] = useState<string | null>(null);
   const [beginAttempt, setBeginAttempt] = useState(0);
@@ -89,12 +91,12 @@ export default function InterviewSession({ session }: Props) {
   // Announce new questions to screen readers
   useEffect(() => {
     if (currentQuestion && phase === 'answering') {
-      setLiveAnnouncement(`Question ${currentQuestion.question_number}: ${currentQuestion.question_text}`);
+      setLiveAnnouncement(t('questionCounter', { number: currentQuestion.question_number, total: session.num_questions }) + ': ' + currentQuestion.question_text);
     }
     if (phase === 'feedback' && currentQuestion) {
-      setLiveAnnouncement(`Feedback received for question ${currentQuestion.question_number}.`);
+      setLiveAnnouncement(t('feedbackLabel', { number: currentQuestion.question_number }));
     }
-  }, [currentQuestion, phase]);
+  }, [currentQuestion, phase, t, session.num_questions]);
 
   // Speak question aloud when it changes in voice mode
   useEffect(() => {
@@ -381,9 +383,9 @@ export default function InterviewSession({ session }: Props) {
             setBeginAttempt((prev) => prev + 1);
           }}
         >
-          Try again
+          {t('tryAgain')}
         </button>
-        <button className={styles.backButton} onClick={() => router.push('/')}>Back to board</button>
+        <button className={styles.backButton} onClick={() => router.push('/')}>{t('backToBoardAction')}</button>
       </div>
     );
   }
@@ -411,8 +413,8 @@ export default function InterviewSession({ session }: Props) {
   if (phase === 'completing') {
     return (
       <div className={styles.state}>
-        <div className={styles.spinner} aria-label="Completing session…" />
-        <p>Wrapping up…</p>
+        <div className={styles.spinner} aria-label={t('wrappingUp')} />
+        <p>{t('wrappingUp')}</p>
       </div>
     );
   }
@@ -433,7 +435,7 @@ export default function InterviewSession({ session }: Props) {
           <div className={styles.progress}>
             {currentQuestion && (
               <span className={styles.counter}>
-                Question {currentQuestion.question_number} of {session.num_questions}
+                {t('questionCounter', { number: currentQuestion.question_number, total: session.num_questions })}
               </span>
             )}
           </div>
@@ -480,7 +482,7 @@ export default function InterviewSession({ session }: Props) {
               <div className={styles.errorBanner} role="alert">
                 <p className={styles.errorBannerMessage}>{errorBanner.message}</p>
                 <button className={styles.retryButton} onClick={handleSubmitAnswer}>
-                  Retry
+                  {t('retry')}
                 </button>
               </div>
             )}
@@ -490,10 +492,10 @@ export default function InterviewSession({ session }: Props) {
               value={answer}
               onChange={handleTextareaChange}
               onKeyDown={handleTextareaKeyDown}
-              placeholder={isVoiceMode ? 'Your spoken answer will appear here…' : 'Type your answer here… (⌘↵ to submit)'}
+              placeholder={isVoiceMode ? t('voicePlaceholder') : t('textPlaceholder')}
               rows={6}
               disabled={phase === 'submitting'}
-              aria-label="Your answer"
+              aria-label={t('yourAnswer')}
             />
 
             {/* Interim transcript */}
@@ -510,7 +512,7 @@ export default function InterviewSession({ session }: Props) {
                 onClick={handleSubmitAnswer}
                 disabled={phase === 'submitting' || !answer.trim()}
               >
-                {phase === 'submitting' ? 'Submitting…' : 'Submit Answer'}
+                {phase === 'submitting' ? t('submitting') : t('submitAnswer')}
               </button>
             </div>
           </div>
@@ -521,25 +523,25 @@ export default function InterviewSession({ session }: Props) {
           <div className={styles.footer}>
             {showCancelConfirm ? (
               <div className={styles.confirmRow}>
-                <span className={styles.confirmText}>End interview and go to debrief?</span>
+                <span className={styles.confirmText}>{t('confirmEnd')}</span>
                 <button className={styles.cancelButton} onClick={() => setShowCancelConfirm(false)}>
-                  Keep going
+                  {t('keepGoing')}
                 </button>
                 <button className={styles.endButton} onClick={handleEndEarly}>
-                  Yes, end now
+                  {t('yesEndNow')}
                 </button>
               </div>
             ) : (
               <>
                 <button className={styles.cancelButton} onClick={handleCancel}>
-                  Cancel
+                  {t('cancel')}
                 </button>
                 <button
                   className={styles.endButton}
                   onClick={handleEndEarly}
                   disabled={phase === 'submitting'}
                 >
-                  End Interview
+                  {t('endInterview')}
                 </button>
               </>
             )}

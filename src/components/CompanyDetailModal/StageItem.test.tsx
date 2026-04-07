@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
+import { renderWithProviders as render } from '@/test/renderWithProviders';
 import userEvent from '@testing-library/user-event';
 import StageItem from './StageItem';
 import type { InterviewStage } from '@/types';
@@ -132,7 +133,7 @@ describe('StageItem', () => {
       global.fetch = vi.fn().mockResolvedValue({ ok: true } as Response);
 
       render(<StageItem stage={makeStage()} {...defaultProps} onDeleted={onDeleted} />);
-      await user.click(screen.getByTitle('Remove stage'));
+      await user.click(screen.getByTitle('Delete'));
 
       await waitFor(() => expect(onDeleted).toHaveBeenCalledWith('stage-1'));
     });

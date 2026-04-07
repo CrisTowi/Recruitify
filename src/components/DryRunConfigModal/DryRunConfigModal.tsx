@@ -11,6 +11,7 @@ import {
   createDryRunSession,
 } from './helpers';
 import { useToast } from '@/components/Toast/ToastProvider';
+import { useTranslations } from 'next-intl';
 import styles from '@/components/SimulationConfigModal/SimulationConfigModal.module.css';
 
 interface Props {
@@ -20,6 +21,8 @@ interface Props {
 export default function DryRunConfigModal({ onClose }: Props) {
   const router = useRouter();
   const { toast } = useToast();
+  const t = useTranslations('session');
+  const tCommon = useTranslations('common');
 
   const [dryRunContext, setDryRunContext] = useState('');
   const [numQuestions, setNumQuestions] = useState(5);
@@ -120,13 +123,13 @@ export default function DryRunConfigModal({ onClose }: Props) {
         aria-labelledby="dry-run-config-title"
       >
         <div className={styles.header}>
-          <h2 id="dry-run-config-title" className={styles.title}>Practice Interview</h2>
-          <button className={styles.closeButton} onClick={onClose} aria-label="Close">✕</button>
+          <h2 id="dry-run-config-title" className={styles.title}>{t('practiceTitle')}</h2>
+          <button className={styles.closeButton} onClick={onClose} aria-label={t('cancel')}>✕</button>
         </div>
 
         {hasAIKey === false && (
           <div className={styles.aiWarning}>
-            No AI key configured. Set up your provider in <strong>AI Settings</strong> before starting.
+            {t('noAIKey')}
           </div>
         )}
 
@@ -134,13 +137,13 @@ export default function DryRunConfigModal({ onClose }: Props) {
           {/* Job role / context */}
           <div className={styles.field}>
             <label htmlFor="dry-run-context" className={styles.label}>
-              Job role / context <span className={styles.optional}>(optional)</span>
+              {t('jobRoleContext')} <span className={styles.optional}>{tCommon('optional')}</span>
             </label>
             <textarea
               id="dry-run-context"
               className={styles.input}
               rows={3}
-              placeholder="e.g. Senior Frontend Engineer at a fintech startup, React-heavy role…"
+              placeholder={t('jobRolePlaceholder')}
               value={dryRunContext}
               onChange={(event) => setDryRunContext(event.target.value)}
               disabled={submitting}
@@ -150,7 +153,7 @@ export default function DryRunConfigModal({ onClose }: Props) {
           {/* Number of questions */}
           <div className={styles.field}>
             <label className={styles.label}>
-              Questions <span className={styles.labelCount}>{numQuestions}</span>
+              {t('questions')} <span className={styles.labelCount}>{numQuestions}</span>
             </label>
             <input
               type="range"
@@ -168,7 +171,7 @@ export default function DryRunConfigModal({ onClose }: Props) {
 
           {/* Difficulty */}
           <div className={styles.field}>
-            <span className={styles.label}>Difficulty</span>
+            <span className={styles.label}>{t('difficulty')}</span>
             <div className={styles.segmented}>
               {DIFFICULTY_OPTIONS.map((option) => (
                 <button
@@ -187,7 +190,7 @@ export default function DryRunConfigModal({ onClose }: Props) {
 
           {/* Feedback mode */}
           <div className={styles.field}>
-            <span className={styles.label}>Feedback mode</span>
+            <span className={styles.label}>{t('feedbackMode')}</span>
             <div className={styles.segmented}>
               {FEEDBACK_MODE_OPTIONS.map((option) => (
                 <button
@@ -206,7 +209,7 @@ export default function DryRunConfigModal({ onClose }: Props) {
 
           {/* Interviewer persona */}
           <div className={styles.field}>
-            <label htmlFor="dry-run-persona-preset" className={styles.label}>Interviewer persona</label>
+            <label htmlFor="dry-run-persona-preset" className={styles.label}>{t('interviewerPersona')}</label>
             <select
               id="dry-run-persona-preset"
               className={styles.select}
@@ -222,7 +225,7 @@ export default function DryRunConfigModal({ onClose }: Props) {
               <input
                 type="text"
                 className={`${styles.input} ${styles.personaInput}`}
-                placeholder="Describe the interviewer role and style…"
+                placeholder={t('describeInterviewer')}
                 value={personaCustom}
                 onChange={(event) => setPersonaCustom(event.target.value)}
                 disabled={submitting}
@@ -233,7 +236,7 @@ export default function DryRunConfigModal({ onClose }: Props) {
 
           {/* Focus areas */}
           <div className={styles.field}>
-            <label htmlFor="dry-run-focus" className={styles.label}>Focus areas <span className={styles.optional}>(optional)</span></label>
+            <label htmlFor="dry-run-focus" className={styles.label}>{t('focusAreas')} <span className={styles.optional}>{tCommon('optional')}</span></label>
             <div className={styles.tagInput} onClick={() => focusInputRef.current?.focus()}>
               {focusAreas.map((area) => (
                 <span key={area} className={styles.tag}>
@@ -257,7 +260,7 @@ export default function DryRunConfigModal({ onClose }: Props) {
                 onChange={(event) => setFocusInput(event.target.value)}
                 onKeyDown={handleFocusKeyDown}
                 onBlur={() => { if (focusInput.trim()) addFocusArea(focusInput); }}
-                placeholder={focusAreas.length === 0 ? 'Type and press Enter…' : ''}
+                placeholder={focusAreas.length === 0 ? t('typeAndPressEnter') : ''}
                 disabled={submitting}
               />
             </div>
@@ -283,14 +286,14 @@ export default function DryRunConfigModal({ onClose }: Props) {
               onClick={onClose}
               disabled={submitting}
             >
-              Cancel
+              {tCommon('cancel')}
             </button>
             <button
               type="submit"
               className={styles.submitButton}
               disabled={submitting || hasAIKey === false}
             >
-              {submitting ? 'Starting…' : 'Start Practice'}
+              {submitting ? t('starting') : t('startPractice')}
             </button>
           </div>
         </form>

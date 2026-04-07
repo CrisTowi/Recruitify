@@ -15,6 +15,7 @@ import {
   testAISettings,
 } from './helpers';
 import { useToast } from '@/components/Toast/ToastProvider';
+import { useTranslations } from 'next-intl';
 import styles from './AISettingsModal.module.css';
 
 interface Props {
@@ -23,6 +24,8 @@ interface Props {
 
 export default function AISettingsModal({ onClose }: Props) {
   const { toast } = useToast();
+  const t = useTranslations('aiSettings');
+  const tCommon = useTranslations('common');
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -132,7 +135,7 @@ export default function AISettingsModal({ onClose }: Props) {
   async function handleTest() {
     const keyToTest = apiKey.trim();
     if (!keyToTest) {
-      setError('Enter an API key to test.');
+      setError(t('enterKeyToTest'));
       return;
     }
 
@@ -143,12 +146,12 @@ export default function AISettingsModal({ onClose }: Props) {
     try {
       const result = await testAISettings(provider, model, keyToTest);
       if (result.success) {
-        setTestResult({ success: true, message: `Connected in ${result.latency_ms}ms` });
+        setTestResult({ success: true, message: t('connectedIn', { ms: result.latency_ms ?? 0 }) });
       } else {
-        setTestResult({ success: false, message: result.error ?? 'Connection failed' });
+        setTestResult({ success: false, message: result.error ?? t('connectionFailed') });
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Test failed';
+      const message = err instanceof Error ? err.message : t('connectionFailed');
       setTestResult({ success: false, message });
     } finally {
       setTesting(false);
@@ -171,7 +174,7 @@ export default function AISettingsModal({ onClose }: Props) {
       if (sttKey.trim()) payload.stt_api_key = sttKey.trim();
 
       await saveAISettings(payload);
-      toast('AI settings saved.');
+      toast(t('saved'));
       onClose();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to save settings';
@@ -194,22 +197,22 @@ export default function AISettingsModal({ onClose }: Props) {
         aria-labelledby="ai-settings-title"
       >
         <div className={styles.header}>
-          <h2 id="ai-settings-title" className={styles.title}>AI Settings</h2>
-          <button className={styles.closeButton} onClick={onClose} aria-label="Close">
+          <h2 id="ai-settings-title" className={styles.title}>{t('title')}</h2>
+          <button className={styles.closeButton} onClick={onClose} aria-label={tCommon('close')}>
             ✕
           </button>
         </div>
 
         <p className={styles.description}>
-          Configure your LLM provider and API key for interview simulations. Your key is encrypted at rest and never shared.
+          {t('description')}
         </p>
 
         {loading ? (
-          <p className={styles.loadingText}>Loading…</p>
+          <p className={styles.loadingText}>{tCommon('loading')}</p>
         ) : (
           <form onSubmit={handleSubmit} noValidate>
             <div className={styles.field}>
-              <label htmlFor="ai-provider" className={styles.label}>Provider</label>
+              <label htmlFor="ai-provider" className={styles.label}>{t('provider')}</label>
               <select
                 id="ai-provider"
                 className={styles.select}
@@ -224,7 +227,7 @@ export default function AISettingsModal({ onClose }: Props) {
             </div>
 
             <div className={styles.field}>
-              <label htmlFor="ai-model" className={styles.label}>Model</label>
+              <label htmlFor="ai-model" className={styles.label}>{t('model')}</label>
               <select
                 id="ai-model"
                 className={styles.select}
@@ -240,9 +243,9 @@ export default function AISettingsModal({ onClose }: Props) {
 
             <div className={styles.field}>
               <label htmlFor="ai-api-key" className={styles.label}>
-                API Key
+                {t('apiKey')}
                 {hasExistingKey && (
-                  <span className={styles.keyHint}> (key saved — leave blank to keep existing)</span>
+                  <span className={styles.keyHint}> {t('keySaved')}</span>
                 )}
               </label>
               <div className={styles.keyRow}>
@@ -253,7 +256,7 @@ export default function AISettingsModal({ onClose }: Props) {
                   className={styles.input}
                   value={apiKey}
                   onChange={(event) => { setApiKey(event.target.value); setTestResult(null); }}
-                  placeholder={hasExistingKey ? '••••••••••••••••' : 'Enter your API key'}
+                  placeholder={hasExistingKey ? '••••••••••••••••' : t('enterApiKey')}
                   disabled={submitting}
                   autoComplete="off"
                 />
@@ -263,7 +266,7 @@ export default function AISettingsModal({ onClose }: Props) {
                   onClick={handleTest}
                   disabled={testing || submitting}
                 >
-                  {testing ? 'Testing…' : 'Test'}
+                  {testing ? t('testing') : t('test')}
                 </button>
               </div>
 
@@ -275,10 +278,10 @@ export default function AISettingsModal({ onClose }: Props) {
             </div>
 
             {/* ── Voice (optional) ── */}
-            <p className={styles.sectionDivider}>Voice (optional)</p>
+            <p className={styles.sectionDivider}>{t('voice')}</p>
 
             <div className={styles.field}>
-              <label htmlFor="tts-provider" className={styles.label}>Text-to-Speech</label>
+              <label htmlFor="tts-provider" className={styles.label}>{t('tts')}</label>
               <select
                 id="tts-provider"
                 className={styles.select}
@@ -297,9 +300,9 @@ export default function AISettingsModal({ onClose }: Props) {
             {ttsProvider === 'deepgram' && (
               <div className={styles.field}>
                 <label htmlFor="tts-api-key" className={styles.label}>
-                  TTS API Key
+                  {t('ttsApiKey')}
                   {hasExistingTtsKey && (
-                    <span className={styles.keyHint}> (key saved — leave blank to keep existing)</span>
+                    <span className={styles.keyHint}> {t('keySaved')}</span>
                   )}
                 </label>
                 <input
@@ -308,7 +311,7 @@ export default function AISettingsModal({ onClose }: Props) {
                   className={styles.input}
                   value={ttsKey}
                   onChange={(event) => setTtsKey(event.target.value)}
-                  placeholder={hasExistingTtsKey ? '••••••••••••••••' : 'Enter TTS API key'}
+                  placeholder={hasExistingTtsKey ? '••••••••••••••••' : t('enterTtsKey')}
                   disabled={submitting}
                   autoComplete="off"
                 />
@@ -318,10 +321,10 @@ export default function AISettingsModal({ onClose }: Props) {
             {ttsProvider === 'deepgram' && (
               <div className={styles.field}>
                 <label htmlFor="tts-voice-deepgram" className={styles.label}>
-                  Voice
-                  {loadingVoices && <span className={styles.keyHint}> (loading…)</span>}
+                  {t('voiceLabel')}
+                  {loadingVoices && <span className={styles.keyHint}> {t('loadingVoices')}</span>}
                   {!loadingVoices && deepgramVoices.length === 0 && (hasExistingTtsKey || ttsKey.trim()) && (
-                    <span className={styles.keyHint}> (failed to load — check key)</span>
+                    <span className={styles.keyHint}> {t('failedToLoadVoices')}</span>
                   )}
                 </label>
                 <select
@@ -332,7 +335,7 @@ export default function AISettingsModal({ onClose }: Props) {
                   disabled={submitting || loadingVoices || deepgramVoices.length === 0}
                 >
                   {deepgramVoices.length === 0 && (
-                    <option value="">— enter API key to load voices —</option>
+                    <option value="">{t('enterKeyToLoadVoices')}</option>
                   )}
                   {deepgramVoices.map((voice) => (
                     <option key={voice.id} value={voice.id}>{voice.name}</option>
@@ -342,7 +345,7 @@ export default function AISettingsModal({ onClose }: Props) {
             )}
 
             <div className={styles.field}>
-              <label htmlFor="stt-provider" className={styles.label}>Speech-to-Text</label>
+              <label htmlFor="stt-provider" className={styles.label}>{t('stt')}</label>
               <select
                 id="stt-provider"
                 className={styles.select}
@@ -361,9 +364,9 @@ export default function AISettingsModal({ onClose }: Props) {
             {sttProvider === 'deepgram' && (
               <div className={styles.field}>
                 <label htmlFor="stt-api-key" className={styles.label}>
-                  STT API Key
+                  {t('sttApiKey')}
                   {hasExistingSttKey && (
-                    <span className={styles.keyHint}> (key saved — leave blank to keep existing)</span>
+                    <span className={styles.keyHint}> {t('keySaved')}</span>
                   )}
                 </label>
                 <input
@@ -372,7 +375,7 @@ export default function AISettingsModal({ onClose }: Props) {
                   className={styles.input}
                   value={sttKey}
                   onChange={(event) => setSttKey(event.target.value)}
-                  placeholder={hasExistingSttKey ? '••••••••••••••••' : 'Enter STT API key'}
+                  placeholder={hasExistingSttKey ? '••••••••••••••••' : t('enterSttKey')}
                   disabled={submitting}
                   autoComplete="off"
                 />
@@ -388,14 +391,14 @@ export default function AISettingsModal({ onClose }: Props) {
                 onClick={onClose}
                 disabled={submitting}
               >
-                Cancel
+                {tCommon('cancel')}
               </button>
               <button
                 type="submit"
                 className={styles.submitButton}
                 disabled={submitting}
               >
-                {submitting ? 'Saving…' : 'Save Settings'}
+                {submitting ? tCommon('saving') : t('save')}
               </button>
             </div>
           </form>

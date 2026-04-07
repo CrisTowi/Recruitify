@@ -13,6 +13,7 @@ import type {
   OfferExpectations,
   AISettings,
   AISettingsInput,
+  UserPreferences,
   LLMProvider,
   TTSProvider,
   STTProvider,
@@ -703,6 +704,49 @@ export class SupabaseAdapter implements DbAdapter {
       created_at: saved.created_at as string,
       updated_at: saved.updated_at as string,
     };
+  }
+
+  // ── User Preferences ─────────────────────────────────────────────────────────
+
+  async getUserPreferences(userId?: string): Promise<UserPreferences> {
+    const { client, userId: sessionUserId } = await this.getClient();
+    const resolvedUserId = userId ?? sessionUserId;
+
+    let query = client.from('user_preferences').select('language');
+
+    if (getAuthEnabled() && resolvedUserId) {
+      query = query.eq('user_id', resolvedUserId);
+    } else {
+      query = query.eq('id', 1);
+    }
+
+    const { data } = await query.maybeSingle();
+    return { language: (data as { language?: string } | null)?.language ?? 'en' };
+  }
+
+  async updateUserPreferences(userId: string | null, prefs: Partial<UserPreferences>): Promise<UserPreferences> {
+    const { client, userId: sessionUserId } = await this.getClient();
+    const resolvedUserId = userId ?? sessionUserId;
+
+    const row: Record<string, unknown> = {
+      ...prefs,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (getAuthEnabled() && resolvedUserId) {
+      row.user_id = resolvedUserId;
+    } else {
+      row.id = 1;
+    }
+
+    const { data, error } = await client
+      .from('user_preferences')
+      .upsert(row, { onConflict: getAuthEnabled() && resolvedUserId ? 'user_id' : 'id' })
+      .select('language')
+      .single();
+
+    if (error) throw new Error(error.message);
+    return { language: (data as { language: string }).language };
   }
 
   /** Decrypt API keys for server-side use only. Never send to client. */

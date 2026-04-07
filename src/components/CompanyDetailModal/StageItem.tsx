@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import type { InterviewStage, TimelineEvent } from '@/types';
+import { useTranslations, useLocale } from 'next-intl';
 import styles from './CompanyDetailModal.module.css';
 
 export default function StageItem({
@@ -15,6 +16,10 @@ export default function StageItem({
   onSimulate?: (stage: InterviewStage) => void;
   hasAIKey?: boolean | null;
 }) {
+  const t = useTranslations('companyDetail');
+  const tCommon = useTranslations('common');
+  const tBoard = useTranslations('board');
+  const locale = useLocale();
   const [notesOpen, setNotesOpen] = useState(false);
   const [notesDraft, setNotesDraft] = useState(stage.notes ?? '');
   const [notesSaving, setNotesSaving] = useState(false);
@@ -125,7 +130,7 @@ export default function StageItem({
             className={styles.stageAddInput}
             type="text"
             value={editName}
-            onChange={(e) => setEditName(e.target.value)}
+            onChange={(event) => setEditName(event.target.value)}
             disabled={editSaving}
             autoFocus
           />
@@ -133,18 +138,18 @@ export default function StageItem({
             className={styles.stageAddDate}
             type="date"
             value={editDate}
-            onChange={(e) => setEditDate(e.target.value)}
+            onChange={(event) => setEditDate(event.target.value)}
             disabled={editSaving}
           />
           <button className={styles.submitButton} onClick={saveEdit} disabled={editSaving || !editName.trim()}>
-            {editSaving ? 'Saving…' : 'Save'}
+            {editSaving ? tCommon('saving') : tCommon('save')}
           </button>
           <button
             className={styles.cancelButton}
             onClick={() => { setEditName(stage.stage_name); setEditDate(stage.scheduled_date ?? ''); setEditing(false); }}
             disabled={editSaving}
           >
-            Cancel
+            {tCommon('cancel')}
           </button>
         </div>
       </li>
@@ -158,7 +163,7 @@ export default function StageItem({
           className={styles.roadmapCheckbox}
           onClick={handleCheckboxClick}
           disabled={completing}
-          title={stage.is_completed ? 'Mark incomplete' : 'Mark complete'}
+          title={stage.is_completed ? t('markIncomplete') : t('markComplete')}
         >
           {stage.is_completed ? '✓' : ''}
         </button>
@@ -167,7 +172,7 @@ export default function StageItem({
 
         {stage.scheduled_date && (
           <span className={styles.roadmapDate}>
-            {new Date(stage.scheduled_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+            {new Date(stage.scheduled_date).toLocaleDateString(locale, { month: 'short', day: 'numeric' })}
           </span>
         )}
 
@@ -177,63 +182,63 @@ export default function StageItem({
               hasAIKey === false ? (
                 <span
                   className={styles.disabledTooltip}
-                  data-tooltip="Add an API key in AI Settings to enable simulations"
+                  data-tooltip={tBoard('aiKeyRequired')}
                 >
                   <button
                     className={`${styles.editButton} ${styles.roadmapNotesBtn} ${styles.simulateBtn}`}
                     disabled
                   >
-                    Simulate
+                    {t('simulate')}
                   </button>
                 </span>
               ) : (
                 <button
                   className={`${styles.editButton} ${styles.roadmapNotesBtn} ${styles.simulateBtn}`}
                   onClick={() => onSimulate(stage)}
-                  title="Simulate this interview"
+                  title={t('simulate')}
                   disabled={hasAIKey === null}
                 >
-                  Simulate
+                  {t('simulate')}
                 </button>
               )
             )}
             <button
               className={`${styles.editButton} ${styles.roadmapNotesBtn}`}
-              onClick={() => { setNotesDraft(stage.notes ?? ''); setNotesOpen((o) => !o); }}
+              onClick={() => { setNotesDraft(stage.notes ?? ''); setNotesOpen((prev) => !prev); }}
             >
-              {stage.notes ? 'Notes' : 'Add note'}
+              {stage.notes ? t('stageNotes') : t('addNote')}
             </button>
             <button
               className={`${styles.editButton} ${styles.roadmapNotesBtn}`}
               onClick={() => { setEditName(stage.stage_name); setEditDate(stage.scheduled_date ?? ''); setEditing(true); }}
             >
-              Edit
+              {tCommon('edit')}
             </button>
-            <button className={styles.roadmapDeleteBtn} onClick={deleteStage} title="Remove stage">✕</button>
+            <button className={styles.roadmapDeleteBtn} onClick={deleteStage} title={tCommon('delete')}>✕</button>
           </>
         )}
       </div>
 
       {completing && (
         <div className={styles.stageNotes}>
-          <p className={styles.stageCompleteLabel}>Add a note to the timeline about this interview (optional)</p>
+          <p className={styles.stageCompleteLabel}>{t('completeNotePrompt')}</p>
           <textarea
             className={styles.prepTextarea}
             value={completeNote}
-            onChange={(e) => setCompleteNote(e.target.value)}
+            onChange={(event) => setCompleteNote(event.target.value)}
             placeholder={`How did the ${stage.stage_name} go? Impressions, feedback, next steps…`}
             rows={3}
             autoFocus
           />
           <div className={styles.stageCompleteActions}>
             <button className={styles.cancelButton} onClick={() => setCompleting(false)} disabled={completeSaving}>
-              Cancel
+              {tCommon('cancel')}
             </button>
             <button className={styles.ghostButton} onClick={completeOnly} disabled={completeSaving}>
-              Complete without note
+              {t('completeWithoutNote')}
             </button>
             <button className={styles.submitButton} onClick={completeAndLog} disabled={completeSaving}>
-              {completeSaving ? 'Saving…' : 'Complete & log'}
+              {completeSaving ? tCommon('saving') : t('completeAndLog')}
             </button>
           </div>
         </div>
@@ -244,15 +249,15 @@ export default function StageItem({
           <textarea
             className={styles.prepTextarea}
             value={notesDraft}
-            onChange={(e) => setNotesDraft(e.target.value)}
-            placeholder="Prep tips, resources, post-interview thoughts…"
+            onChange={(event) => setNotesDraft(event.target.value)}
+            placeholder={t('prepPlaceholder')}
             rows={4}
             autoFocus
           />
           <div className={styles.prepActions}>
-            <button className={styles.cancelButton} onClick={() => setNotesOpen(false)} disabled={notesSaving}>Cancel</button>
+            <button className={styles.cancelButton} onClick={() => setNotesOpen(false)} disabled={notesSaving}>{tCommon('cancel')}</button>
             <button className={styles.submitButton} onClick={saveNotes} disabled={notesSaving}>
-              {notesSaving ? 'Saving…' : 'Save'}
+              {notesSaving ? tCommon('saving') : tCommon('save')}
             </button>
           </div>
         </div>

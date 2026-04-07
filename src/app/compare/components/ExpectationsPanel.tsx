@@ -6,6 +6,7 @@ import { REMOTE_POLICIES, HEALTH_TIERS } from '@/types';
 import { fmtCommas } from '@/lib/formatInput';
 import { fmt } from '../helpers';
 import { useToast } from '@/components/Toast/ToastProvider';
+import { useTranslations } from 'next-intl';
 import styles from '../compare.module.css';
 
 export default function ExpectationsPanel({
@@ -13,9 +14,11 @@ export default function ExpectationsPanel({
   onSaved,
 }: {
   expectations: OfferExpectations | null;
-  onSaved: (e: OfferExpectations) => void;
+  onSaved: (updated: OfferExpectations) => void;
 }) {
   const { toast } = useToast();
+  const t = useTranslations('compare');
+  const tCommon = useTranslations('common');
   const [open, setOpen] = useState(!!expectations);
   const [saving, setSaving] = useState(false);
 
@@ -71,10 +74,10 @@ export default function ExpectationsPanel({
     <div className={styles.expPanel}>
       <button
         className={styles.expToggle}
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => setOpen((prev) => !prev)}
       >
         <span className={styles.expToggleLabel}>
-          {hasSomeExpectation ? 'Your targets' : 'Set your targets'}
+          {hasSomeExpectation ? t('yourTargets') : t('setTargets')}
         </span>
         {hasSomeExpectation && !open && (
           <span className={styles.expSummary}>
@@ -86,7 +89,7 @@ export default function ExpectationsPanel({
         )}
         {!hasSomeExpectation && !open && (
           <span className={styles.expSummaryEmpty}>
-            Define minimum salary, PTO, remote policy… — cells that match will show ★
+            {t('targetDescription')}
           </span>
         )}
         <span className={styles.expChevron}>{open ? '▲' : '▼'}</span>
@@ -96,53 +99,53 @@ export default function ExpectationsPanel({
         <div className={styles.expForm}>
           <div className={styles.expGrid}>
             <div className={styles.expField}>
-              <label className={styles.expLabel}>Base Salary</label>
+              <label className={styles.expLabel}>{t('baseSalary')}</label>
               <div className={styles.expInputGroup}>
                 <select className={styles.expCurrencySelect} value={currency} onChange={(event) => setCurrency(event.target.value)} disabled={saving}>
-                  {['USD', 'EUR', 'GBP', 'CAD', 'AUD'].map((currency) => <option key={currency} value={currency}>{currency}</option>)}
+                  {['USD', 'EUR', 'GBP', 'CAD', 'AUD'].map((cur) => <option key={cur} value={cur}>{cur}</option>)}
                 </select>
                 <input className={styles.expInput} type="text" inputMode="numeric" placeholder="180,000" value={fmtCommas(baseSalary)} onChange={(event) => setBaseSalary(event.target.value.replace(/[^0-9]/g, ''))} disabled={saving} />
               </div>
             </div>
             <div className={styles.expField}>
-              <label className={styles.expLabel}>Signing Bonus</label>
+              <label className={styles.expLabel}>{t('signingBonus')}</label>
               <input className={styles.expInput} type="text" inputMode="numeric" placeholder="15,000" value={fmtCommas(signingBonus)} onChange={(event) => setSigningBonus(event.target.value.replace(/[^0-9]/g, ''))} disabled={saving} />
             </div>
             <div className={styles.expField}>
-              <label className={styles.expLabel}>Performance Bonus %</label>
+              <label className={styles.expLabel}>{t('performanceBonusPct')}</label>
               <input className={styles.expInput} type="number" min={0} placeholder="10" value={bonusPct} onChange={(event) => setBonusPct(event.target.value)} disabled={saving} />
             </div>
             <div className={styles.expField}>
-              <label className={styles.expLabel}>Equity / RSU Value</label>
+              <label className={styles.expLabel}>{t('equityValue')}</label>
               <input className={styles.expInput} type="text" inputMode="numeric" placeholder="300,000" value={fmtCommas(equityValue)} onChange={(event) => setEquityValue(event.target.value.replace(/[^0-9]/g, ''))} disabled={saving} />
             </div>
             <div className={styles.expField}>
-              <label className={styles.expLabel}>PTO Days</label>
+              <label className={styles.expLabel}>{t('ptoDays')}</label>
               <input className={styles.expInput} type="number" min={0} placeholder="20" value={ptoDays} onChange={(event) => setPtoDays(event.target.value)} disabled={saving} />
             </div>
             <div className={styles.expField}>
-              <label className={styles.expLabel}>401k Match %</label>
+              <label className={styles.expLabel}>{t('retirement401k')}</label>
               <input className={styles.expInput} type="number" min={0} placeholder="4" value={retirementMatch} onChange={(event) => setRetirementMatch(event.target.value)} disabled={saving} />
             </div>
             <div className={styles.expField}>
-              <label className={styles.expLabel}>Remote Policy</label>
+              <label className={styles.expLabel}>{t('remotePolicy')}</label>
               <select className={styles.expInput} value={remotePolicy} onChange={(event) => setRemotePolicy(event.target.value as RemotePolicy | '')} disabled={saving}>
-                <option value="">— any —</option>
+                <option value="">{t('anyOption')}</option>
                 {REMOTE_POLICIES.map((policy) => <option key={policy} value={policy}>{policy}</option>)}
               </select>
             </div>
             <div className={styles.expField}>
-              <label className={styles.expLabel}>Health Insurance</label>
+              <label className={styles.expLabel}>{t('healthInsurance')}</label>
               <select className={styles.expInput} value={healthTier} onChange={(event) => setHealthTier(event.target.value as HealthTier | '')} disabled={saving}>
-                <option value="">— any —</option>
+                <option value="">{t('anyOption')}</option>
                 {HEALTH_TIERS.map((tier) => <option key={tier} value={tier}>{tier}</option>)}
               </select>
             </div>
           </div>
           <div className={styles.expActions}>
-            <button className={styles.expCancel} onClick={() => setOpen(false)} disabled={saving}>Cancel</button>
+            <button className={styles.expCancel} onClick={() => setOpen(false)} disabled={saving}>{tCommon('cancel')}</button>
             <button className={styles.expSave} onClick={handleSave} disabled={saving}>
-              {saving ? 'Saving…' : 'Save targets'}
+              {saving ? tCommon('saving') : t('saveTargets')}
             </button>
           </div>
         </div>

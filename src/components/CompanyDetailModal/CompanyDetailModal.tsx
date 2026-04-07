@@ -11,8 +11,9 @@ import type {
 } from '@/types';
 import { INTEREST_LEVELS } from '@/types';
 import styles from './CompanyDetailModal.module.css';
-import { renderWithLinks, formatDate, EVENT_TYPE_LABELS } from './helpers';
+import { renderWithLinks, formatDate, EVENT_TYPE_TRANSLATION_KEYS } from './helpers';
 import { useToast } from '@/components/Toast/ToastProvider';
+import { useTranslations, useLocale } from 'next-intl';
 import NoteItem from './NoteItem';
 import ContactItem from './ContactItem';
 import AppointmentItem from './AppointmentItem';
@@ -35,6 +36,9 @@ interface Props {
 
 export default function CompanyDetailModal({ company, onClose, onDeleted, onUpdated }: Props) {
   const { toast } = useToast();
+  const t = useTranslations('companyDetail');
+  const tCommon = useTranslations('common');
+  const locale = useLocale();
   const hasAIKey = useAIKeyStatus();
   const [activeTab, setActiveTab] = useState<'timeline' | 'stages' | 'offer' | 'simulations'>('timeline');
   const [stages, setStages] = useState<InterviewStage[]>([]);
@@ -113,11 +117,11 @@ export default function CompanyDetailModal({ company, onClose, onDeleted, onUpda
       onUpdated({ ...company, interest_level: value });
     } catch {
       setInterestLevel(prev);
-      toast('Failed to update interest level');
+      toast(t('failedToUpdateInterest'));
     } finally {
       setSavingInterest(false);
     }
-  }, [company, interestLevel, onUpdated, toast]);
+  }, [company, interestLevel, onUpdated, toast, t]);
 
   const handleCreated = useCallback((newEvent: TimelineEvent) => {
     setEvents((prev) => [newEvent, ...prev]);
@@ -160,7 +164,7 @@ export default function CompanyDetailModal({ company, onClose, onDeleted, onUpda
     if (res.ok) {
       onDeleted(company.id);
     } else {
-      toast('Failed to delete company');
+      toast(t('failedToDelete'));
       setDeleting(false);
       setConfirmDelete(false);
     }
@@ -202,13 +206,13 @@ export default function CompanyDetailModal({ company, onClose, onDeleted, onUpda
               onClick={handleDelete}
               disabled={deleting}
             >
-              {deleting ? 'Deleting…' : confirmDelete ? 'Confirm delete?' : 'Delete'}
+              {deleting ? t('deleting') : confirmDelete ? t('confirmDelete') : t('delete')}
             </button>
             <button
               ref={closeButtonRef}
               className={styles.closeButton}
               onClick={onClose}
-              aria-label="Close"
+              aria-label={tCommon('close')}
             >
               ✕
             </button>
@@ -217,7 +221,7 @@ export default function CompanyDetailModal({ company, onClose, onDeleted, onUpda
 
         {/* Interest level selector */}
         <div className={styles.interestBar}>
-          <span className={styles.interestLabel}>Interest</span>
+          <span className={styles.interestLabel}>{t('interest')}</span>
           <div className={styles.interestOptions}>
             {INTEREST_LEVELS.map(({ value, emoji }) => (
               <button
@@ -240,25 +244,25 @@ export default function CompanyDetailModal({ company, onClose, onDeleted, onUpda
             className={`${styles.tab} ${activeTab === 'timeline' ? styles.tabActive : ''}`}
             onClick={() => setActiveTab('timeline')}
           >
-            Timeline
+            {t('tabTimeline')}
           </button>
           <button
             className={`${styles.tab} ${activeTab === 'stages' ? styles.tabActive : ''}`}
             onClick={() => setActiveTab('stages')}
           >
-            Interview &amp; Prep{stages.length > 0 && <span className={styles.tabCount}>{stages.length}</span>}
+            {t('tabStages')}{stages.length > 0 && <span className={styles.tabCount}>{stages.length}</span>}
           </button>
           <button
             className={`${styles.tab} ${activeTab === 'offer' ? styles.tabActive : ''}`}
             onClick={() => setActiveTab('offer')}
           >
-            Offer{offer && <span className={styles.tabCount}>✓</span>}
+            {t('tabOffer')}{offer && <span className={styles.tabCount}>✓</span>}
           </button>
           <button
             className={`${styles.tab} ${activeTab === 'simulations' ? styles.tabActive : ''}`}
             onClick={() => setActiveTab('simulations')}
           >
-            Simulations
+            {t('tabSimulations')}
           </button>
         </div>
 
@@ -269,12 +273,12 @@ export default function CompanyDetailModal({ company, onClose, onDeleted, onUpda
               <AddEntryForm companyId={company.id} onCreated={handleCreated} />
 
               <div className={styles.timelineSection}>
-                <h3 className={styles.timelineSectionTitle}>Timeline</h3>
+                <h3 className={styles.timelineSectionTitle}>{t('timelineSection')}</h3>
 
-                {loading && <p className={styles.timelineLoading}>Loading…</p>}
-                {fetchError && <p className={styles.timelineError}>Failed to load: {fetchError}</p>}
+                {loading && <p className={styles.timelineLoading}>{tCommon('loading')}</p>}
+                {fetchError && <p className={styles.timelineError}>{t('failedToLoad', { error: fetchError })}</p>}
                 {!loading && !fetchError && events.length === 0 && (
-                  <p className={styles.timelineEmpty}>No entries yet. Add one above.</p>
+                  <p className={styles.timelineEmpty}>{t('noEntries')}</p>
                 )}
 
                 {!loading && !fetchError && events.length > 0 && (
@@ -291,18 +295,18 @@ export default function CompanyDetailModal({ company, onClose, onDeleted, onUpda
                         <div className={styles.timelineContent}>
                           <div className={styles.timelineItemHeader}>
                             <span className={styles.eventTypeLabel}>
-                              {EVENT_TYPE_LABELS[event.event_type]}
+                              {t(EVENT_TYPE_TRANSLATION_KEYS[event.event_type] as Parameters<typeof t>[0])}
                             </span>
                             <div className={styles.itemHeaderRight}>
                               <time className={styles.eventDate} dateTime={event.created_at}>
-                                {formatDate(event.created_at)}
+                                {formatDate(event.created_at, locale)}
                               </time>
                               {event.event_type !== 'status_change' && editingId !== event.id && (
                                 <button
                                   className={styles.editButton}
                                   onClick={() => setEditingId(event.id)}
                                 >
-                                  Edit
+                                  {tCommon('edit')}
                                 </button>
                               )}
                             </div>
@@ -350,9 +354,9 @@ export default function CompanyDetailModal({ company, onClose, onDeleted, onUpda
             <div className={styles.roadmapSection}>
               <StageAddForm companyId={company.id} onCreated={(stage) => setStages((prev) => [...prev, stage])} />
 
-              {loading && <p className={styles.timelineLoading}>Loading…</p>}
+              {loading && <p className={styles.timelineLoading}>{tCommon('loading')}</p>}
               {!loading && stages.length === 0 && (
-                <p className={styles.timelineEmpty}>No stages yet. Add your first one above.</p>
+                <p className={styles.timelineEmpty}>{t('noStages')}</p>
               )}
               {!loading && stages.length > 0 && (
                 <ol className={styles.roadmap}>
@@ -374,13 +378,13 @@ export default function CompanyDetailModal({ company, onClose, onDeleted, onUpda
               {!loading && (
                 <div className={styles.prepSection}>
                   <div className={styles.prepHeader}>
-                    <span className={styles.prepLabel}>Prep Notes</span>
+                    <span className={styles.prepLabel}>{t('prepNotes')}</span>
                     {!prepEditing && (
                       <button
                         className={styles.prepEditButton}
                         onClick={() => { setPrepDraft(prepNotes); setPrepEditing(true); }}
                       >
-                        {prepNotes ? 'Edit' : 'Add notes'}
+                        {prepNotes ? tCommon('edit') : t('addNotes')}
                       </button>
                     )}
                   </div>
@@ -391,7 +395,7 @@ export default function CompanyDetailModal({ company, onClose, onDeleted, onUpda
                         className={styles.prepTextarea}
                         value={prepDraft}
                         onChange={(event) => setPrepDraft(event.target.value)}
-                        placeholder="Links, resources, topics to study, interviewer tips…"
+                        placeholder={t('prepPlaceholder')}
                         rows={6}
                         autoFocus
                       />
@@ -401,14 +405,14 @@ export default function CompanyDetailModal({ company, onClose, onDeleted, onUpda
                           onClick={handlePrepCancel}
                           disabled={prepSaving}
                         >
-                          Cancel
+                          {tCommon('cancel')}
                         </button>
                         <button
                           className={styles.submitButton}
                           onClick={handlePrepSave}
                           disabled={prepSaving}
                         >
-                          {prepSaving ? 'Saving…' : 'Save'}
+                          {prepSaving ? tCommon('saving') : tCommon('save')}
                         </button>
                       </div>
                     </>

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { ApplicationStatus } from '@/types';
 import { STATUSES } from './helpers';
 import { useToast } from '@/components/Toast/ToastProvider';
+import { useTranslations } from 'next-intl';
 import styles from './AddCompanyModal.module.css';
 
 interface Props {
@@ -13,6 +14,9 @@ interface Props {
 
 export default function AddCompanyModal({ onClose, onCreated }: Props) {
   const { toast } = useToast();
+  const t = useTranslations('addCompany');
+  const tStatuses = useTranslations('statuses');
+  const tCommon = useTranslations('common');
   const [name, setName] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
   const [status, setStatus] = useState<ApplicationStatus>('Wishlist');
@@ -37,7 +41,7 @@ export default function AddCompanyModal({ onClose, onCreated }: Props) {
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (!name.trim()) {
-      setError('Company name is required.');
+      setError(t('nameRequired'));
       return;
     }
 
@@ -58,7 +62,7 @@ export default function AddCompanyModal({ onClose, onCreated }: Props) {
 
       onCreated();
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Something went wrong.';
+      const message = err instanceof Error ? err.message : t('nameRequired');
       setError(message);
       toast(message);
       setSubmitting(false);
@@ -76,12 +80,12 @@ export default function AddCompanyModal({ onClose, onCreated }: Props) {
         aria-modal="true"
         aria-labelledby="modal-title"
       >
-        <h2 id="modal-title" className={styles.title}>Add Company</h2>
+        <h2 id="modal-title" className={styles.title}>{t('title')}</h2>
 
         <form onSubmit={handleSubmit} noValidate>
           <div className={styles.field}>
             <label htmlFor="company-name" className={styles.label}>
-              Company name <span className={styles.required}>*</span>
+              {t('nameLabel')} <span className={styles.required}>*</span>
             </label>
             <input
               ref={nameRef}
@@ -90,14 +94,14 @@ export default function AddCompanyModal({ onClose, onCreated }: Props) {
               className={styles.input}
               value={name}
               onChange={(event) => setName(event.target.value)}
-              placeholder="e.g. Acme Corp"
+              placeholder={t('namePlaceholder')}
               disabled={submitting}
             />
           </div>
 
           <div className={styles.field}>
             <label htmlFor="logo-url" className={styles.label}>
-              Logo URL <span className={styles.optional}>(optional)</span>
+              {t('logoLabel')} <span className={styles.optional}>(optional)</span>
             </label>
             <input
               id="logo-url"
@@ -105,13 +109,13 @@ export default function AddCompanyModal({ onClose, onCreated }: Props) {
               className={styles.input}
               value={logoUrl}
               onChange={(event) => setLogoUrl(event.target.value)}
-              placeholder="https://example.com/logo.png"
+              placeholder={t('logoPlaceholder')}
               disabled={submitting}
             />
           </div>
 
           <div className={styles.field}>
-            <label htmlFor="status" className={styles.label}>Status</label>
+            <label htmlFor="status" className={styles.label}>{t('statusLabel')}</label>
             <select
               id="status"
               className={styles.select}
@@ -119,8 +123,8 @@ export default function AddCompanyModal({ onClose, onCreated }: Props) {
               onChange={(event) => setStatus(event.target.value as ApplicationStatus)}
               disabled={submitting}
             >
-              {STATUSES.map((status) => (
-                <option key={status} value={status}>{status}</option>
+              {STATUSES.map((statusOption) => (
+                <option key={statusOption} value={statusOption}>{tStatuses(statusOption)}</option>
               ))}
             </select>
           </div>
@@ -134,14 +138,14 @@ export default function AddCompanyModal({ onClose, onCreated }: Props) {
               onClick={onClose}
               disabled={submitting}
             >
-              Cancel
+              {tCommon('cancel')}
             </button>
             <button
               type="submit"
               className={styles.submitButton}
               disabled={submitting}
             >
-              {submitting ? 'Saving…' : 'Add Company'}
+              {submitting ? t('submitting') : t('submit')}
             </button>
           </div>
         </form>

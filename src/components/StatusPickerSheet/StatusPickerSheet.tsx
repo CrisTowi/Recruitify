@@ -2,6 +2,7 @@
 
 import type { ApplicationStatus, CompanyWithNextStep } from '@/types';
 import { COLUMNS } from '@/components/KanbanBoard/helpers';
+import { useTranslations } from 'next-intl';
 import styles from './StatusPickerSheet.module.css';
 
 const STATUS_COLORS: Record<ApplicationStatus, string> = {
@@ -20,13 +21,16 @@ interface Props {
 }
 
 export default function StatusPickerSheet({ company, onSelect, onClose }: Props) {
+  const t = useTranslations('board');
+  const tStatuses = useTranslations('statuses');
+
   return (
     <>
       <div className={styles.backdrop} onClick={onClose} />
-      <div className={styles.sheet} role="dialog" aria-label="Move company to column">
+      <div className={styles.sheet} role="dialog" aria-label={t('moveTo', { name: company.name })}>
         <div className={styles.handle} />
         <p className={styles.title}>
-          Move <strong>{company.name}</strong> to…
+          {t('moveTo', { name: company.name })}
         </p>
         <div className={styles.grid}>
           {COLUMNS.map((status) => {
@@ -39,7 +43,7 @@ export default function StatusPickerSheet({ company, onSelect, onClose }: Props)
                 onClick={() => onSelect(status)}
               >
                 <span className={styles.statusDot} />
-                <span className={styles.statusLabel}>{status}</span>
+                <span className={styles.statusLabel}>{tStatuses(status)}</span>
                 {isActive && <span className={styles.checkmark}>✓</span>}
               </button>
             );

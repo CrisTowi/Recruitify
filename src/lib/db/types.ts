@@ -10,6 +10,7 @@ import type {
   OfferExpectations,
   AISettings,
   AISettingsInput,
+  UserPreferences,
   InterviewSession,
   InterviewSessionFull,
   SessionQuestion,
@@ -97,4 +98,8 @@ export interface DbAdapter {
   upsertAISettings(userId: string | null, settings: AISettingsInput): Promise<AISettings>;
   /** Returns decrypted API keys for server-side use only. Never expose to client. */
   getDecryptedAIKeys(userId?: string): Promise<{ llm_api_key: string | null; tts_api_key: string | null; stt_api_key: string | null } | null>;
+
+  // ── User Preferences ──────────────────────────────────────────────────────
+  getUserPreferences(userId?: string): Promise<UserPreferences>;
+  updateUserPreferences(userId: string | null, prefs: Partial<UserPreferences>): Promise<UserPreferences>;
 }

@@ -6,16 +6,19 @@ import { REMOTE_POLICIES, HEALTH_TIERS } from '@/types';
 import { fmtCommas } from '@/lib/formatInput';
 import { fmt } from './helpers';
 import { useToast } from '@/components/Toast/ToastProvider';
+import { useTranslations } from 'next-intl';
 import styles from './CompanyDetailModal.module.css';
 
 interface OfferSectionProps {
   companyId: string;
   offer: CompanyOffer | null;
-  onUpdated: (o: CompanyOffer) => void;
+  onUpdated: (offer: CompanyOffer) => void;
 }
 
 export default function OfferSection({ companyId, offer, onUpdated }: OfferSectionProps) {
   const { toast } = useToast();
+  const t = useTranslations('companyDetail');
+  const tCommon = useTranslations('common');
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -90,63 +93,63 @@ export default function OfferSection({ companyId, offer, onUpdated }: OfferSecti
     return (
       <div className={styles.offerSection}>
         <div className={styles.offerHeader}>
-          <span className={styles.offerTitle}>Offer Details</span>
+          <span className={styles.offerTitle}>{t('offerDetails')}</span>
           <button className={styles.prepEditButton} onClick={startEdit}>
-            {offer ? 'Edit' : 'Add offer details'}
+            {offer ? tCommon('edit') : t('addOfferDetails')}
           </button>
         </div>
         {offer ? (
           <dl className={styles.offerGrid}>
             <div className={styles.offerRow}>
-              <dt>Base Salary</dt>
+              <dt>{t('baseSalary')}</dt>
               <dd>{fmt(offer.base_salary, offer.currency, 'currency')}</dd>
             </div>
             <div className={styles.offerRow}>
-              <dt>Signing Bonus</dt>
+              <dt>{t('signingBonus')}</dt>
               <dd>{fmt(offer.signing_bonus, offer.currency, 'currency')}</dd>
             </div>
             <div className={styles.offerRow}>
-              <dt>Performance Bonus</dt>
+              <dt>{t('performanceBonus')}</dt>
               <dd>{fmt(offer.bonus_pct, offer.currency, 'pct')}</dd>
             </div>
             <div className={styles.offerRow}>
-              <dt>Equity / RSU</dt>
+              <dt>{t('equity')}</dt>
               <dd>
                 {fmt(offer.equity_value, offer.currency, 'currency')}
                 {offer.equity_vesting && <span className={styles.offerSub}>{offer.equity_vesting}</span>}
               </dd>
             </div>
             <div className={styles.offerRow}>
-              <dt>PTO Days</dt>
+              <dt>{t('ptoDays')}</dt>
               <dd>{fmt(offer.pto_days, offer.currency, 'days')}</dd>
             </div>
             <div className={styles.offerRow}>
-              <dt>Remote Policy</dt>
+              <dt>{t('remotePolicy')}</dt>
               <dd>{offer.remote_policy ?? '—'}</dd>
             </div>
             <div className={styles.offerRow}>
-              <dt>Health Insurance</dt>
+              <dt>{t('healthInsurance')}</dt>
               <dd>{offer.health_tier ?? '—'}</dd>
             </div>
             <div className={styles.offerRow}>
-              <dt>401k Match</dt>
+              <dt>{t('retirement401k')}</dt>
               <dd>{fmt(offer.retirement_match_pct, offer.currency, 'pct')}</dd>
             </div>
             {offer.other_benefits && (
               <div className={`${styles.offerRow} ${styles.offerRowFull}`}>
-                <dt>Other Benefits</dt>
+                <dt>{t('otherBenefits')}</dt>
                 <dd>{offer.other_benefits}</dd>
               </div>
             )}
             {offer.notes && (
               <div className={`${styles.offerRow} ${styles.offerRowFull}`}>
-                <dt>Notes</dt>
+                <dt>{t('notes')}</dt>
                 <dd>{offer.notes}</dd>
               </div>
             )}
           </dl>
         ) : (
-          <p className={styles.timelineEmpty}>No offer details yet. Add them to include this company in the comparison.</p>
+          <p className={styles.timelineEmpty}>{t('noOffer')}</p>
         )}
       </div>
     );
@@ -155,80 +158,80 @@ export default function OfferSection({ companyId, offer, onUpdated }: OfferSecti
   return (
     <div className={styles.offerSection}>
       <div className={styles.offerHeader}>
-        <span className={styles.offerTitle}>Offer Details</span>
+        <span className={styles.offerTitle}>{t('offerDetails')}</span>
       </div>
       <div className={styles.offerEditGrid}>
         <div className={styles.offerEditRow}>
           <div className={styles.field}>
-            <label className={styles.label}>Base Salary</label>
+            <label className={styles.label}>{t('baseSalary')}</label>
             <div className={styles.offerInputGroup}>
               <select className={styles.offerCurrencySelect} value={currency} onChange={(event) => setCurrency(event.target.value)} disabled={saving}>
-                {['USD', 'EUR', 'GBP', 'CAD', 'AUD'].map((currency) => <option key={currency} value={currency}>{currency}</option>)}
+                {['USD', 'EUR', 'GBP', 'CAD', 'AUD'].map((cur) => <option key={cur} value={cur}>{cur}</option>)}
               </select>
               <input className={styles.input} type="text" inputMode="numeric" placeholder="150,000" value={fmtCommas(baseSalary)} onChange={(event) => setBaseSalary(event.target.value.replace(/[^0-9]/g, ''))} disabled={saving} />
             </div>
           </div>
           <div className={styles.field}>
-            <label className={styles.label}>Signing Bonus</label>
+            <label className={styles.label}>{t('signingBonus')}</label>
             <input className={styles.input} type="text" inputMode="numeric" placeholder="10,000" value={fmtCommas(signingBonus)} onChange={(event) => setSigningBonus(event.target.value.replace(/[^0-9]/g, ''))} disabled={saving} />
           </div>
         </div>
         <div className={styles.offerEditRow}>
           <div className={styles.field}>
-            <label className={styles.label}>Performance Bonus %</label>
+            <label className={styles.label}>{t('performanceBonusPct')}</label>
             <input className={styles.input} type="number" min={0} placeholder="15" value={bonusPct} onChange={(event) => setBonusPct(event.target.value)} disabled={saving} />
           </div>
           <div className={styles.field}>
-            <label className={styles.label}>401k Match %</label>
+            <label className={styles.label}>{t('retirement401kPct')}</label>
             <input className={styles.input} type="number" min={0} placeholder="4" value={retirementMatch} onChange={(event) => setRetirementMatch(event.target.value)} disabled={saving} />
           </div>
         </div>
         <div className={styles.offerEditRow}>
           <div className={styles.field}>
-            <label className={styles.label}>Equity / RSU Value</label>
+            <label className={styles.label}>{t('equityValue')}</label>
             <input className={styles.input} type="text" inputMode="numeric" placeholder="200,000" value={fmtCommas(equityValue)} onChange={(event) => setEquityValue(event.target.value.replace(/[^0-9]/g, ''))} disabled={saving} />
           </div>
           <div className={styles.field}>
-            <label className={styles.label}>Vesting Schedule</label>
-            <input className={styles.input} type="text" placeholder="4yr, 1yr cliff" value={equityVesting} onChange={(event) => setEquityVesting(event.target.value)} disabled={saving} />
+            <label className={styles.label}>{t('vestingSchedule')}</label>
+            <input className={styles.input} type="text" placeholder={t('vestingPlaceholder')} value={equityVesting} onChange={(event) => setEquityVesting(event.target.value)} disabled={saving} />
           </div>
         </div>
         <div className={styles.offerEditRow}>
           <div className={styles.field}>
-            <label className={styles.label}>PTO Days</label>
+            <label className={styles.label}>{t('ptoDays')}</label>
             <input className={styles.input} type="number" min={0} placeholder="20" value={ptoDays} onChange={(event) => setPtoDays(event.target.value)} disabled={saving} />
           </div>
           <div className={styles.field}>
-            <label className={styles.label}>Remote Policy</label>
+            <label className={styles.label}>{t('remotePolicy')}</label>
             <select className={styles.input} value={remotePolicy} onChange={(event) => setRemotePolicy(event.target.value as RemotePolicy | '')} disabled={saving}>
-              <option value="">— Select —</option>
+              <option value="">{t('selectPlaceholder')}</option>
               {REMOTE_POLICIES.map((policy) => <option key={policy} value={policy}>{policy}</option>)}
             </select>
           </div>
         </div>
         <div className={styles.offerEditRow}>
           <div className={styles.field}>
-            <label className={styles.label}>Health Insurance</label>
+            <label className={styles.label}>{t('healthInsurance')}</label>
             <select className={styles.input} value={healthTier} onChange={(event) => setHealthTier(event.target.value as HealthTier | '')} disabled={saving}>
-              <option value="">— Select —</option>
+              <option value="">{t('selectPlaceholder')}</option>
               {HEALTH_TIERS.map((tier) => <option key={tier} value={tier}>{tier}</option>)}
             </select>
           </div>
         </div>
         <div className={styles.field}>
-          <label className={styles.label}>Other Benefits</label>
-          <textarea className={styles.prepTextarea} rows={2} placeholder="Home office stipend, gym…" value={otherBenefits} onChange={(event) => setOtherBenefits(event.target.value)} disabled={saving} />
+          <label className={styles.label}>{t('otherBenefits')}</label>
+          <textarea className={styles.prepTextarea} rows={2} placeholder={t('otherBenefitsPlaceholder')} value={otherBenefits} onChange={(event) => setOtherBenefits(event.target.value)} disabled={saving} />
         </div>
         <div className={styles.field}>
-          <label className={styles.label}>Notes</label>
-          <textarea className={styles.prepTextarea} rows={2} placeholder="Deadline, negotiation notes…" value={offerNotes} onChange={(event) => setOfferNotes(event.target.value)} disabled={saving} />
+          <label className={styles.label}>{t('notes')}</label>
+          <textarea className={styles.prepTextarea} rows={2} placeholder={t('notesPlaceholder')} value={offerNotes} onChange={(event) => setOfferNotes(event.target.value)} disabled={saving} />
         </div>
       </div>
       {err && <p className={styles.formError}>{err}</p>}
       <div className={styles.prepActions}>
-        <button className={styles.cancelButton} onClick={() => setEditing(false)} disabled={saving}>Cancel</button>
+        <button className={styles.cancelButton} onClick={() => setEditing(false)} disabled={saving}>{tCommon('cancel')}</button>
         <button className={styles.submitButton} onClick={handleSave} disabled={saving}>
-          {saving ? 'Saving…' : 'Save'}
+          {saving ? tCommon('saving') : tCommon('save')}
         </button>
       </div>
     </div>

@@ -247,6 +247,12 @@ export interface AISettingsInput {
   stt_api_key?: string | null;
 }
 
+// ─── User Preferences ─────────────────────────────────────────────────────────
+
+export interface UserPreferences {
+  language: string;
+}
+
 // ─── Calendar Types ───────────────────────────────────────────────────────────
 
 export interface CalendarMatch {

@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
+import { NextIntlClientProvider } from 'next-intl';
 import ClientLayout from '@/components/ClientLayout';
+import SiteHeader from '@/components/SiteHeader/SiteHeader';
+import { defaultLocale } from '@/i18n/routing';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -43,6 +45,14 @@ async function getAuthUser() {
   }
 }
 
+async function getLocaleMessages(locale: string) {
+  try {
+    return (await import(`../../messages/${locale}.json`)).default as Record<string, unknown>;
+  } catch {
+    return (await import('../../messages/en.json')).default as Record<string, unknown>;
+  }
+}
+
 export default async function RootLayout({
   children,
 }: {
@@ -51,28 +61,23 @@ export default async function RootLayout({
   const user = await getAuthUser();
   const authEnabled = process.env.SUPABASE_AUTH === 'true' && process.env.STORAGE_MODE !== 'sqlite';
 
+  const cookieStore = await cookies();
+  const locale = cookieStore.get('NEXT_LOCALE')?.value ?? defaultLocale;
+  const messages = await getLocaleMessages(locale);
+
   return (
-    <html lang="en">
+    <html lang={locale}>
       <body suppressHydrationWarning>
-        <header className="site-header">
-          <span className="site-logo">Recruitify</span>
-          {(!authEnabled || user) && (
-            <nav className="site-nav">
-              <Link href="/" className="site-nav-link">Board</Link>
-              <Link href="/compare" className="site-nav-link">Compare Offers</Link>
-            </nav>
-          )}
-          {authEnabled && user && (
-            <form action="/api/auth/signout" method="POST" className="signout-form">
-              <button type="submit" className="signout-button">
-                Sign out
-              </button>
-            </form>
-          )}
-        </header>
-        <ClientLayout>
-          <main>{children}</main>
-        </ClientLayout>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <SiteHeader
+            authEnabled={authEnabled}
+            showNav={!authEnabled || !!user}
+            showSignOut={authEnabled && !!user}
+          />
+          <ClientLayout>
+            <main>{children}</main>
+          </ClientLayout>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

@@ -2,16 +2,18 @@
 
 import { useState } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
+import { useTranslations } from 'next-intl';
 import styles from './page.module.css';
 
 export default function LoginPage() {
+  const t = useTranslations('login');
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     setError(null);
     setLoading(true);
 
@@ -23,9 +25,9 @@ export default function LoginPage() {
     });
 
     if (!inviteRes.ok) {
-      let inviteBody: { error?: string } = { error: 'Access denied.' };
+      let inviteBody: { error?: string } = { error: t('accessDenied') };
       try { inviteBody = await inviteRes.json(); } catch { /* use default */ }
-      setError(inviteBody.error ?? 'Access denied.');
+      setError(inviteBody.error ?? t('accessDenied'));
       setLoading(false);
       return;
     }
@@ -54,31 +56,29 @@ export default function LoginPage() {
   return (
     <div className={styles.container}>
       <div className={styles.card}>
-        <h1 className={styles.title}>Sign in to Recruitify</h1>
-        <p className={styles.subtitle}>
-          Enter your email and we&apos;ll send you a magic link to sign in.
-        </p>
+        <h1 className={styles.title}>{t('title')}</h1>
+        <p className={styles.subtitle}>{t('subtitle')}</p>
 
         {sent ? (
           <div className={styles.successMessage}>
-            <div className={styles.successTitle}>Check your email</div>
+            <div className={styles.successTitle}>{t('checkEmail')}</div>
             <p className={styles.successText}>
-              A magic link has been sent to <strong>{email}</strong>. Click the link in the email to sign in.
+              {t('magicLinkSentBefore')} <strong>{email}</strong>. {t('magicLinkSentAfter')}
             </p>
           </div>
         ) : (
           <form className={styles.form} onSubmit={handleSubmit}>
             <div className={styles.field}>
               <label htmlFor="email" className={styles.label}>
-                Email address
+                {t('emailLabel')}
               </label>
               <input
                 id="email"
                 type="email"
                 className={styles.input}
-                placeholder="you@example.com"
+                placeholder={t('emailPlaceholder')}
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(event) => setEmail(event.target.value)}
                 required
                 autoComplete="email"
                 autoFocus
@@ -94,7 +94,7 @@ export default function LoginPage() {
               className={styles.button}
               disabled={loading || !email}
             >
-              {loading ? 'Sending…' : 'Send magic link'}
+              {loading ? t('sending') : t('send')}
             </button>
           </form>
         )}

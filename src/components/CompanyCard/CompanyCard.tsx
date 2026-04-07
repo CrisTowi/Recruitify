@@ -1,5 +1,8 @@
+'use client';
+
 import type { CompanyWithNextStep } from '@/types';
-import { STATUS_LABELS, INTEREST_EMOJI } from './helpers';
+import { INTEREST_EMOJI } from './helpers';
+import { useTranslations, useLocale } from 'next-intl';
 import styles from './CompanyCard.module.css';
 
 interface Props {
@@ -11,6 +14,8 @@ interface Props {
 }
 
 export default function CompanyCard({ company, onMoveLeft, onMoveRight, prevLabel, nextLabel }: Props) {
+  const tStatuses = useTranslations('statuses');
+  const locale = useLocale();
   const { name, logo_url, status, next_step, interest_level } = company;
   const hasMoveBar = onMoveLeft !== undefined || onMoveRight !== undefined;
 
@@ -30,7 +35,7 @@ export default function CompanyCard({ company, onMoveLeft, onMoveRight, prevLabe
             className={styles.statusBadge}
             data-status={status.toLowerCase()}
           >
-            {STATUS_LABELS[status]}
+            {tStatuses(status)}
           </span>
         </div>
         {interest_level && (
@@ -46,7 +51,7 @@ export default function CompanyCard({ company, onMoveLeft, onMoveRight, prevLabe
           <span className={styles.nextStepName}>{next_step.stage_name}</span>
           {next_step.scheduled_date && (
             <span className={styles.nextStepDate}>
-              {new Date(next_step.scheduled_date).toLocaleDateString(undefined, {
+              {new Date(next_step.scheduled_date).toLocaleDateString(locale, {
                 month: 'short',
                 day: 'numeric',
               })}

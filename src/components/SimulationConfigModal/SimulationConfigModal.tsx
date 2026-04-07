@@ -13,6 +13,7 @@ import {
   createSession,
 } from './helpers';
 import { useToast } from '@/components/Toast/ToastProvider';
+import { useTranslations, useLocale } from 'next-intl';
 import styles from './SimulationConfigModal.module.css';
 
 interface Props {
@@ -24,6 +25,9 @@ interface Props {
 export default function SimulationConfigModal({ company, stage, onClose }: Props) {
   const router = useRouter();
   const { toast } = useToast();
+  const t = useTranslations('session');
+  const tCommon = useTranslations('common');
+  const locale = useLocale();
 
   const [numQuestions, setNumQuestions] = useState(5);
   const [personaPreset, setPersonaPreset] = useState(PERSONA_PRESETS[0].value);
@@ -146,23 +150,23 @@ export default function SimulationConfigModal({ company, stage, onClose }: Props
         aria-labelledby="sim-config-title"
       >
         <div className={styles.header}>
-          <h2 id="sim-config-title" className={styles.title}>Simulate Interview</h2>
-          <button className={styles.closeButton} onClick={onClose} aria-label="Close">✕</button>
+          <h2 id="sim-config-title" className={styles.title}>{t('simulateTitle')}</h2>
+          <button className={styles.closeButton} onClick={onClose} aria-label={tCommon('close')}>✕</button>
         </div>
 
         {/* Context — read only */}
         <div className={styles.context}>
           <div className={styles.contextRow}>
-            <span className={styles.contextLabel}>Company</span>
+            <span className={styles.contextLabel}>{t('company')}</span>
             <span className={styles.contextValue}>{company.name}</span>
           </div>
           <div className={styles.contextRow}>
-            <span className={styles.contextLabel}>Stage</span>
+            <span className={styles.contextLabel}>{t('stage')}</span>
             <span className={styles.contextValue}>{stage.stage_name}</span>
           </div>
           {company.prep_notes && (
             <div className={styles.contextRow}>
-              <span className={styles.contextLabel}>Prep notes</span>
+              <span className={styles.contextLabel}>{t('prepNotes')}</span>
               <span className={`${styles.contextValue} ${styles.contextNotes}`}>{company.prep_notes}</span>
             </div>
           )}
@@ -170,18 +174,18 @@ export default function SimulationConfigModal({ company, stage, onClose }: Props
 
         {/* Loading state */}
         {activeSession === undefined && (
-          <p className={styles.loadingText}>Checking for active sessions…</p>
+          <p className={styles.loadingText}>{t('checkingActiveSessions')}</p>
         )}
 
         {/* Active session conflict */}
         {activeSession !== undefined && activeSession !== null && (
           <div className={styles.conflictBanner}>
             <p className={styles.conflictMessage}>
-              You have an active simulation in progress. Continue where you left off, or discard it to start a new one.
+              {t('activeSessionConflict')}
             </p>
             {activeSession.started_at && (
               <p className={styles.conflictMeta}>
-                Started {new Date(activeSession.started_at).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
+                {new Date(activeSession.started_at).toLocaleString(locale, { dateStyle: 'medium', timeStyle: 'short' })}
               </p>
             )}
             <div className={styles.conflictActions}>
@@ -191,14 +195,14 @@ export default function SimulationConfigModal({ company, stage, onClose }: Props
                 onClick={handleDiscardAndStartNew}
                 disabled={discarding}
               >
-                {discarding ? 'Discarding…' : 'Discard & start new'}
+                {discarding ? t('discarding') : t('discardAndStartNew')}
               </button>
               <button
                 type="button"
                 className={styles.submitButton}
                 onClick={() => router.push(`/session/${activeSession.id}`)}
               >
-                Continue
+                {t('continue')}
               </button>
             </div>
           </div>
@@ -210,7 +214,7 @@ export default function SimulationConfigModal({ company, stage, onClose }: Props
             {/* AI key guard */}
             {hasAIKey === false && (
               <div className={styles.aiWarning}>
-                No AI key configured. Set up your provider in <strong>AI Settings</strong> before starting.
+                {t('noAIKey')}
               </div>
             )}
 
@@ -218,7 +222,7 @@ export default function SimulationConfigModal({ company, stage, onClose }: Props
           {/* Number of questions */}
           <div className={styles.field}>
             <label className={styles.label}>
-              Questions <span className={styles.labelCount}>{numQuestions}</span>
+              {t('questions')} <span className={styles.labelCount}>{numQuestions}</span>
             </label>
             <input
               type="range"
@@ -236,7 +240,7 @@ export default function SimulationConfigModal({ company, stage, onClose }: Props
 
           {/* Difficulty */}
           <div className={styles.field}>
-            <span className={styles.label}>Difficulty</span>
+            <span className={styles.label}>{t('difficulty')}</span>
             <div className={styles.segmented}>
               {DIFFICULTY_OPTIONS.map((option) => (
                 <button
@@ -255,7 +259,7 @@ export default function SimulationConfigModal({ company, stage, onClose }: Props
 
           {/* Feedback mode */}
           <div className={styles.field}>
-            <span className={styles.label}>Feedback mode</span>
+            <span className={styles.label}>{t('feedbackMode')}</span>
             <div className={styles.segmented}>
               {FEEDBACK_MODE_OPTIONS.map((option) => (
                 <button
@@ -274,7 +278,7 @@ export default function SimulationConfigModal({ company, stage, onClose }: Props
 
           {/* Interviewer persona */}
           <div className={styles.field}>
-            <label htmlFor="sim-persona-preset" className={styles.label}>Interviewer persona</label>
+            <label htmlFor="sim-persona-preset" className={styles.label}>{t('interviewerPersona')}</label>
             <select
               id="sim-persona-preset"
               className={styles.select}
@@ -290,7 +294,7 @@ export default function SimulationConfigModal({ company, stage, onClose }: Props
               <input
                 type="text"
                 className={`${styles.input} ${styles.personaInput}`}
-                placeholder="Describe the interviewer role and style…"
+                placeholder={t('describeInterviewer')}
                 value={personaCustom}
                 onChange={(event) => setPersonaCustom(event.target.value)}
                 disabled={submitting}
@@ -301,7 +305,7 @@ export default function SimulationConfigModal({ company, stage, onClose }: Props
 
           {/* Focus areas */}
           <div className={styles.field}>
-            <label htmlFor="sim-focus" className={styles.label}>Focus areas <span className={styles.optional}>(optional)</span></label>
+            <label htmlFor="sim-focus" className={styles.label}>{t('focusAreas')} <span className={styles.optional}>{tCommon('optional')}</span></label>
             <div className={styles.tagInput} onClick={() => focusInputRef.current?.focus()}>
               {focusAreas.map((area) => (
                 <span key={area} className={styles.tag}>
@@ -325,7 +329,7 @@ export default function SimulationConfigModal({ company, stage, onClose }: Props
                 onChange={(event) => setFocusInput(event.target.value)}
                 onKeyDown={handleFocusKeyDown}
                 onBlur={() => { if (focusInput.trim()) addFocusArea(focusInput); }}
-                placeholder={focusAreas.length === 0 ? 'Type and press Enter…' : ''}
+                placeholder={focusAreas.length === 0 ? t('typeAndPressEnter') : ''}
                 disabled={submitting}
               />
             </div>
@@ -351,14 +355,14 @@ export default function SimulationConfigModal({ company, stage, onClose }: Props
               onClick={onClose}
               disabled={submitting}
             >
-              Cancel
+              {tCommon('cancel')}
             </button>
             <button
               type="submit"
               className={styles.submitButton}
               disabled={submitting || hasAIKey === false}
             >
-              {submitting ? 'Starting…' : 'Start Session'}
+              {submitting ? t('starting') : t('startSession')}
             </button>
           </div>
         </form>

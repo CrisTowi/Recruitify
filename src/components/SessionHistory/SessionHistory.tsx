@@ -10,6 +10,7 @@ import {
   buildSparklinePath,
 } from './helpers';
 import Skeleton from '@/components/Skeleton/Skeleton';
+import { useTranslations, useLocale } from 'next-intl';
 import styles from './SessionHistory.module.css';
 
 interface Props {
@@ -21,6 +22,8 @@ const SPARKLINE_HEIGHT = 28;
 
 export default function SessionHistory({ companyId }: Props) {
   const router = useRouter();
+  const t = useTranslations('session');
+  const locale = useLocale();
   const [sessions, setSessions] = useState<InterviewSession[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -56,8 +59,8 @@ export default function SessionHistory({ companyId }: Props) {
   if (sessions.length === 0) {
     return (
       <div className={styles.empty}>
-        <p>No simulation sessions yet.</p>
-        <p className={styles.emptyHint}>Click &ldquo;Simulate&rdquo; on any stage to start practicing.</p>
+        <p>{t('noSimulations')}</p>
+        <p className={styles.emptyHint}>{t('noSimulationsHint')}</p>
       </div>
     );
   }
@@ -73,13 +76,13 @@ export default function SessionHistory({ companyId }: Props) {
     <div className={styles.container}>
       {showSparkline && (
         <div className={styles.trendRow}>
-          <span className={styles.trendLabel}>Score trend</span>
+          <span className={styles.trendLabel}>{t('scoreTrend')}</span>
           <svg
             width={SPARKLINE_WIDTH}
             height={SPARKLINE_HEIGHT}
             viewBox={`0 0 ${SPARKLINE_WIDTH} ${SPARKLINE_HEIGHT}`}
             className={styles.sparkline}
-            aria-label="Score trend over sessions"
+            aria-label={t('scoreTrend')}
           >
             <path d={sparklinePath} className={styles.sparklinePath} fill="none" strokeWidth="2" />
           </svg>
@@ -100,7 +103,7 @@ export default function SessionHistory({ companyId }: Props) {
               }}
             >
               <div className={styles.itemLeft}>
-                <span className={styles.itemDate}>{formatSessionDate(session.created_at)}</span>
+                <span className={styles.itemDate}>{formatSessionDate(session.created_at, locale)}</span>
                 <span className={styles.itemMeta}>
                   {session.num_questions}Q · {session.difficulty} · {session.feedback_mode === 'immediate' ? 'Immediate' : 'Simulation'}
                 </span>

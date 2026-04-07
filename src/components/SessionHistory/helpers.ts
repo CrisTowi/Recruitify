@@ -7,8 +7,8 @@ export async function fetchSessionsForCompany(companyId: string): Promise<Interv
   return data.sessions;
 }
 
-export function formatSessionDate(isoString: string): string {
-  return new Date(isoString).toLocaleDateString(undefined, {
+export function formatSessionDate(isoString: string, locale?: string): string {
+  return new Date(isoString).toLocaleDateString(locale, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',

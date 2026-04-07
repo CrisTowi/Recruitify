@@ -16,6 +16,7 @@ import type {
   HealthTier,
   AISettings,
   AISettingsInput,
+  UserPreferences,
   LLMProvider,
   TTSProvider,
   STTProvider,
@@ -183,6 +184,12 @@ function initSchema(db: Database.Database): void {
       stt_provider TEXT,
       stt_api_key_encrypted TEXT,
       created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+      updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS user_preferences (
+      id INTEGER PRIMARY KEY DEFAULT 1,
+      language TEXT NOT NULL DEFAULT 'en',
       updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
     );
   `);
@@ -1102,5 +1109,32 @@ export class SqliteAdapter implements DbAdapter {
       tts_api_key: row.tts_api_key_encrypted ? decrypt(row.tts_api_key_encrypted) : null,
       stt_api_key: row.stt_api_key_encrypted ? decrypt(row.stt_api_key_encrypted) : null,
     });
+  }
+
+  // ── User Preferences ─────────────────────────────────────────────────────────
+
+  getUserPreferences(_userId?: string): Promise<UserPreferences> {
+    const db = getDb();
+    const row = db.prepare<[], { language: string }>('SELECT language FROM user_preferences WHERE id = 1').get();
+    return Promise.resolve({ language: row?.language ?? 'en' });
+  }
+
+  updateUserPreferences(_userId: string | null, prefs: Partial<UserPreferences>): Promise<UserPreferences> {
+    const db = getDb();
+    const now = new Date().toISOString();
+    const existing = db.prepare<[], { id: number }>('SELECT id FROM user_preferences WHERE id = 1').get();
+
+    if (existing) {
+      if (prefs.language !== undefined) {
+        db.prepare('UPDATE user_preferences SET language = ?, updated_at = ? WHERE id = 1').run(prefs.language, now);
+      }
+    } else {
+      db.prepare(
+        'INSERT INTO user_preferences (id, language, updated_at) VALUES (1, ?, ?)',
+      ).run(prefs.language ?? 'en', now);
+    }
+
+    const row = db.prepare<[], { language: string }>('SELECT language FROM user_preferences WHERE id = 1').get()!;
+    return Promise.resolve({ language: row.language });
   }
 }

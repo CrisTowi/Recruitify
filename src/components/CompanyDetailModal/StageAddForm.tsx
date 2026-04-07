@@ -2,15 +2,18 @@
 
 import { useState } from 'react';
 import type { InterviewStage } from '@/types';
+import { useTranslations } from 'next-intl';
 import styles from './CompanyDetailModal.module.css';
 
 export default function StageAddForm({ companyId, onCreated }: { companyId: string; onCreated: (s: InterviewStage) => void }) {
+  const t = useTranslations('companyDetail');
+  const tCommon = useTranslations('common');
   const [name, setName] = useState('');
   const [date, setDate] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleSubmit(event: React.FormEvent) {
+    event.preventDefault();
     if (!name.trim()) return;
     setSubmitting(true);
     try {
@@ -36,20 +39,20 @@ export default function StageAddForm({ companyId, onCreated }: { companyId: stri
         className={styles.stageAddInput}
         type="text"
         value={name}
-        onChange={(e) => setName(e.target.value)}
-        placeholder="Stage name (e.g. Technical screen)"
+        onChange={(event) => setName(event.target.value)}
+        placeholder={t('stageNamePlaceholder')}
         disabled={submitting}
       />
       <input
         className={styles.stageAddDate}
         type="date"
         value={date}
-        onChange={(e) => setDate(e.target.value)}
+        onChange={(event) => setDate(event.target.value)}
         disabled={submitting}
-        title="Scheduled date (optional)"
+        title={tCommon('optional')}
       />
       <button className={styles.submitButton} type="submit" disabled={submitting || !name.trim()}>
-        {submitting ? 'Adding…' : 'Add'}
+        {submitting ? tCommon('adding') : tCommon('add')}
       </button>
     </form>
   );

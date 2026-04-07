@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { SessionQuestion } from '@/types';
 import { scoreColorClass, formatScoreLabel } from './helpers';
+import { useTranslations } from 'next-intl';
 import styles from './SessionDebrief.module.css';
 
 interface Props {
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export default function QuestionRow({ question }: Props) {
+  const t = useTranslations('session');
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -34,34 +36,34 @@ export default function QuestionRow({ question }: Props) {
       {expanded && (
         <div className={styles.questionDetail}>
           <div className={styles.detailSection}>
-            <p className={styles.detailLabel}>Question</p>
+            <p className={styles.detailLabel}>{t('questionDetail')}</p>
             <p className={styles.detailText}>{question.question_text}</p>
           </div>
 
           {question.answer_transcript && (
             <div className={styles.detailSection}>
-              <p className={styles.detailLabel}>Your answer</p>
+              <p className={styles.detailLabel}>{t('yourAnswer')}</p>
               <p className={styles.detailText}>{question.answer_transcript}</p>
             </div>
           )}
 
           {question.feedback_strengths && (
             <div className={styles.detailSection}>
-              <p className={`${styles.detailLabel} ${styles.strengthLabel}`}>What worked</p>
+              <p className={`${styles.detailLabel} ${styles.strengthLabel}`}>{t('whatWorkedQuestion')}</p>
               <p className={styles.detailText}>{question.feedback_strengths}</p>
             </div>
           )}
 
           {question.feedback_improvements && (
             <div className={styles.detailSection}>
-              <p className={`${styles.detailLabel} ${styles.improvementLabel}`}>How to improve</p>
+              <p className={`${styles.detailLabel} ${styles.improvementLabel}`}>{t('howToImproveQuestion')}</p>
               <p className={styles.detailText}>{question.feedback_improvements}</p>
             </div>
           )}
 
           {question.feedback_suggested_answer && (
             <div className={styles.detailSection}>
-              <p className={styles.detailLabel}>Suggested direction</p>
+              <p className={styles.detailLabel}>{t('suggestedDirectionQuestion')}</p>
               <p className={styles.detailText}>{question.feedback_suggested_answer}</p>
             </div>
           )}

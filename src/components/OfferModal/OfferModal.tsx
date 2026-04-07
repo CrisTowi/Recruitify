@@ -5,6 +5,7 @@ import type { CompanyWithNextStep, CompanyOffer, RemotePolicy, HealthTier } from
 import { REMOTE_POLICIES, HEALTH_TIERS } from '@/types';
 import { fmtCommas } from '@/lib/formatInput';
 import { useToast } from '@/components/Toast/ToastProvider';
+import { useTranslations } from 'next-intl';
 import styles from './OfferModal.module.css';
 
 interface Props {
@@ -15,6 +16,8 @@ interface Props {
 
 export default function OfferModal({ company, onSaved, onSkip }: Props) {
   const { toast } = useToast();
+  const t = useTranslations('offerModal');
+  const tCommon = useTranslations('common');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -80,16 +83,16 @@ export default function OfferModal({ company, onSaved, onSkip }: Props) {
       <div className={styles.modal} role="dialog" aria-modal="true">
         <div className={styles.header}>
           <div className={styles.headerTitle}>
-            <span className={styles.badge}>Offer</span>
+            <span className={styles.badge}>{t('badge')}</span>
             <h2 className={styles.company}>{company.name}</h2>
           </div>
-          <p className={styles.subtitle}>Log the offer details to compare later. All fields are optional.</p>
+          <p className={styles.subtitle}>{t('subtitle')}</p>
         </div>
 
         <form className={styles.form} onSubmit={handleSubmit} noValidate>
           <div className={styles.row}>
             <div className={styles.field}>
-              <label className={styles.label}>Base Salary (annual)</label>
+              <label className={styles.label}>{t('baseSalary')}</label>
               <div className={styles.inputGroup}>
                 <select
                   className={styles.currencySelect}
@@ -113,7 +116,7 @@ export default function OfferModal({ company, onSaved, onSkip }: Props) {
               </div>
             </div>
             <div className={styles.field}>
-              <label className={styles.label}>Signing Bonus</label>
+              <label className={styles.label}>{t('signingBonus')}</label>
               <input
                 className={styles.input}
                 type="text"
@@ -128,7 +131,7 @@ export default function OfferModal({ company, onSaved, onSkip }: Props) {
 
           <div className={styles.row}>
             <div className={styles.field}>
-              <label className={styles.label}>Performance Bonus %</label>
+              <label className={styles.label}>{t('performanceBonus')}</label>
               <input
                 className={styles.input}
                 type="number"
@@ -141,7 +144,7 @@ export default function OfferModal({ company, onSaved, onSkip }: Props) {
               />
             </div>
             <div className={styles.field}>
-              <label className={styles.label}>401k / Retirement Match %</label>
+              <label className={styles.label}>{t('retirement')}</label>
               <input
                 className={styles.input}
                 type="number"
@@ -157,7 +160,7 @@ export default function OfferModal({ company, onSaved, onSkip }: Props) {
 
           <div className={styles.row}>
             <div className={styles.field}>
-              <label className={styles.label}>Equity / RSU Total Value</label>
+              <label className={styles.label}>{t('equity')}</label>
               <input
                 className={styles.input}
                 type="text"
@@ -169,11 +172,11 @@ export default function OfferModal({ company, onSaved, onSkip }: Props) {
               />
             </div>
             <div className={styles.field}>
-              <label className={styles.label}>Vesting Schedule</label>
+              <label className={styles.label}>{t('vestingSchedule')}</label>
               <input
                 className={styles.input}
                 type="text"
-                placeholder="4yr, 1yr cliff"
+                placeholder={t('vestingPlaceholder')}
                 value={equityVesting}
                 onChange={(event) => setEquityVesting(event.target.value)}
                 disabled={submitting}
@@ -183,7 +186,7 @@ export default function OfferModal({ company, onSaved, onSkip }: Props) {
 
           <div className={styles.row}>
             <div className={styles.field}>
-              <label className={styles.label}>PTO Days</label>
+              <label className={styles.label}>{t('ptoDays')}</label>
               <input
                 className={styles.input}
                 type="number"
@@ -195,14 +198,14 @@ export default function OfferModal({ company, onSaved, onSkip }: Props) {
               />
             </div>
             <div className={styles.field}>
-              <label className={styles.label}>Remote Policy</label>
+              <label className={styles.label}>{t('remotePolicy')}</label>
               <select
                 className={styles.input}
                 value={remotePolicy}
                 onChange={(event) => setRemotePolicy(event.target.value as RemotePolicy | '')}
                 disabled={submitting}
               >
-                <option value="">— Select —</option>
+                <option value="">{t('selectPlaceholder')}</option>
                 {REMOTE_POLICIES.map((policy) => <option key={policy} value={policy}>{policy}</option>)}
               </select>
             </div>
@@ -210,24 +213,24 @@ export default function OfferModal({ company, onSaved, onSkip }: Props) {
 
           <div className={styles.row}>
             <div className={styles.field}>
-              <label className={styles.label}>Health Insurance</label>
+              <label className={styles.label}>{t('healthInsurance')}</label>
               <select
                 className={styles.input}
                 value={healthTier}
                 onChange={(event) => setHealthTier(event.target.value as HealthTier | '')}
                 disabled={submitting}
               >
-                <option value="">— Select —</option>
+                <option value="">{t('selectPlaceholder')}</option>
                 {HEALTH_TIERS.map((tier) => <option key={tier} value={tier}>{tier}</option>)}
               </select>
             </div>
           </div>
 
           <div className={styles.field}>
-            <label className={styles.label}>Other Benefits</label>
+            <label className={styles.label}>{t('otherBenefits')}</label>
             <textarea
               className={styles.textarea}
-              placeholder="Home office stipend, gym membership, meal allowance…"
+              placeholder={t('otherBenefitsPlaceholder')}
               rows={2}
               value={otherBenefits}
               onChange={(event) => setOtherBenefits(event.target.value)}
@@ -236,10 +239,10 @@ export default function OfferModal({ company, onSaved, onSkip }: Props) {
           </div>
 
           <div className={styles.field}>
-            <label className={styles.label}>Notes</label>
+            <label className={styles.label}>{t('notes')}</label>
             <textarea
               className={styles.textarea}
-              placeholder="Deadline to decide, negotiation notes…"
+              placeholder={t('notesPlaceholder')}
               rows={2}
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
@@ -256,10 +259,10 @@ export default function OfferModal({ company, onSaved, onSkip }: Props) {
               onClick={onSkip}
               disabled={submitting}
             >
-              Skip for now
+              {t('skipForNow')}
             </button>
             <button type="submit" className={styles.saveButton} disabled={submitting}>
-              {submitting ? 'Saving…' : 'Save offer details'}
+              {submitting ? tCommon('saving') : t('saveOffer')}
             </button>
           </div>
         </form>

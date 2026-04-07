@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import type { TimelineEvent, TimelineEventType, ProcessStatusValue, CreateTimelineEventPayload } from '@/types';
 import { PROCESS_STATUS_VALUES } from '@/types';
-import { EVENT_TYPE_LABELS, USER_EVENT_TYPES } from './helpers';
+import { EVENT_TYPE_TRANSLATION_KEYS, USER_EVENT_TYPES } from './helpers';
 import { useToast } from '@/components/Toast/ToastProvider';
+import { useTranslations } from 'next-intl';
 import styles from './CompanyDetailModal.module.css';
 
 interface AddEntryFormProps {
@@ -14,6 +15,8 @@ interface AddEntryFormProps {
 
 export default function AddEntryForm({ companyId, onCreated }: AddEntryFormProps) {
   const { toast } = useToast();
+  const t = useTranslations('companyDetail');
+  const tCommon = useTranslations('common');
   const [eventType, setEventType] = useState<TimelineEventType>('note');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +48,7 @@ export default function AddEntryForm({ companyId, onCreated }: AddEntryFormProps
     setError(null);
 
     if (eventType === 'contact' && !contactName.trim()) {
-      setError('Contact name is required.');
+      setError(t('contactNameRequired'));
       return;
     }
 
@@ -94,7 +97,7 @@ export default function AddEntryForm({ companyId, onCreated }: AddEntryFormProps
   return (
     <form className={styles.addForm} onSubmit={handleSubmit} noValidate>
       <div className={styles.addFormHeader}>
-        <span className={styles.addFormTitle}>Add Entry</span>
+        <span className={styles.addFormTitle}>{t('addEntry')}</span>
         <div className={styles.typeSelector}>
           {USER_EVENT_TYPES.map((type) => (
             <button
@@ -104,7 +107,7 @@ export default function AddEntryForm({ companyId, onCreated }: AddEntryFormProps
               onClick={() => { setEventType(type); setError(null); }}
               disabled={submitting}
             >
-              {EVENT_TYPE_LABELS[type]}
+              {t(EVENT_TYPE_TRANSLATION_KEYS[type] as Parameters<typeof t>[0])}
             </button>
           ))}
         </div>
@@ -114,24 +117,24 @@ export default function AddEntryForm({ companyId, onCreated }: AddEntryFormProps
         <>
           <div className={styles.field}>
             <label className={styles.label}>
-              Title <span className={styles.optional}>(optional)</span>
+              {t('noteTitle')} <span className={styles.optional}>{tCommon('optional')}</span>
             </label>
             <input
               type="text"
               className={styles.input}
               value={noteTitle}
               onChange={(event) => setNoteTitle(event.target.value)}
-              placeholder="e.g. Post-interview thoughts"
+              placeholder={t('noteTitlePlaceholder')}
               disabled={submitting}
             />
           </div>
           <div className={styles.field}>
-            <label className={styles.label}>Body</label>
+            <label className={styles.label}>{t('noteBody')}</label>
             <textarea
               className={styles.textarea}
               value={noteBody}
               onChange={(event) => setNoteBody(event.target.value)}
-              placeholder="Write your note here…"
+              placeholder={t('noteBodyPlaceholder')}
               rows={3}
               disabled={submitting}
             />
@@ -143,54 +146,54 @@ export default function AddEntryForm({ companyId, onCreated }: AddEntryFormProps
         <>
           <div className={styles.field}>
             <label className={styles.label}>
-              Name <span className={styles.required}>*</span>
+              {t('contactName')} <span className={styles.required}>*</span>
             </label>
             <input
               type="text"
               className={styles.input}
               value={contactName}
               onChange={(event) => setContactName(event.target.value)}
-              placeholder="e.g. Jane Smith"
+              placeholder={t('contactNamePlaceholder')}
               disabled={submitting}
             />
           </div>
           <div className={styles.fieldRow}>
             <div className={styles.field}>
               <label className={styles.label}>
-                Role <span className={styles.optional}>(optional)</span>
+                {t('contactRole')} <span className={styles.optional}>{tCommon('optional')}</span>
               </label>
               <input
                 type="text"
                 className={styles.input}
                 value={contactRole}
                 onChange={(event) => setContactRole(event.target.value)}
-                placeholder="e.g. Engineering Manager"
+                placeholder={t('contactRolePlaceholder')}
                 disabled={submitting}
               />
             </div>
             <div className={styles.field}>
               <label className={styles.label}>
-                Email <span className={styles.optional}>(optional)</span>
+                {t('contactEmail')} <span className={styles.optional}>{tCommon('optional')}</span>
               </label>
               <input
                 type="email"
                 className={styles.input}
                 value={contactEmail}
                 onChange={(event) => setContactEmail(event.target.value)}
-                placeholder="jane@example.com"
+                placeholder={t('contactEmailPlaceholder')}
                 disabled={submitting}
               />
             </div>
           </div>
           <div className={styles.field}>
             <label className={styles.label}>
-              Notes <span className={styles.optional}>(optional)</span>
+              {t('contactNotes')} <span className={styles.optional}>{tCommon('optional')}</span>
             </label>
             <textarea
               className={styles.textarea}
               value={contactNotes}
               onChange={(event) => setContactNotes(event.target.value)}
-              placeholder="Notes about this contact…"
+              placeholder={t('contactNotesPlaceholder')}
               rows={2}
               disabled={submitting}
             />
@@ -202,20 +205,20 @@ export default function AddEntryForm({ companyId, onCreated }: AddEntryFormProps
         <>
           <div className={styles.field}>
             <label className={styles.label}>
-              Title <span className={styles.optional}>(optional)</span>
+              {t('apptTitle')} <span className={styles.optional}>{tCommon('optional')}</span>
             </label>
             <input
               type="text"
               className={styles.input}
               value={apptTitle}
               onChange={(event) => setApptTitle(event.target.value)}
-              placeholder="e.g. Technical Screen"
+              placeholder={t('apptTitlePlaceholder')}
               disabled={submitting}
             />
           </div>
           <div className={styles.field}>
             <label className={styles.label}>
-              Date &amp; Time <span className={styles.optional}>(optional)</span>
+              {t('apptDateTime')} <span className={styles.optional}>{tCommon('optional')}</span>
             </label>
             <input
               type="datetime-local"
@@ -227,13 +230,13 @@ export default function AddEntryForm({ companyId, onCreated }: AddEntryFormProps
           </div>
           <div className={styles.field}>
             <label className={styles.label}>
-              Notes <span className={styles.optional}>(optional)</span>
+              {t('apptNotes')} <span className={styles.optional}>{tCommon('optional')}</span>
             </label>
             <textarea
               className={styles.textarea}
               value={apptNotes}
               onChange={(event) => setApptNotes(event.target.value)}
-              placeholder="e.g. 45 min, Zoom link TBD"
+              placeholder={t('apptNotesPlaceholder')}
               rows={2}
               disabled={submitting}
             />
@@ -243,7 +246,7 @@ export default function AddEntryForm({ companyId, onCreated }: AddEntryFormProps
 
       {eventType === 'process_status' && (
         <div className={styles.field}>
-          <label className={styles.label}>Status</label>
+          <label className={styles.label}>{t('processStatus')}</label>
           <select
             className={styles.select}
             value={processStatus}
@@ -261,7 +264,7 @@ export default function AddEntryForm({ companyId, onCreated }: AddEntryFormProps
 
       <div className={styles.addFormActions}>
         <button type="submit" className={styles.submitButton} disabled={submitting}>
-          {submitting ? 'Saving…' : 'Add Entry'}
+          {submitting ? tCommon('saving') : t('addEntrySubmit')}
         </button>
       </div>
     </form>

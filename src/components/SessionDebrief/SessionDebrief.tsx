@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import type { InterviewSessionFull } from '@/types';
 import { scoreColorClass, generateDebrief, buildDebriefMarkdown, copyToClipboard } from './helpers';
 import { useToast } from '@/components/Toast/ToastProvider';
+import { useTranslations, useLocale } from 'next-intl';
 import QuestionRow from './QuestionRow';
 import styles from './SessionDebrief.module.css';
 
@@ -16,6 +17,8 @@ interface Props {
 export default function SessionDebrief({ session, onRegenerated }: Props) {
   const router = useRouter();
   const { toast } = useToast();
+  const t = useTranslations('session');
+  const locale = useLocale();
   const [regenerating, setRegenerating] = useState(false);
   const [regenError, setRegenError] = useState<string | null>(null);
   const [copying, setCopying] = useState(false);
@@ -43,9 +46,9 @@ export default function SessionDebrief({ session, onRegenerated }: Props) {
     setCopying(true);
     try {
       await copyToClipboard(buildDebriefMarkdown(session));
-      toast('Debrief copied to clipboard');
+      toast(t('debriefCopied'));
     } catch {
-      toast('Failed to copy to clipboard');
+      toast(t('failedToCopy'));
     } finally {
       setCopying(false);
     }
@@ -72,11 +75,11 @@ export default function SessionDebrief({ session, onRegenerated }: Props) {
         {/* Header */}
         <div className={styles.cardHeader}>
           <div>
-            <h1 className={styles.heading}>Session Debrief</h1>
+            <h1 className={styles.heading}>{t('debrief')}</h1>
             <p className={styles.meta}>
-              {answeredQuestions.length} question{answeredQuestions.length !== 1 ? 's' : ''} answered
+              {t('questionsAnswered', { count: answeredQuestions.length })}
               {session.completed_at && (
-                <> · {new Date(session.completed_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</>
+                <> · {new Date(session.completed_at).toLocaleDateString(locale, { month: 'short', day: 'numeric', year: 'numeric' })}</>
               )}
             </p>
           </div>
@@ -96,17 +99,17 @@ export default function SessionDebrief({ session, onRegenerated }: Props) {
 
         {!hasDebrief && !regenerating && (
           <div className={styles.noDebrief}>
-            <p>Debrief not yet generated.</p>
+            <p>{t('noDebrief')}</p>
             <button className={styles.regenButton} onClick={handleRegenerate}>
-              Generate Debrief
+              {t('generateDebrief')}
             </button>
           </div>
         )}
 
         {regenerating && (
           <div className={styles.generating}>
-            <div className={styles.spinner} aria-label="Generating debrief…" />
-            <p>Generating debrief…</p>
+            <div className={styles.spinner} aria-label={t('generatingDebrief')} />
+            <p>{t('generatingDebrief')}</p>
           </div>
         )}
 
@@ -122,9 +125,9 @@ export default function SessionDebrief({ session, onRegenerated }: Props) {
                 styles.verdictBorderline
               }`}>
                 <span className={styles.verdictLabel}>
-                  {session.debrief_verdict === 'pass' ? 'Move Forward' :
-                   session.debrief_verdict === 'fail' ? 'Not Moving Forward' :
-                   'Borderline'}
+                  {session.debrief_verdict === 'pass' ? t('verdictPass') :
+                   session.debrief_verdict === 'fail' ? t('verdictFail') :
+                   t('verdictBorderline')}
                 </span>
                 {session.debrief_interviewer_note && (
                   <p className={styles.verdictNote}>{session.debrief_interviewer_note}</p>
@@ -135,7 +138,7 @@ export default function SessionDebrief({ session, onRegenerated }: Props) {
             {/* Strengths */}
             {session.debrief_strengths.length > 0 && (
               <div className={styles.section}>
-                <h2 className={styles.sectionTitle}>Strengths</h2>
+                <h2 className={styles.sectionTitle}>{t('strengths')}</h2>
                 <ul className={styles.list}>
                   {session.debrief_strengths.map((strength, index) => (
                     <li key={index} className={`${styles.listItem} ${styles.strengthItem}`}>
@@ -149,7 +152,7 @@ export default function SessionDebrief({ session, onRegenerated }: Props) {
             {/* Improvements */}
             {session.debrief_improvements.length > 0 && (
               <div className={styles.section}>
-                <h2 className={styles.sectionTitle}>Areas to Improve</h2>
+                <h2 className={styles.sectionTitle}>{t('improvements')}</h2>
                 <ul className={styles.list}>
                   {session.debrief_improvements.map((improvement, index) => (
                     <li key={index} className={`${styles.listItem} ${styles.improvementItem}`}>
@@ -163,7 +166,7 @@ export default function SessionDebrief({ session, onRegenerated }: Props) {
             {/* Resources */}
             {session.debrief_resources.length > 0 && (
               <div className={styles.section}>
-                <h2 className={styles.sectionTitle}>Suggested Resources</h2>
+                <h2 className={styles.sectionTitle}>{t('resources')}</h2>
                 <ul className={styles.list}>
                   {session.debrief_resources.map((resource, index) => (
                     <li key={index} className={styles.listItem}>{resource}</li>
@@ -175,7 +178,7 @@ export default function SessionDebrief({ session, onRegenerated }: Props) {
             {/* Per-question breakdown */}
             {session.questions.length > 0 && (
               <div className={styles.section}>
-                <h2 className={styles.sectionTitle}>Question Breakdown</h2>
+                <h2 className={styles.sectionTitle}>{t('questionBreakdown')}</h2>
                 <ol className={styles.questionList}>
                   {session.questions.map((question) => (
                     <QuestionRow key={question.id} question={question} />
@@ -189,7 +192,7 @@ export default function SessionDebrief({ session, onRegenerated }: Props) {
         {/* Actions */}
         <div className={styles.actions}>
           <button className={styles.backButton} onClick={() => router.push('/')}>
-            ← Back to board
+            {t('backToBoard')}
           </button>
           <div className={styles.actionsRight}>
             {hasDebrief && (
@@ -200,14 +203,14 @@ export default function SessionDebrief({ session, onRegenerated }: Props) {
                   disabled={copying}
                   title="Copy debrief as Markdown"
                 >
-                  {copying ? 'Copying…' : 'Copy'}
+                  {copying ? t('copying') : t('copy')}
                 </button>
                 <button
                   className={styles.exportButton}
                   onClick={handleExportMarkdown}
                   title="Download debrief as Markdown file"
                 >
-                  Export .md
+                  {t('exportMd')}
                 </button>
               </>
             )}
@@ -217,7 +220,7 @@ export default function SessionDebrief({ session, onRegenerated }: Props) {
                 onClick={handleRegenerate}
                 disabled={regenerating}
               >
-                {regenerating ? 'Regenerating…' : 'Regenerate'}
+                {regenerating ? t('regenerating') : t('regenerate')}
               </button>
             )}
           </div>
