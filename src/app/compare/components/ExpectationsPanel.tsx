@@ -83,8 +83,8 @@ export default function ExpectationsPanel({
           <span className={styles.expSummary}>
             {expectations.base_salary != null && `Base ≥ ${fmt(expectations.base_salary, expectations.currency, 'currency')}`}
             {expectations.pto_days != null && ` · PTO ≥ ${expectations.pto_days}d`}
-            {expectations.remote_policy && ` · ${expectations.remote_policy}`}
-            {expectations.health_tier && ` · ${expectations.health_tier} health`}
+            {expectations.remote_policy && ` · ${t(`remotePolicies.${expectations.remote_policy === 'On-site' ? 'OnSite' : expectations.remote_policy}` as Parameters<typeof t>[0])}`}
+            {expectations.health_tier && ` · ${t(`healthTiers.${expectations.health_tier}` as Parameters<typeof t>[0])}`}
           </span>
         )}
         {!hasSomeExpectation && !open && (
@@ -131,14 +131,22 @@ export default function ExpectationsPanel({
               <label className={styles.expLabel}>{t('remotePolicy')}</label>
               <select className={styles.expInput} value={remotePolicy} onChange={(event) => setRemotePolicy(event.target.value as RemotePolicy | '')} disabled={saving}>
                 <option value="">{t('anyOption')}</option>
-                {REMOTE_POLICIES.map((policy) => <option key={policy} value={policy}>{policy}</option>)}
+                {REMOTE_POLICIES.map((policy) => (
+                  <option key={policy} value={policy}>
+                    {t(`remotePolicies.${policy === 'On-site' ? 'OnSite' : policy}` as Parameters<typeof t>[0])}
+                  </option>
+                ))}
               </select>
             </div>
             <div className={styles.expField}>
               <label className={styles.expLabel}>{t('healthInsurance')}</label>
               <select className={styles.expInput} value={healthTier} onChange={(event) => setHealthTier(event.target.value as HealthTier | '')} disabled={saving}>
                 <option value="">{t('anyOption')}</option>
-                {HEALTH_TIERS.map((tier) => <option key={tier} value={tier}>{tier}</option>)}
+                {HEALTH_TIERS.map((tier) => (
+                  <option key={tier} value={tier}>
+                    {t(`healthTiers.${tier}` as Parameters<typeof t>[0])}
+                  </option>
+                ))}
               </select>
             </div>
           </div>

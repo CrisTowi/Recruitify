@@ -168,7 +168,18 @@
     "saveTargets": "Save targets",
     "performanceBonusPct": "Performance Bonus %",
     "equityValue": "Equity / RSU Value",
-    "retirement401k": "401k Match %"
+    "retirement401k": "401k Match %",
+    "orBetter": "or better",
+    "remotePolicies": {
+      "Remote": "Remote",
+      "Hybrid": "Hybrid",
+      "OnSite": "On-site"
+    },
+    "healthTiers": {
+      "None": "None",
+      "Basic": "Basic",
+      "Premium": "Premium"
+    }
   },
   "aiSettings": {
     "title": "AI Settings",

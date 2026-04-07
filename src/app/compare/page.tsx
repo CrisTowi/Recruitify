@@ -26,6 +26,23 @@ export default function ComparePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  function tRemotePolicy(value: string): string {
+    const keyMap: Record<string, string> = { 'Remote': 'Remote', 'Hybrid': 'Hybrid', 'On-site': 'OnSite' };
+    return t(`remotePolicies.${keyMap[value] ?? value}` as Parameters<typeof t>[0]);
+  }
+
+  function tHealthTier(value: string): string {
+    const keyMap: Record<string, string> = { 'None': 'None', 'Basic': 'Basic', 'Premium': 'Premium' };
+    return t(`healthTiers.${keyMap[value] ?? value}` as Parameters<typeof t>[0]);
+  }
+
+  const fmtLabels = {
+    orBetter: t('orBetter'),
+    remotePolicy: tRemotePolicy,
+    healthTier: tHealthTier,
+    ptoDays: (n: number) => `≥ ${n} days`,
+  };
+
   const ROWS: RowDef[] = [
     {
       label: t('baseSalary'),
@@ -66,12 +83,12 @@ export default function ComparePage() {
     },
     {
       label: t('remotePolicy'),
-      render: (offer) => offer?.remote_policy ?? '—',
+      render: (offer) => offer?.remote_policy ? tRemotePolicy(offer.remote_policy) : '—',
       expField: 'remote_policy',
     },
     {
       label: t('healthInsurance'),
-      render: (offer) => offer?.health_tier ?? '—',
+      render: (offer) => offer?.health_tier ? tHealthTier(offer.health_tier) : '—',
       expField: 'health_tier',
     },
     {
@@ -205,7 +222,7 @@ export default function ComparePage() {
                         : new Set<string>();
 
                       const expText = row.expField && expectations
-                        ? fmtExpectation(expectations, row.expField)
+                        ? fmtExpectation(expectations, row.expField, fmtLabels)
                         : '';
 
                       return (

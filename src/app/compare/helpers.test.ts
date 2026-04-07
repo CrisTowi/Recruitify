@@ -81,34 +81,41 @@ describe('compare helpers', () => {
   });
 
   describe('fmtExpectation', () => {
+    const tLabels = {
+      orBetter: 'or better',
+      remotePolicy: (value: string) => value,
+      healthTier: (value: string) => value,
+      ptoDays: (n: number) => `≥ ${n} days`,
+    };
+
     it('returns empty string when field value is null', () => {
       const exp = makeExpectations({ base_salary: null });
-      expect(fmtExpectation(exp, 'base_salary')).toBe('');
+      expect(fmtExpectation(exp, 'base_salary', tLabels)).toBe('');
     });
 
     it('formats base_salary as currency with ≥ prefix', () => {
       const exp = makeExpectations({ base_salary: 100000 });
-      expect(fmtExpectation(exp, 'base_salary')).toBe('≥ $100,000');
+      expect(fmtExpectation(exp, 'base_salary', tLabels)).toBe('≥ $100,000');
     });
 
     it('formats bonus_pct as percentage with ≥ prefix', () => {
       const exp = makeExpectations({ bonus_pct: 10 });
-      expect(fmtExpectation(exp, 'bonus_pct')).toBe('≥ 10%');
+      expect(fmtExpectation(exp, 'bonus_pct', tLabels)).toBe('≥ 10%');
     });
 
     it('formats pto_days as days with ≥ prefix', () => {
       const exp = makeExpectations({ pto_days: 15 });
-      expect(fmtExpectation(exp, 'pto_days')).toBe('≥ 15 days');
+      expect(fmtExpectation(exp, 'pto_days', tLabels)).toBe('≥ 15 days');
     });
 
     it('formats remote_policy with "or better" suffix', () => {
       const exp = makeExpectations({ remote_policy: 'Hybrid' });
-      expect(fmtExpectation(exp, 'remote_policy')).toBe('Hybrid or better');
+      expect(fmtExpectation(exp, 'remote_policy', tLabels)).toBe('Hybrid or better');
     });
 
     it('formats health_tier with "or better" suffix', () => {
       const exp = makeExpectations({ health_tier: 'Basic' });
-      expect(fmtExpectation(exp, 'health_tier')).toBe('Basic or better');
+      expect(fmtExpectation(exp, 'health_tier', tLabels)).toBe('Basic or better');
     });
   });
 

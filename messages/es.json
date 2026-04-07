@@ -168,7 +168,18 @@
     "saveTargets": "Guardar objetivos",
     "performanceBonusPct": "Bono por desempeño %",
     "equityValue": "Valor de acciones / RSU",
-    "retirement401k": "Aporte jubilación %"
+    "retirement401k": "Aporte jubilación %",
+    "orBetter": "o mejor",
+    "remotePolicies": {
+      "Remote": "Remoto",
+      "Hybrid": "Híbrido",
+      "OnSite": "Presencial"
+    },
+    "healthTiers": {
+      "None": "Sin cobertura",
+      "Basic": "Básico",
+      "Premium": "Premium"
+    }
   },
   "aiSettings": {
     "title": "Configuración de IA",

@@ -30,7 +30,7 @@ export function fmt(n: number | null | undefined, currency: string, type: 'curre
   return `${n} days`;
 }
 
-export function fmtExpectation(exp: OfferExpectations, field: keyof OfferExpectations): string {
+export function fmtExpectation(exp: OfferExpectations, field: keyof OfferExpectations, tLabels: { orBetter: string; remotePolicy: (v: string) => string; healthTier: (v: string) => string; ptoDays: (n: number) => string }): string {
   const value = exp[field];
   if (value === null || value === undefined) return '';
   if (field === 'base_salary' || field === 'signing_bonus' || field === 'equity_value') {
@@ -39,9 +39,9 @@ export function fmtExpectation(exp: OfferExpectations, field: keyof OfferExpecta
   if (field === 'bonus_pct' || field === 'retirement_match_pct') {
     return `≥ ${value}%`;
   }
-  if (field === 'pto_days') return `≥ ${value} days`;
-  if (field === 'remote_policy') return `${value} or better`;
-  if (field === 'health_tier') return `${value} or better`;
+  if (field === 'pto_days') return tLabels.ptoDays(value as number);
+  if (field === 'remote_policy') return `${tLabels.remotePolicy(value as string)} ${tLabels.orBetter}`;
+  if (field === 'health_tier') return `${tLabels.healthTier(value as string)} ${tLabels.orBetter}`;
   return String(value);
 }
 
